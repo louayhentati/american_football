@@ -1,0 +1,118 @@
+<!-- Gaivy, Hamid, Rashed, Yazan, Hamza -->
+<!-- templates/drive_detail.html -->
+{% extends "base.html" %}
+{% block title %}Drive {{ drive.id }}{% endblock %}
+{% block content %}
+<div class="container-fluid">  <!-- Changed to container-fluid for full width -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Drive {{ drive.id }}</h2>
+            <a href="{{ url_for('game_detail', game_id=drive.game_id) }}" class="btn btn-secondary">Back to Drives</a>
+            <a href="{{ url_for('add_play', drive_id=drive.id) }}" class="btn btn-primary">Add Play</a>
+            <a href="{{ url_for('export_drive', drive_id=drive.id) }}" class="btn btn-info">Export CSV</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Play #</th>
+                            <th>ODK</th>
+                            <th>Down</th>
+                            <th>Distance</th>
+                            <th>Yard Line</th>
+                            <th>Play Type</th>
+                            <th>Result</th>
+                            <th>Gain/Loss</th>
+                            <th>Personnel</th>
+                            <th>Formation</th>
+                            <th>Strength</th>
+                            <th>Adjustment</th>
+                            <!-- Play Details -->
+                            <th>Motion</th>
+                            <th>Protection</th>
+                            <th>Play Call</th>
+                            <th>Direction</th>
+                            <th>Tag</th>
+                            <th>Hash</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for play in drive.plays %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ play.odk }}</td>
+                            <td>{{ play.down }}</td>
+                            <td>{{ play.distance }}</td>
+                            <td>{{ play.yard_line }}</td>
+                            <td>{{ play.play_type }}</td>
+                            <td>{{ play.result }}</td>
+                            <td>{{ play.gain_loss }}</td>
+                            <td>{{ play.personnel }}</td>
+                            <td>{{ play.off_form }}</td>
+                            <td>{{ play.form_str }}</td>
+                            <td>{{ play.form_adj }}</td>
+                            <td>{{ play.motion }}</td>
+                            <td>{{ play.protection }}</td>
+                            <td>{{ play.off_play }}</td>
+                            <td>{{ play.dir_call }}</td>
+                            <td>{{ play.tag }}</td>
+                            <td>{{ play.hash }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('edit_play', play_id=play.id) }}"
+                                       class="btn btn-sm btn-warning">Edit</a>
+                                    <form action="{{ url_for('delete_play', play_id=play.id) }}"
+                                          method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                onclick="return confirm('Delete this play?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Make the table more compact and scrollable */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table th, .table td {
+        white-space: nowrap;
+        padding: 0.5rem;
+    }
+
+    /* Keep action buttons together */
+    .btn-group {
+        white-space: nowrap;
+    }
+
+    /* Make sure action buttons stay visible */
+    .table td:last-child {
+        position: sticky;
+        right: 0;
+        background: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    .table th:last-child {
+        position: sticky;
+        right: 0;
+        background: #f8f9fa;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Drive Chart - {{ game.game_name }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .drive-chart {
+        position: relative;
+        width: 100%;
+        min-height: 400px;
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        padding-bottom: 60px;
+        margin: 20px 0;
+    }
+    .field-container {
+        position: relative;
+        min-height: 100%;
+        width: 100%;
+        left: 0;
+        background: linear-gradient(
+            to right,
+            #5C1D28 0%,   #5C1D28 8.5%,
+            #2e7d32 8.5%,  #2e7d32 91.75%,
+            #FFD200 91.75%,  #FFD200 100%
+        ) !important;
+    }
+    .yard-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #fff !important;
+        opacity: 0.7;
+    }
+    .yard-line-number {
+        position: absolute;
+        bottom: -20px;
+        font-size: 14px;
+        text-align: center;
+        color: #fff;
+        text-shadow: 1px 1px 2px #000;
+    }
+    .drive-line {
+        position: absolute;
+        height: 50px;
+        width: 100%;
+    }
+    .drive-bar {
+        height: 100%;
+        position: absolute;
+        border: 2px solid #000 !important;
+        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5) !important;
+        z-index: 1;
+    }
+    .drive-bar.loss {
+        background-color: #ff0000 !important; /* Red for loss */
+    }
+    .drive-bar.gain {
+        background-color: #007bff !important; /* Blue for gain */
+    }
+    .drive-bar.touchdown {
+        background-color: #28a745 !important;
+    }
+    .drive-bar.punt {
+        background-color: #ffc107 !important;
+    }
+    .drive-bar.field-goal {
+        background-color: #17a2b8 !important;
+    }
+    .drive-label {
+        position: absolute;
+        top: 50%; /* Start at the middle of the drive bar */
+        transform: translateY(-50%); /* Adjust up by half the label's height to center it */
+        font-size: 14px;
+        color: #fff;
+        text-shadow: 1px 1px 2px #000;
+        white-space: nowrap;
+        text-align: center; /* Center the text horizontally */
+        z-index: 2; /* Ensure it stays above the bar */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ game.game_name }} - Drive Chart</h1>
+
+    <div class="row">
+        <div class="col">
+            <p> Hometeam plays from Left to Right!</p>
+            {% if drives|length == 0 %}
+                <p>No drives available for this game.</p>
+            {% elif drives|length == 1 %}
+                <p>This game has only one drive. Add more drives to see a full chart.</p>
+            {% endif %}
+            <div class="drive-chart" style="height: {{ max(drives|length * 60 + 100, 400) }}px;">
+                <div class="field-container">
+                    <!-- Yard Lines -->
+                    {% for i in range(1, 20) %} <!-- Start from 1 (5 yards) to 19 (95 yards) -->
+                        {% set yard = i * 5 %}
+                        <div class="yard-line" style="left: {{ (i * 5) / 1.2 + 8.33 }}%;"></div>
+                        <div class="yard-line-number" style="left: {{ (i * 5) / 1.2 + 8.33 - 0.5 }}%;">
+                            {% if i == 10 %}
+                                50
+                            {% elif i < 10 %}
+                                {{ yard*(-1) }}
+                            {% else %}
+                                {{ 100 - yard }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <!-- Drives -->
+                    {% for drive in drives %}
+                        <div class="drive-line" style="top: {{ 50 - 10 + (loop.index0 * 60) }}px;">
+
+                            <!-- Drive result bar -->
+                            <div class="drive-bar {{ 'loss' if drive.loss else 'gain' }} {{ drive.result|lower|replace(' ', '-') }}"
+                                 style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
+                                        {% if drive.result|lower == 'touchdown' %}
+                                            width: {{ 96 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
+                                        {% else %}
+                                            width: {{ (((drive.end - drive.start) / 100) * 100|abs) / 1.2 }}%;
+                                        {% endif %}">
+                            </div>
+                            <!-- Drive label centered inside the bar -->
+                            <div class="drive-label"
+                                 style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
+                                        {% if drive.result|lower == 'touchdown' %}
+                                            width: {{ 96 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
+                                        {% else %}
+                                            width: {{ (((drive.end - drive.start) / 100) * 100|abs) / 1.2 }}%;
+                                        {% endif %}">
+                                {{ drive.result or 'In Progress' }} ({{ drive.play_count if drive.play_count is defined else 'N/A' }} plays)
+                            </div>
+
+                            <!-- JavaScript to log drive.start and drive.end to console -->
+                            <script>
+                                console.log("Drive Start: " + {{ drive.start }} + ", Drive End: " + {{ drive.end }});
+                                console.log("Loss: " + {{ "true" if drive.loss else "false" }});
+                            </script>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
