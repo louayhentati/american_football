@@ -1,0 +1,52 @@
+{% extends "system/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block head %}
+<!-- Font Awesome for eye icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="App Logo" class="login-logo">
+    <h2 class="text-center mb-4">Welcome Back</h2>
+
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input id="username" type="text" name="username" class="form-control" required autofocus>
+        </div>
+
+        <div class="form-group mb-4">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group">
+                <input id="password" type="password" name="password" class="form-control" required>
+                <span class="input-group-text" onclick="togglePassword()" style="cursor:pointer;">
+                    <i class="fas fa-eye" id="toggleIcon"></i>
+                </span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+    </form>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const icon = document.getElementById('toggleIcon');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

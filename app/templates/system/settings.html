@@ -1,0 +1,70 @@
+{% extends "system/base.html" %}
+{% block title %}Play Options Settings{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Play Options Settings</h2>
+            <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Back to Games</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for param_name, display_name in parameters.items() %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ display_name }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add new option form -->
+                    <form method="POST" action="{{ url_for('add_play_option', param=param_name) }}" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="value"
+                                   placeholder="New option" required>
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
+                    </form>
+
+                    <!-- Existing options -->
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for option in options[param_name] %}
+                        <div class="btn-group">
+                            <button class="btn {{ 'btn-primary' if option.enabled else 'btn-secondary' }}">
+                                {{ option.value }}
+                            </button>
+                            <button type="button"
+                                    class="btn {{ 'btn-primary' if option.enabled else 'btn-secondary' }} dropdown-toggle dropdown-toggle-split"
+                                    data-bs-toggle="dropdown">
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <form method="POST"
+                                          action="{{ url_for('toggle_play_option', option_id=option.id) }}"
+                                          class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            {{ 'Disable' if option.enabled else 'Enable' }}
+                                        </button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form method="POST"
+                                          action="{{ url_for('delete_play_option', option_id=option.id) }}"
+                                          class="d-inline">
+                                        <button type="submit" class="dropdown-item text-danger"
+                                                onclick="return confirm('Are you sure you want to delete this option?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
