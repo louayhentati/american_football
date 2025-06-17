@@ -3,6 +3,30 @@
 A web-based football game analysis tool built with *Flask* and *SQLAlchemy*. This tool allows users to log in, manage games, and analyze football plays in real-time.
 
 ---
+## 0. Quick Start : 
+> **Note:** The ``python`` command and file path structure may vary depending on your operating system.
+
+1. clone repository 
+```bash
+    git clone git@gitlab.informatik.fb2.frankfurt-university.de:projekt-football/sommersemester25.git <dir_name>
+    cd <dir_name>
+```
+2. setup virtual env
+```bash
+    python -m venv venv
+```
+3. activate venv
+```bash
+    source venv/bin/activate
+```
+4. install dependencies
+```bash
+    pip install -r requirements.txt
+```
+5. run
+```bash
+    python run.py
+```
 
 ## 1. User Guide
 
