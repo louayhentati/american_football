@@ -1,21 +1,28 @@
 # Mac Files
 .DS_Store
+._*
 
 # Log files
 *.log
 0.log
 logs/*
 
-# config files
+# Config files
 config.yaml
 *.yaml
 *.conf
 *.env
 env.*
+secrets.*
 
 # IDEA files
-.idea
 *.xml
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
 
 # __pycache__
 __pycache__/
