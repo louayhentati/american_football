@@ -1,0 +1,31 @@
+{% extends "system/base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+    <!-- [!]- css/settings.css here not outside content block -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}"/>
+
+    <div class="settings-container">
+        <!-- [!] include or paste it here - settings sidebar -->
+        {% include "settings/partials/sidebar.html" %}
+
+        <div class="settings-content">
+            <div class="tab-content">
+                <!-- [!] include or paste it here - play option -->
+                {% include "settings/partials/play_options.html" %}
+                <!-- [!] include or paste it here - play calls -->
+                {% include "settings/partials/play_calls.html" %}
+                <!-- [!] include or paste it here - play defaults -->
+                {% include "settings/partials/play_defaults.html" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- [!] include or paste it here - play option -->
+    {% include "settings/partials/play_add_option_modal.html" %}
+
+    <!-- [!]- js/settings.js here not outside content block -->
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+
+{% endblock %}

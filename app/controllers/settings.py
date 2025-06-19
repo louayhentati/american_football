@@ -34,7 +34,11 @@ class SettingsController:
         options = {}
         for param in self.play_parameters:
             options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
-        return render_template('system/settings.html', options=options, parameters=self.play_parameters)
+        return render_template(
+            template_name_or_list='settings/settings.html',
+            options=options,
+            parameters=self.play_parameters
+        )
 
     @login_required
     def add_play_option(self, param):
