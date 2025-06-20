@@ -24,7 +24,12 @@
                             {% for option in options[param_name] %}
                                 <div class="option-item {% if option.enabled %}enabled{% else %}disabled{% endif %}"
                                      data-option-id="{{ option.id }}">
-                                    <span class="option-text">{{ option.value }}</span>
+                                    <span class="option-text">
+                                        {{ option.value }}
+                                        {% if param_name == 'off_play' and option.play_call %}
+                                            <small class="text-muted">({{ option.play_call.name }})</small>
+                                        {% endif %}
+                                    </span>
                                     <div class="option-actions">
                                         <div class="action-group">
                                             <form method="POST"
