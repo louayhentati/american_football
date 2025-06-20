@@ -70,16 +70,71 @@ class PlaybookApp:
     def initialize_database(self) -> None:
         with self.app.app_context():
             db.create_all()
+            self._ensure_play_calls()
             self._ensure_play_options()
+            self._create_test_user()
             db.session.commit()
 
     @staticmethod
+    def _create_test_user():
+        from werkzeug.security import generate_password_hash
+        password = generate_password_hash('dev.null')
+
+        existing = UserModel.query.filter_by(username='dev.null').first()
+        if not existing:
+            test_user = UserModel(
+                username='dev.null',
+                password=password,
+                role='admin'
+            )
+            db.session.add(test_user)
+            print("[+] Test user 'dev.null' created.")
+        else:
+            print("[=] Test user 'dev.null' already exists.")
+
+    @staticmethod
+    def _ensure_play_calls() -> None:
+        for name in AD.PLAY_CALLS:
+            existing = PlayCallModel.query.filter(
+                db.func.lower(PlayCallModel.name) == name.lower()
+            ).first()
+
+            if not existing:
+                call = PlayCallModel(name=name.upper(), status=True)
+                db.session.add(call)
+                print(f"[+] Play Call '{name}' added.")
+            else:
+                print(f"[=] Play Call '{name}' already exists.")
+
+    @staticmethod
     def _ensure_play_options() -> None:
-        for name, value in AD.PLAY_OPTIONS:
+        # Verzeihung - wird später als sys.argv | argparse --dev-mode=True
+        # Else - useless
+        import random
+        for name, value, *_ in AD.PLAY_OPTIONS:
             exists = PlayOptionModel.query.filter_by(parameter_name=name, value=value).first()
             if not exists:
                 option = PlayOptionModel(parameter_name=name, value=value, enabled=True)
+
+                if name == 'off_play':
+                    call_ids = [c.id for c in PlayCallModel.query.all()]
+                    if call_ids:
+                        option.play_call_id = random.choice(call_ids)
+                        print(f"[+] Play Option '{name}' -> '{value}' associated with call ID {option.play_call_id}")
+
                 db.session.add(option)
+                print(f"[+] Play Option '{name}' -> '{value}' added.")
+            else:
+                updated = False
+                if name == 'off_play' and exists.play_call_id is None:
+                    call_ids = [c.id for c in PlayCallModel.query.all()]
+                    if call_ids:
+                        exists.play_call_id = random.choice(call_ids)
+                        updated = True
+                        print(f"[~] Updated Play Option '{name}' -> '{value}' with call ID {exists.play_call_id}")
+
+                if not updated:
+                    print(f"[=] Play Option '{name}' -> '{value}' already exists.")
 
     def run(self) -> None:
         self.app.run(host='127.0.0.1', port=8080, debug=True)
