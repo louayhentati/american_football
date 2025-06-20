@@ -25,12 +25,15 @@
                     <label for="playCategorySelect" class="form-label">
                         Play Call <small class="text-danger">*</small>
                     </label>
-                    <select class="form-select" id="playCategorySelect" name="play_category" required>
+                    <select class="form-select" id="playCategorySelect" name="play_call_id" required>
                         <option value="" selected disabled>Choose Play Call</option>
-                        <option value="RPO">RPO</option>
-                        <option value="PASS">PASS</option>
-                        <option value="SCREEN">SCREEN</option>
-                        <option value="RUN">RUN</option>
+                        {% for call in play_calls %}
+                            <option value="{{ call.id }}">{{ call.name }}</option>
+                        {% endfor %}
+                        {#                        <option value="RPO">RPO</option>#}
+                        {#                        <option value="PASS">PASS</option>#}
+                        {#                        <option value="SCREEN">SCREEN</option>#}
+                        {#                        <option value="RUN">RUN</option>#}
                     </select>
                 </div>
 
@@ -56,3 +59,33 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const typeSelect = document.getElementById("playTypeSelect");
+        const categoryDiv = document.getElementById("offPlayCategoryDiv");
+
+        typeSelect.addEventListener("change", function () {
+            if (this.value === "off_play") {
+                categoryDiv.classList.remove("d-none");
+            } else {
+                categoryDiv.classList.add("d-none");
+            }
+        });
+    });
+</script>
+<script>
+    const form = document.getElementById("addOptionForm");
+    const typeSelect = document.getElementById("playTypeSelect");
+
+    form.addEventListener("submit", function (e) {
+        const type = typeSelect.value;
+        if (!type) {
+            e.preventDefault();
+            alert("Select an option type.");
+            return;
+        }
+        form.action = `/settings/play/option/add/${type}`;
+    });
+</script>
+
