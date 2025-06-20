@@ -58,6 +58,7 @@ class SettingsController:
         calls = self.__load_play_calls()
         for param in self.play_parameters:
             options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
+
         return render_template(
             template_name_or_list='settings/settings.html',
             options=options,
@@ -69,9 +70,16 @@ class SettingsController:
     @login_required
     def add_play_option(self, param):
         if param not in self.play_parameters:
-            abort(code=404)
+            abort(404)
+
         value = request.form.get('value')
+        play_call_id = request.form.get('play_call_id')
+
         option = PlayOptionModel(parameter_name=param, value=value)
+
+        if param == 'off_play' and play_call_id:
+            option.play_call_id = int(play_call_id)
+
         db.session.add(option)
         db.session.commit()
         flash(f'Added option "{value}" to {self.play_parameters[param]}')
