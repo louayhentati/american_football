@@ -5,6 +5,7 @@ class ServerConfig:
 
 
 class ApplicationData:
+    PLAY_CALLS = ['RPO', 'PASS', 'SCREEN', 'RUN']
     PLAY_PARAMETERS = {
         'off_form': 'Offensive Formation',
         'form_str': 'Formation Strength',

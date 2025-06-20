@@ -4,6 +4,7 @@ from flask_login import LoginManager
 from app.extensions import db
 from app.models.user import UserModel
 from app.models.play_option import PlayOptionModel
+from app.models.play_call import PlayCallModel
 from app.config import ApplicationData as AD
 
 from app.controllers.user import UserController

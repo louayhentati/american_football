@@ -1,9 +1,9 @@
 <div class="tab-pane fade show active" id="play-options" role="tabpanel">
     <div class="content-header">
         <h4><i class="bi bi-card-checklist me-2"></i>Play Options</h4>
-        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
                 data-bs-target="#addOptionModal">
-            <i class="fas fa-plus me-1"></i> Add Option
+            <i class="fas fa-plus me-1"></i> New Option
         </button>
     </div>
 
@@ -71,3 +71,6 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- [!] include or paste it here - play option -->
+{% include "settings/partials/play_add_option_modal.html" %}
