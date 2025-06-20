@@ -1,143 +1,151 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // [S] init sidebar menu state
+    // [S] Sidebar submenu toggle
     const playSubmenu = document.getElementById('playSubmenu');
     const userSubmenu = document.getElementById('userSubmenu');
     const playToggle = document.querySelector('[href="#playSubmenu"]');
     const userToggle = document.querySelector('[href="#userSubmenu"]');
 
-    // show play menu by default when page loads
-    playSubmenu.classList.add('show');
-    playToggle.querySelector('.menu-toggle i').classList.add('rotated');
-    // [E] init sidebar menu state
+    // Restore last opened submenu
+    // const lastOpenMenu = sessionStorage.getItem('activeSidebar');
+    // if (lastOpenMenu) {
+    //     const menu = document.querySelector(lastOpenMenu);
+    //     if (menu) {
+    //         new bootstrap.Collapse(menu, {toggle: true});
+    //     }
+    // }
 
-    // [S] tab switching logic
-    const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
-    tabLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault(); // stop normal link behavior
+    document.querySelectorAll('.submenu').forEach(sub => {
+        sub.addEventListener('shown.bs.collapse', function () {
+            const toggleLink = document.querySelector(`[href="#${this.id}"]`);
+            toggleLink?.querySelector('.menu-toggle i')?.classList.add('rotated');
+            toggleLink?.classList.remove('collapsed');
+        });
 
-            // get target tab content area
-            const target = this.getAttribute('href');
-            const tabPane = document.querySelector(target);
-
-            if (tabPane) {
-                // hide all other tab contents
-                document.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.classList.remove('show', 'active');
-                });
-
-                // show current tab content
-                tabPane.classList.add('show', 'active');
-
-                // update active tab link
-                document.querySelectorAll('.nav-link').forEach(navLink => {
-                    navLink.classList.remove('active');
-                });
-                this.classList.add('active');
-            }
+        sub.addEventListener('hidden.bs.collapse', function () {
+            const toggleLink = document.querySelector(`[href="#${this.id}"]`);
+            toggleLink?.querySelector('.menu-toggle i')?.classList.remove('rotated');
+            toggleLink?.classList.add('collapsed');
         });
     });
-    // [E] tab switching logic
 
-    // [S] sidebar menu collapse functionality
+    // Sidebar menu toggle handler
     document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(toggle => {
         toggle.addEventListener('click', function () {
-            // get target menu element
             const target = this.getAttribute('href');
             const menu = document.querySelector(target);
             const icon = this.querySelector('.menu-toggle i');
 
-            // close other menus when opening a new one
+            // Close other menu
             if (target === '#playSubmenu') {
                 userSubmenu.classList.remove('show');
-                userToggle.querySelector('.menu-toggle i').classList.remove('rotated');
+                userToggle.querySelector('.menu-toggle i')?.classList.remove('rotated');
                 userToggle.classList.add('collapsed');
             } else if (target === '#userSubmenu') {
                 playSubmenu.classList.remove('show');
-                playToggle.querySelector('.menu-toggle i').classList.remove('rotated');
+                playToggle.querySelector('.menu-toggle i')?.classList.remove('rotated');
                 playToggle.classList.add('collapsed');
             }
 
-            // toggle current menu visibility
-            menu.classList.toggle('show');
-            icon.classList.toggle('rotated'); // rotate toggle icon
+            const collapse = bootstrap.Collapse.getOrCreateInstance(menu);
+            collapse.toggle();
 
-            // update collapsed state attribute
-            if (menu.classList.contains('show')) {
-                this.classList.remove('collapsed');
+            icon.classList.toggle('rotated', isNowOpen);
+            this.classList.toggle('collapsed', !isNowOpen);
+
+            // Save submenu
+            if (isNowOpen) {
+                sessionStorage.setItem('activeSidebar', target);
             } else {
-                this.classList.add('collapsed');
+                sessionStorage.removeItem('activeSidebar');
             }
         });
     });
-    // [E] sidebar menu collapse functionality
+    // [E] Sidebar submenu toggle
 
-    // [S] remember open categories in session storage
-    const openCategories = {}; // track open categories
+    // [S] Tab switching logic
+    const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = this.getAttribute('href');
+            const tabPane = document.querySelector(target);
+
+            if (tabPane) {
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+
+                tabPane.classList.add('show', 'active');
+                this.classList.add('active');
+
+                // Save active tab
+                sessionStorage.setItem('activeTab', target);
+            }
+        });
+    });
+
+    // Restore last active tab
+    const savedTab = sessionStorage.getItem('activeTab');
+    if (savedTab) {
+        const savedLink = document.querySelector(`[data-bs-toggle="tab"][href="${savedTab}"]`);
+        if (savedLink) savedLink.click();
+    }
+    // [E] Tab switching logic
+
+    // [S] Accordion open category memory
+    const openCategories = {};
 
     document.querySelectorAll('.accordion-collapse').forEach(collapse => {
-        // when category is opened
         collapse.addEventListener('shown.bs.collapse', function () {
             openCategories[this.id] = true;
             sessionStorage.setItem('openOptions', JSON.stringify(openCategories));
         });
 
-        // when category is closed
         collapse.addEventListener('hidden.bs.collapse', function () {
             delete openCategories[this.id];
             sessionStorage.setItem('openOptions', JSON.stringify(openCategories));
         });
     });
 
-    // restore open categories when page loads
     const savedOpen = sessionStorage.getItem('openOptions');
     if (savedOpen) {
         const openState = JSON.parse(savedOpen);
         Object.keys(openState).forEach(id => {
             const collapse = document.getElementById(id);
             if (collapse) {
-                // bootstrap function to open accordion items
                 new bootstrap.Collapse(collapse, {toggle: true});
+                const toggleLink = document.querySelector(`[href="#${id}"]`);
+                toggleLink?.querySelector('.menu-toggle i')?.classList.add('rotated');
+                toggleLink?.classList.remove('collapsed');
             }
         });
     }
-    // [E] remember open categories in session storage
+    // [E] Accordion open memory
 
-    // [S] option item interaction
+    // [S] Option-item editing mode
     document.querySelectorAll('.option-item').forEach(item => {
         item.addEventListener('click', function (e) {
-            // skip if user clicked action buttons
             if (e.target.closest('.action-btn')) return;
-
-            // close any other open options
             document.querySelectorAll('.option-item.editing').forEach(openItem => {
-                if (openItem !== this) {
-                    openItem.classList.remove('editing');
-                }
+                if (openItem !== this) openItem.classList.remove('editing');
             });
-
-            // toggle editing mode for clicked option
             this.classList.toggle('editing');
         });
     });
-    // [E] option item interaction
 
-    // [S] close button functionality
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', function (e) {
-            e.stopPropagation(); // prevent option item click
-            this.closest('.option-item').classList.remove('editing');
+            e.stopPropagation();
+            this.closest('.option-item')?.classList.remove('editing');
         });
     });
-    // [E] close button functionality
+    // [E] Option-item editing mode
 
-    // [S] play option form handling
+    // [S] Play option form behavior
     const playTypeSelect = document.getElementById('playTypeSelect');
     const offPlayCategoryDiv = document.getElementById('offPlayCategoryDiv');
     const playCategorySelect = document.getElementById('playCategorySelect');
     const addOptionForm = document.getElementById('addOptionForm');
 
-    // show/hide category field based on selection
     function updateOffPlayCategoryVisibility() {
         const selected = playTypeSelect.value;
         if (selected === 'off_play') {
@@ -146,31 +154,38 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             offPlayCategoryDiv.classList.add('d-none');
             playCategorySelect.removeAttribute('required');
-            playCategorySelect.value = ''; // clear selection
+            playCategorySelect.value = '';
         }
     }
 
-    // update form when play type changes
-    playTypeSelect.addEventListener('change', () => {
+    playTypeSelect?.addEventListener('change', () => {
         updateOffPlayCategoryVisibility();
         const selectedParam = playTypeSelect.value;
-        if (selectedParam) {
-            // update form action with selected type
-            addOptionForm.action = `/settings/option/add/${encodeURIComponent(selectedParam)}`;
-        } else {
-            addOptionForm.action = '#';
-        }
+        addOptionForm.action = selectedParam ? `/settings/play/option/add/${encodeURIComponent(selectedParam)}` : '#';
     });
 
-    // reset form when modal opens
     const addOptionModal = document.getElementById('addOptionModal');
-    addOptionModal.addEventListener('show.bs.modal', () => {
+    addOptionModal?.addEventListener('show.bs.modal', () => {
         playTypeSelect.value = '';
         offPlayCategoryDiv.classList.add('d-none');
         playCategorySelect.value = '';
         playCategorySelect.removeAttribute('required');
-        addOptionForm.action = '#'; // reset form action
-        addOptionForm.reset(); // clear all form fields
+        addOptionForm.action = '#';
+        addOptionForm.reset();
     });
-    // [E] play option form handling
+    // [E] Play option form
+
+    // [S] Save UI state before navigating away
+    window.addEventListener('beforeunload', () => {
+        const openMenu = document.querySelector('.collapse.show');
+        if (openMenu) {
+            sessionStorage.setItem('activeSidebar', `#${openMenu.id}`);
+        }
+
+        const activeTab = document.querySelector('.nav-link.active');
+        if (activeTab) {
+            sessionStorage.setItem('activeTab', activeTab.getAttribute('href'));
+        }
+    });
+    // [E] Save UI state on unload
 });

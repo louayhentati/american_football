@@ -1,5 +1,5 @@
 from flask import Flask, render_template, abort, request, redirect, flash, url_for
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.play_option import PlayOptionModel
@@ -62,7 +62,8 @@ class SettingsController:
             template_name_or_list='settings/settings.html',
             options=options,
             parameters=self.play_parameters,
-            play_calls=calls
+            play_calls=calls,
+            user=current_user
         )
 
     @login_required

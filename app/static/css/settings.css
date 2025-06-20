@@ -122,9 +122,12 @@
     transition: transform 0.2s ease;
 }
 
-.menu-toggle.rotated i {
-    transform: rotate(90deg);
+.menu-toggle i.rotated {
+    transform: rotate(180deg);
+    /*transition: transform 0.3s ease;*/
 }
+
+
 /* [END] SUBMENU */
 
 /* ===== CONTENT SECTION ===== */
