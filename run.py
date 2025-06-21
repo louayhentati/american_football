@@ -40,7 +40,6 @@ class PlaybookApp:
 
             self._register_controllers()
             self._inject_context()
-            self._register_error_handlers()
 
             print("Application initialized successfully")
         except Exception as e:
@@ -55,7 +54,7 @@ class PlaybookApp:
             DriveController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             PlayController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             CallSheetController(app=self.app)
-            SettingsController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
+            SettingsController(app=self.app, play_parameters=AD.PLAY_PARAMETERS, teams_data=AD.TEAMS_DATA)
             ErrorController(app=self.app)
             print("Controllers registered successfully")
         except Exception as e:

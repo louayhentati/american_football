@@ -7,7 +7,7 @@ from app.models.user import UserModel
 
 class UserController:
     def __init__(self, app: Flask, login_manager: LoginManager, teams_data: dict) -> None:
-        self.teams_data = teams_data
+        # self.teams_data = teams_data
         self.app = app
         self.login_manager = login_manager
         self.register_routes()
@@ -16,7 +16,7 @@ class UserController:
         self.login_manager.user_loader(self.load_user)
         self.app.add_url_rule(rule='/', view_func=self.index)
         self.app.add_url_rule(rule='/login', view_func=self.login, methods=['GET', 'POST'])
-        self.app.add_url_rule(rule='/set_team', view_func=self.set_team, methods=['POST'])
+        # self.app.add_url_rule(rule='/set_team', view_func=self.set_team, methods=['POST'])
         self.app.add_url_rule(rule='/logout', view_func=self.logout)
 
     @staticmethod
@@ -48,12 +48,12 @@ class UserController:
 
         return render_template('auth/login.html')
 
-    @login_required
-    def set_team(self):
-        chosen_team = request.form.get('team_name')
-        if chosen_team in self.teams_data:
-            session['team_name'] = chosen_team
-        return redirect(url_for('game_options'))
+    # @login_required
+    # def set_team(self):
+    #     chosen_team = request.form.get('team_name')
+    #     if chosen_team in self.teams_data:
+    #         session['team_name'] = chosen_team
+    #     return redirect(url_for('game_options'))
 
     @login_required
     def logout(self):
