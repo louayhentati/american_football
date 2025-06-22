@@ -56,9 +56,9 @@ class CallSheetController:
             average = total / count if count > 0 else 0
 
             entries.append({
-                'off_play': off_play,
-                'off_form': off_form,
-                'form_adj': form_adj,
+                'off_play': off_play if off_play is not None else '-',
+                'off_form': off_form if off_form is not None else '-',
+                'form_adj': form_adj if form_adj  is not None else '-',
                 'count': count,
                 'percent': percent,
                 'total': total,
