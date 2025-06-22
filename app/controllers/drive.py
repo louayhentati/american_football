@@ -110,6 +110,11 @@ class DriveController:
     @login_required
     def drive_detail(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
+        for play in drive.plays:
+            # Here we replace the 'None' with '-'
+            for column in play.__table__.columns:
+                if getattr(play, column.name) is None:
+                    setattr(play, column.name, '-')
         return render_template('drive/drive_detail.html', drive=drive)
 
     @login_required
