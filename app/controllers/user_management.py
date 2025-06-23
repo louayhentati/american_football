@@ -88,6 +88,6 @@ class UserManagementController:
             user.password = generate_password_hash(new_password, method='scrypt')
             db.session.commit()
             flash('Password reset successfully', 'success')
-            return redirect(url_for('game_options'))
+            return redirect(url_for('user_list'))
 
         return render_template('user/user_reset_password.html', user=user)

@@ -1,0 +1,25 @@
+{% extends "system/base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+    <!-- [!]- css/settings.css here not outside content block -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}"/>
+
+    <div class="settings-container">
+        <!-- [!] include or paste it here - settings sidebar -->
+        {% include "settings/partials/sidebar.html" %}
+
+        <div class="settings-content">
+            <div class="tab-content">
+                {% include "settings/partials/play/options_list.html" %}
+                {% include "settings/partials/play/calls_list.html" %}
+                {% include "settings/partials/play/default_prefs.html" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- [!]- js/settings.js here not outside content block -->
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+
+{% endblock %}

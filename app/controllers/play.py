@@ -3,6 +3,7 @@ from flask_login import login_required
 from app.extensions import db
 from app.models.drive import DriveModel
 from app.models.play import PlayModel
+from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
 
 
@@ -18,7 +19,19 @@ class PlayController:
 
     @login_required
     def edit_play(self, play_id):
+        form = request.form
+        off_play_value = form.get('off_play')
+        print(f'off_play_value: {off_play_value}')
+
+        play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
+        print(f'play_option: {play_option}')
+        play_type = play_option.play_call.name if play_option and play_option.play_call else None
+        print(f'play_type: {play_type}')
+
+
+        options = self._get_add_play_form_options()
         play = PlayModel.query.get_or_404(play_id)
+
         if request.method == 'POST':
             try:
                 result_form = request.form.get('result')
@@ -27,7 +40,8 @@ class PlayController:
                 play.yard_line = request.form.get('yard_line', type=int)
                 play.down = request.form.get('down', type=int)
                 play.distance = request.form.get('distance', type=int)
-                play.play_type = request.form.get('play_type')
+                # play.play_type = request.form.get('play_type')
+                play.play_type = play_type
                 play.result = result_form
                 play.gain_loss = request.form.get('gain_loss', type=int)
                 play.personnel = request.form.get('personnel')
@@ -50,10 +64,6 @@ class PlayController:
             except Exception as e:
                 db.session.rollback()
                 flash(f'Error updating play: {str(e)}', 'error')
-
-        options = {}
-        for param in self.play_parameters:
-            options[param] = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
 
         return render_template('play/add_play.html',
                                play=play,
@@ -78,3 +88,30 @@ class PlayController:
             db.session.rollback()
             flash(f'Error deleting play: {str(e)}', 'error')
         return redirect(url_for('drive_detail', drive_id=drive_id))
+
+    # redundant : same as in controllers/drive.py
+    # refactoring -> later
+    def _get_add_play_form_options(self):
+        options = {}
+
+        for param in self.play_parameters:
+            entries = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
+
+            if param == 'off_play':
+                enriched = []
+                for entry in entries:
+                    play_call = PlayCallModel.query.get(entry.play_call_id)
+                    label = f"{entry.value} ({play_call.name})" if play_call else entry.value
+                    enriched.append({
+                        'id': entry.id,
+                        'value': entry.value,
+                        'label': label
+                    })
+                options[param] = enriched
+            else:
+                options[param] = [
+                    {'id': entry.id, 'value': entry.value, 'label': entry.value}
+                    for entry in entries
+                ]
+
+        return options

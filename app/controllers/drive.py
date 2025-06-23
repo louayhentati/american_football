@@ -6,6 +6,7 @@ from flask_login import login_required
 from app.extensions import db
 from app.models.drive import DriveModel
 from app.models.play import PlayModel
+from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
 
 
@@ -23,88 +24,146 @@ class DriveController:
 
     @login_required
     def add_play(self, drive_id):
-
         drive = DriveModel.query.get_or_404(drive_id)
 
         if request.method == 'POST':
+            return self._handle_add_play_post_request(drive_id, drive)
+        else:
+            return self._handle_add_play_get_request(drive_id)
 
-            play = PlayModel(
-                drive_id=drive_id,
-                odk=request.form['odk'],
-                down=int(request.form.get('down') or 1),
-                distance=int(request.form.get('distance') or 10),
-                yard_line=int(request.form.get('yard_line') or 25),
-                hash=request.form.get('hash', 'M'),
-                personnel=request.form.get('personnel'),
-                off_form=request.form.get('off_form'),
-                form_str=request.form.get('form_str'),
-                form_adj=request.form.get('form_adj'),
-                motion=request.form.get('motion'),
-                protection=request.form.get('protection'),
-                off_play=request.form.get('off_play'),
-                dir_call=request.form.get('dir_call'),
-                tag=request.form.get('tag'),
-                play_type=request.form.get('play_type'),
-                result=request.form.get('result'),
-                gain_loss=int(request.form.get('gain_loss') or 0)
-            )
+    def _handle_add_play_post_request(self, drive_id, drive):
+        play = self._create_play_from_form(drive_id)
+        db.session.add(play)
+        db.session.flush()
 
-            db.session.add(play)
-            db.session.flush()
+        self._update_play_fields(play, drive_id, drive)
+        db.session.commit()
 
-            previous_play = (
-                PlayModel.query
-                .filter(PlayModel.drive_id == drive_id, PlayModel.id != play.id)
-                .order_by(PlayModel.id.desc())
-                .first()
-            )
+        flash('Play added successfully!', 'success')
+        return redirect(url_for('drive_detail', drive_id=drive_id))
 
-            if previous_play:
-                next_fields = self.__calculate_next_play_fields(last_play=previous_play)
+    @staticmethod
+    def _create_play_from_form(drive_id):
+        form = request.form
+        off_play_value = form.get('off_play')
+        play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
+        play_type = play_option.play_call.name if play_option and play_option.play_call else None
 
-                play.down = next_fields.get('down', play.down)
-                play.distance = next_fields.get('distance', play.distance)
-                play.yard_line = next_fields.get('yard_line', play.yard_line)
-
-                if next_fields.get('possession_change', False):
-                    drive.ended = True
-
-            db.session.commit()
-
-            flash('Play added successfully!', 'success')
-            return redirect(url_for('drive_detail', drive_id=drive_id))
-
-        options = {}
-        for param in self.play_parameters:
-            options[param] = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
-
-        last_play = (
-            PlayModel.query
-            .filter_by(drive_id=drive_id)
-            .order_by(PlayModel.id.desc())
-            .first()
+        return PlayModel(
+            drive_id=drive_id,
+            odk=form['odk'],
+            down=int(form.get('down') or 1),
+            distance=int(form.get('distance') or 10),
+            yard_line=int(form.get('yard_line') or 25),
+            hash=form.get('hash', 'M'),
+            personnel=form.get('personnel'),
+            off_form=form.get('off_form'),
+            form_str=form.get('form_str'),
+            form_adj=form.get('form_adj'),
+            motion=form.get('motion'),
+            protection=form.get('protection'),
+            off_play=off_play_value,
+            play_type=play_type,
+            dir_call=form.get('dir_call'),
+            tag=form.get('tag'),
+            result=form.get('result'),
+            gain_loss=int(form.get('gain_loss') or 0)
         )
-        print(f'last_play: {last_play}')
 
-        default_down = 1
-        default_distance = 10
-        default_yard_line = 25  # <- default starting position
+    def _update_play_fields(self, play, drive_id, drive):
+        previous_play = self._get_previous_play(drive_id, play.id)
+        if not previous_play:
+            return
 
-        if last_play:
-            next_fields = self.__calculate_next_play_fields(last_play)
-            default_down = next_fields.get('down', default_down)
-            default_distance = next_fields.get('distance', default_distance)
-            default_yard_line = next_fields.get('yard_line', default_yard_line)
-            print(f'add_play : default_yard_line = {default_yard_line}')
+        next_fields = self.__calculate_next_play_fields(last_play=previous_play)
+        play.down = next_fields.get('down', play.down)
+        play.distance = next_fields.get('distance', play.distance)
+        play.yard_line = next_fields.get('yard_line', play.yard_line)
+
+        if next_fields.get('possession_change', False):
+            drive.ended = True
+
+    @staticmethod
+    def _get_previous_play(drive_id, current_play_id):
+        return (PlayModel.query
+                .filter(PlayModel.drive_id == drive_id,
+                        PlayModel.id != current_play_id)
+                .order_by(PlayModel.id.desc())
+                .first())
+
+    def _handle_add_play_get_request(self, drive_id):
+        play_call_details = self._get_play_call_details()
+        options = self._get_add_play_form_options()
+        down, distance, yard_line = self._get_default_play_fields(drive_id)
 
         return render_template(
             template_name_or_list='play/add_play.html',
             drive_id=drive_id,
             play=None,
             options=options,
-            default_down=default_down,
-            default_distance=default_distance,
-            default_yard_line=default_yard_line
+            default_down=down,
+            default_distance=distance,
+            default_yard_line=yard_line,
+            play_call_details=play_call_details
+        )
+
+    @staticmethod
+    def _get_play_call_details():
+        off_play_name = request.args.get('off_play') or None
+        if not off_play_name:
+            return {}
+
+        play_call = PlayOptionModel.query.filter_by(value=off_play_name).first()
+        return {'id': play_call.id, 'name': play_call.name} if play_call else {}
+
+    def _get_add_play_form_options(self):
+        options = {}
+
+        for param in self.play_parameters:
+            entries = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
+
+            if param == 'off_play':
+                enriched = []
+                for entry in entries:
+                    play_call = PlayCallModel.query.get(entry.play_call_id)
+                    label = f"{entry.value} ({play_call.name})" if play_call else entry.value
+                    # enriched.append({
+                    #     'id': entry.id,
+                    #     'value': entry.value,
+                    #     'label': label
+                    # })
+                    enriched.append({
+                        'id': entry.id,
+                        'value': entry.value,
+                        'label': label,
+                        'play_call_id': entry.play_call_id
+                    })
+
+                options[param] = enriched
+            else:
+                options[param] = [
+                    {'id': entry.id, 'value': entry.value, 'label': entry.value}
+                    for entry in entries
+                ]
+
+        return options
+
+    def _get_default_play_fields(self, drive_id):
+        last_play = (
+            PlayModel.query
+            .filter_by(drive_id=drive_id)
+            .order_by(PlayModel.id.desc())
+            .first()
+        )
+
+        if not last_play:
+            return 1, 10, 25
+
+        next_fields = self.__calculate_next_play_fields(last_play)
+        return (
+            next_fields.get('down', 1),
+            next_fields.get('distance', 10),
+            next_fields.get('yard_line', 25)
         )
 
     @login_required

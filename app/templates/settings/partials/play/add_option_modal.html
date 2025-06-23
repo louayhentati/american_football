@@ -1,0 +1,91 @@
+<div class="modal fade" id="addOptionModal" tabindex="-1" aria-labelledby="addOptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="addOptionForm" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addOptionModalLabel">
+                    <i class="fas fa-plus me-2"></i>Add Play Option
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="playTypeSelect" class="form-label">
+                        Option Type <small class="text-danger">*</small>
+                    </label>
+                    <select class="form-select" id="playTypeSelect" name="play_type" required>
+                        <option value="" selected disabled>Choose Option Type</option>
+                        {% for param_name, display_name in parameters.items() %}
+                            <option value="{{ param_name }}">{{ display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3 d-none" id="offPlayCategoryDiv">
+                    <label for="playCategorySelect" class="form-label">
+                        Play Call <small class="text-danger">*</small>
+                    </label>
+                    <select class="form-select" id="playCategorySelect" name="play_call_id" required>
+                        <option value="" selected disabled>Choose Play Call</option>
+                        {% for call in play_calls %}
+                            <option value="{{ call.id }}">{{ call.name }}</option>
+                        {% endfor %}
+                        {#                        <option value="RPO">RPO</option>#}
+                        {#                        <option value="PASS">PASS</option>#}
+                        {#                        <option value="SCREEN">SCREEN</option>#}
+                        {#                        <option value="RUN">RUN</option>#}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="optionValueInput" class="form-label">
+                        Option Name <small class="text-danger">*</small>
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="optionValueInput"
+                           name="value"
+                           placeholder="Enter option name (max 20 chars)"
+                           maxlength="20"
+                           required>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                {#<button type="submit" class="btn btn-success btn-sm">Submit</button>#}
+                <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const typeSelect = document.getElementById("playTypeSelect");
+        const categoryDiv = document.getElementById("offPlayCategoryDiv");
+
+        typeSelect.addEventListener("change", function () {
+            if (this.value === "off_play") {
+                categoryDiv.classList.remove("d-none");
+            } else {
+                categoryDiv.classList.add("d-none");
+            }
+        });
+    });
+</script>
+<script>
+    const form = document.getElementById("addOptionForm");
+    const typeSelect = document.getElementById("playTypeSelect");
+
+    form.addEventListener("submit", function (e) {
+        const type = typeSelect.value;
+        if (!type) {
+            e.preventDefault();
+            alert("Select an option type.");
+            return;
+        }
+        form.action = `/settings/play/option/add/${type}`;
+    });
+</script>
+

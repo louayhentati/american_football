@@ -1,0 +1,66 @@
+<div class="settings-sidebar">
+    <div class="sidebar-header">
+        <h5><i class="bi bi-gear me-2"></i>Settings</h5>
+    </div>
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#playSubmenu" role="button" aria-expanded="false">
+                <i class="bi bi-dice-5-fill"></i>
+                <span>Play Settings</span>
+                <span class="menu-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+
+            </a>
+            <ul class="submenu collapse" id="playSubmenu" data-bs-parent=".nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#play-options" data-bs-toggle="tab" role="tab">
+                        <i class="bi bi-card-checklist"></i>
+                        <span>Options</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#play-calls" data-bs-toggle="tab" role="tab">
+                        <i class="bi bi-tags"></i>
+                        <span>Calls</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
+                        <i class="bi bi-sliders"></i>
+                        <span>Defaults</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button"
+               aria-expanded="false">
+                <i class="fas fa-users"></i>
+                <span>User Management</span>
+                <span class="menu-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+
+            </a>
+            <ul class="submenu collapse" id="userSubmenu" data-bs-parent=".nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('user_list') }}">
+                        <i class="bi bi-people"></i>
+                        <span>All Users</span>
+                    </a>
+                </li>
+                {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_user') }}">
+                            <i class="bi bi-person-add"></i>
+                            <span>Add User</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </li>
+    </ul>
+</div>
