@@ -65,42 +65,6 @@ class PlaybookApp:
         def inject_teams() -> dict:
             return dict(teams=AD.TEAMS_DATA)
 
-    def initialize_database(self) -> None:
-        print("Initializing database...")
-        try:
-            with self.app.app_context():
-                db.create_all()
-                self._ensure_play_calls()
-                self._ensure_play_options()
-                self._create_test_users()
-                db.session.commit()
-            print("Database initialized successfully")
-        except Exception as e:
-            print(f"[!] Database initialization failed: {str(e)} ({type(e).__name__})")
-
-    @staticmethod
-    def _create_test_users():
-        from werkzeug.security import generate_password_hash
-
-        users = [
-            ('dev.null', 'dev.null', 'admin'),
-            ('coach', 'password123', 'admin'),
-            ('guest', 'password123', 'user'),
-        ]
-
-        for username, raw_password, role in users:
-            try:
-                existing = UserModel.query.filter_by(username=username).first()
-                if not existing:
-                    password = generate_password_hash(raw_password)
-                    user = UserModel(username=username, password=password, role=role)
-                    db.session.add(user)
-                    print(f"[+] User '{username}' created")
-                else:
-                    print(f"[=] User '{username}' already exists")
-            except Exception as e:
-                print(f"[!] Error creating user '{username}': {str(e)} ({type(e).__name__})")
-
     @staticmethod
     def _ensure_play_calls() -> None:
         for name in AD.PLAY_CALLS:
@@ -155,10 +119,6 @@ class PlaybookApp:
 
 def main():
     app_instance = PlaybookApp()
-    try:
-        app_instance.initialize_database()
-    except Exception as e:
-        print(f"[!] Unhandled exception during startup: {str(e)} ({type(e).__name__})")
     app_instance.run()
 
 
