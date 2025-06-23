@@ -7,5 +7,5 @@ class UserPreference(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True)
     play_call_id = db.Column(db.Integer, db.ForeignKey('play_call.id', ondelete='SET NULL'), nullable=True)
 
-    user = db.relationship(UserModel, backref=db.backref('preference', uselist=False))
-    play_call = db.relationship(PlayCallModel)
+    user = db.relationship('UserModel', back_populates='preference')
+    play_call = db.relationship('PlayCallModel')
