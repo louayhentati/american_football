@@ -1,0 +1,539 @@
+{% extends "system/base.html" %}
+{% block title %}{{ 'Edit Play' if play else 'Add Play' }}{% endblock %}
+{% block content %}
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">{{ 'Edit Play' if play else 'Add Play' }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST"
+                              action="{{ url_for('edit_play', play_id=play.id) if play else url_for('add_play', drive_id=drive_id) }}"
+                              id="playForm">
+                            <!-- Play Call Summary
+                            <div class="alert alert-info mb-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="alert-heading">Play Call Summary</h5>
+                                        <div id="playCallSummary" class="mb-0">
+                                        {#{% if play_call_details %}#}
+                                        {#<span class="badge bg-primary me-2">{{ play_call_details.name }}</span>#}
+                                        {#{% else %}#}
+                                        {#<span class="text-muted">No play call selected</span>#}
+                                        {#{% endif %}#}
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-info" id="updateSummaryBtn">
+                                        <i class="bi bi-arrow-clockwise"></i> Update
+                                    </button>
+                                </div>
+                            </div> -->
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs mb-4" id="playFormTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="basic-tab" data-bs-toggle="tab"
+                                            data-bs-target="#basic" type="button" role="tab">
+                                        <i class="bi bi-card-checklist me-1"></i> Basic
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="formation-tab" data-bs-toggle="tab"
+                                            data-bs-target="#formation" type="button" role="tab">
+                                        <i class="bi bi-diagram-3 me-1"></i> Formation
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="playcall-tab" data-bs-toggle="tab"
+                                            data-bs-target="#playcall" type="button" role="tab">
+                                        <i class="bi bi-play-btn me-1"></i> Play Call
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="result-tab" data-bs-toggle="tab"
+                                            data-bs-target="#result" type="button" role="tab">
+                                        <i class="bi bi-graph-up me-1"></i> Result
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content" id="playFormTabsContent">
+                                <!-- Basic Tab -->
+                                <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">ODK</label>
+                                            <div class="btn-group w-100" role="group">
+                                                <input type="radio" class="btn-check" name="odk" id="odk-o" value="O"
+                                                       {% if play and play.odk == 'O' %}checked{% elif not play %}checked{% endif %}>
+                                                <label class="btn btn-outline-primary" for="odk-o">Offense</label>
+
+                                                <input type="radio" class="btn-check" name="odk" id="odk-d" value="D"
+                                                       {% if play and play.odk == 'D' %}checked{% endif %}>
+                                                <label class="btn btn-outline-primary" for="odk-d">Defense</label>
+
+                                                <input type="radio" class="btn-check" name="odk" id="odk-k" value="K"
+                                                       {% if play and play.odk == 'K' %}checked{% endif %}>
+                                                <label class="btn btn-outline-primary" for="odk-k">Special</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Hash</label>
+                                            <div class="btn-group w-100" role="group">
+                                                {% for h in ['L', 'M', 'R'] %}
+                                                    <input type="radio" class="btn-check" name="hash" id="hash-{{ h }}"
+                                                           value="{{ h }}" {{ 'checked' if play and play.hash == h }}>
+                                                    <label class="btn btn-outline-primary"
+                                                           for="hash-{{ h }}">{{ h }}</label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Down</label>
+                                            <select class="form-select" name="down">
+                                                {% for down_number in range(1, 5) %}
+                                                    <option value="{{ down_number }}"
+                                                            {% if play and play.down == down_number %}selected{% elif down_number == default_down %}selected{% endif %}>
+                                                        {{ down_number }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Distance</label>
+                                            <input type="number" class="form-control" name="distance"
+                                                   value="{{ play.distance if play else default_distance }}">
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Yard Line</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="yard_line"
+                                                       value="{{ play.yard_line if play else default_yard_line }}">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                        onclick="toggleYardLine()">
+                                                    Own/Opp
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Personnel</label>
+                                        <div class="btn-group w-100" role="group">
+                                            {% for p in ['10', '11', '20', '21'] %}
+                                                <input type="radio" class="btn-check" name="personnel" id="pers-{{ p }}"
+                                                       value="{{ p }}" {{ 'checked' if play and play.personnel == p }}>
+                                                <label class="btn btn-outline-primary"
+                                                       for="pers-{{ p }}">{{ p }}</label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Formation Tab -->
+                                <div class="tab-pane fade" id="formation" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Offensive Formation</label>
+                                            <select class="form-select" name="off_form">
+                                                <option value="">Select...</option>
+                                                {% for option in options.off_form %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.off_form == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Formation Strength</label>
+                                            <select class="form-select" name="form_str">
+                                                <option value="">Select...</option>
+                                                {% for option in options.form_str %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.form_str == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Formation Adjustment</label>
+                                            <select class="form-select" name="form_adj">
+                                                <option value="">Select...</option>
+                                                {% for option in options.form_adj %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.form_adj == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Motion</label>
+                                            <select class="form-select" name="motion">
+                                                <option value="">Select...</option>
+                                                {% for option in options.motion %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.motion == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Protection</label>
+                                        <select class="form-select" name="protection">
+                                            <option value="">Select...</option>
+                                            {% for option in options.protection %}
+                                                <option value="{{ option.value }}"
+                                                        {% if play and play.protection == option.value %}selected{% endif %}>
+                                                    {{ option.value }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Play Call Tab -->
+                                <div class="tab-pane fade" id="playcall" role="tabpanel">
+                                    <div class="mb-4">
+                                        <label class="form-label">Off Play</label>
+                                        <select class="form-select mb-2" id="offPlaySelect" name="off_play">
+                                            <option value="">Select a play...</option>
+                                            {% for option in options.off_play %}
+                                                <option value="{{ option.value }}"
+                                                        {% if play and play.off_play == option.value %}selected{% endif %}
+                                                        data-play-id="{{ option.id }}"
+                                                        data-play-name="{{ option.name }}">
+                                                    {{ option.label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <!--
+                                        <div class="alert alert-light border mt-3" id="playCallDetails">
+                                            {#{% if play_call_details %}#}
+                                            {#    <div>#}
+                                            {#        <strong>Selected Play:</strong>#}
+                                            {#        <span class="badge bg-primary">{{ play_call_details.name }}</span>#}
+                                            {#    </div>#}
+                                            {#    <div class="mt-2 small text-muted">#}
+                                            {#        Play ID: {{ play_call_details.id }}#}
+                                            {#    </div>#}
+                                            {#{% else %}#}
+                                            {#    <div class="text-muted">#}
+                                            {#        No play selected. Choose a play from the dropdown above.#}
+                                            {#    </div>#}
+                                            {#{% endif %}#}
+                                        </div>
+                                        -->
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Directional Call</label>
+                                            <select class="form-select" name="dir_call">
+                                                <option value="">Select...</option>
+                                                {% for option in options.dir_call %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.dir_call == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Tags</label>
+                                            <select class="form-select" name="tag">
+                                                <option value="">Select...</option>
+                                                {% for option in options.tag %}
+                                                    <option value="{{ option.value }}"
+                                                            {% if play and play.tag == option.value %}selected{% endif %}>
+                                                        {{ option.value }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Result Tab -->
+                                <div class="tab-pane fade" id="result" role="tabpanel">
+                                    <div class="mb-4">
+                                        <label class="form-label">Result</label>
+                                        <select class="form-select" name="result">
+                                            {% for result in ['Complete', 'Complete, TD', 'Incomplete', 'Rush', 'Rush, TD', 'Sack', 'Touchdown', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt', 'Penalty'] %}
+                                                <option value="{{ result }}"
+                                                        {% if play and play.result == result %}selected{% endif %}>
+                                                    {{ result }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label class="form-label">Gain/Loss</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="gain_loss"
+                                                       value="{{ play.gain_loss if play else '' }}">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                        onclick="toggleGainLoss()">
+                                                    Toggle +/-
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mt-4">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">Next Play Preview</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="mb-2 small text-muted">Next Down</div>
+                                                    <div class="fw-bold" id="nextDownPreview">1</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-2 small text-muted">Next Distance</div>
+                                                    <div class="fw-bold" id="nextDistancePreview">10</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-2 small text-muted">Next Yard Line</div>
+                                                    <div class="fw-bold" id="nextYardLinePreview">25</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-secondary"
+                                        onclick="window.location.href='{{ url_for('drive_detail', drive_id=drive_id) }}'">
+                                    <i class="bi bi-arrow-left me-1"></i> Go Back
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if play %}
+                                        <i class="bi bi-save me-1"></i> Save Changes
+                                    {% else %}
+                                        <i class="bi bi-plus-circle me-1"></i> Add Play
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .card {
+            border-radius: 10px;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+        }
+
+        .nav-tabs .nav-link {
+            font-weight: 500;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tabs .nav-link.active {
+            border-bottom: 3px solid #0d6efd;
+            background: transparent;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        #playCallDetails {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+    </style>
+
+    {#<script src="{{ url_for('static', filename='js/play.js') }}"></script>#}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Update play call details when selection changes
+            const offPlaySelect = document.getElementById('offPlaySelect');
+            const playCallDetails = document.getElementById('playCallDetails');
+            const playCallSummary = document.getElementById('playCallSummary');
+
+            offPlaySelect.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const playId = selectedOption.getAttribute('data-play-id');
+                const playName = selectedOption.getAttribute('data-play-name');
+
+                if (playId && playName) {
+                    playCallDetails.innerHTML = `
+                    <div>
+                        <strong>Selected Play:</strong>
+                        <span class="badge bg-primary">${playName}</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Play ID: ${playId}
+                    </div>
+                `;
+
+                    playCallSummary.innerHTML = `
+                    <span class="badge bg-primary me-2">${playName}</span>
+                `;
+                } else {
+                    playCallDetails.innerHTML = `
+                    <div class="text-muted">
+                        No play selected. Choose a play from the dropdown above.
+                    </div>
+                `;
+
+                    playCallSummary.innerHTML = `
+                    <span class="text-muted">No play call selected</span>
+                `;
+                }
+            });
+
+            // Update summary button
+            document.getElementById('updateSummaryBtn').addEventListener('click', function () {
+                const offPlayValue = offPlaySelect.value;
+                if (offPlayValue) {
+                    const selectedOption = Array.from(offPlaySelect.options).find(opt => opt.value === offPlayValue);
+                    if (selectedOption) {
+                        const playName = selectedOption.getAttribute('data-play-name');
+                        playCallSummary.innerHTML = `
+                        <span class="badge bg-primary me-2">${playName}</span>
+                    `;
+                    }
+                }
+            });
+
+            // Preview next play values - FIXED
+            function updateNextPlayPreview() {
+                const down = parseInt(document.querySelector('select[name="down"]').value) || 1;
+                const distance = parseInt(document.querySelector('input[name="distance"]').value) || 10;
+                const yardLineInput = document.querySelector('input[name="yard_line"]');
+                const yardLineValue = parseInt(yardLineInput.value) || 25;
+                const gainLoss = parseInt(document.querySelector('input[name="gain_loss"]').value) || 0;
+
+                // Determine field position (own/opponent side)
+                const isOwnSide = yardLineValue > 0;
+                const absYardLine = Math.abs(yardLineValue);
+
+                let nextDown = down;
+                let nextDistance = distance;
+                let nextAbsYardLine = absYardLine;
+                let nextIsOwnSide = isOwnSide;
+                let possessionChange = false;
+
+                // Calculate new position
+                if (isOwnSide) {
+                    nextAbsYardLine = absYardLine + gainLoss;
+                } else {
+                    nextAbsYardLine = absYardLine - gainLoss;
+                }
+
+                // Boundary checks
+                if (nextAbsYardLine >= 100) {
+                    // Touchdown or endzone
+                    possessionChange = true;
+                    nextAbsYardLine = 25;  // Opponent starts at 25
+                    nextDown = 1;
+                    nextDistance = 10;
+                    nextIsOwnSide = false;
+                } else if (nextAbsYardLine <= 0) {
+                    // Safety or backfield
+                    possessionChange = true;
+                    nextAbsYardLine = 75;  // Opponent starts at 75
+                    nextDown = 1;
+                    nextDistance = 10;
+                    nextIsOwnSide = true;
+                }
+                // First down conversion
+                else if (gainLoss >= distance) {
+                    nextDown = 1;
+                    nextDistance = 10;
+                }
+                // Next down
+                else if (down < 4) {
+                    nextDown = down + 1;
+                    nextDistance = distance - Math.abs(gainLoss);
+                }
+                // Failed 4th down
+                else {
+                    possessionChange = true;
+                    nextAbsYardLine = 100 - nextAbsYardLine;
+                    nextDown = 1;
+                    nextDistance = 10;
+                    nextIsOwnSide = !isOwnSide;
+                }
+
+                // Convert back to relative yard line
+                const nextYardLine = nextIsOwnSide ? nextAbsYardLine : -nextAbsYardLine;
+
+                // Update preview display
+                document.getElementById('nextDownPreview').textContent = nextDown;
+                document.getElementById('nextDistancePreview').textContent = nextDistance;
+                document.getElementById('nextYardLinePreview').textContent = nextYardLine;
+            }
+
+            // Update preview when relevant fields change
+            ['down', 'distance', 'yard_line', 'gain_loss'].forEach(field => {
+                const element = document.querySelector(`[name="${field}"]`);
+                if (element) {
+                    element.addEventListener('input', updateNextPlayPreview);
+                }
+            });
+
+            // Initialize preview
+            updateNextPlayPreview();
+
+            // Initialize play call summary if value exists
+            if (offPlaySelect.value) {
+                offPlaySelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Utility toggles with preview update - FIXED
+        function toggleGainLoss() {
+            const input = document.querySelector('input[name="gain_loss"]');
+            if (input.value) {
+                input.value = -parseInt(input.value);
+            }
+            // Trigger input event to update preview
+            input.dispatchEvent(new Event('input'));
+        }
+
+        function toggleYardLine() {
+            const input = document.querySelector('input[name="yard_line"]');
+            if (input.value) {
+                input.value = -parseInt(input.value);
+            }
+            // Trigger input event to update preview
+            input.dispatchEvent(new Event('input'));
+        }
+    </script>
+{% endblock %}
