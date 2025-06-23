@@ -22,6 +22,7 @@ class GameController:
         self.app.add_url_rule(rule='/game/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
         self.app.add_url_rule(rule='/game/<int:game_id>/drive-chart', view_func=self.drive_chart)
         self.app.add_url_rule(rule='/game/<int:game_id>/export', view_func=self.export_game)
+        self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart', view_func=self.drive_play_chart)
 
     @login_required
     def game_options(self) -> str:
@@ -75,6 +76,50 @@ class GameController:
             flash(f'Error adding drive: {str(e)}', 'error')
         return redirect(url_for('game_detail', game_id=game_id))
 
+
+    #Function for converting yard-field values to format 0-100
+    def convert(self,yl: int) -> float:
+        if yl <  0: return -yl
+        if yl == 50: return 50
+        # yl>0
+        return 100 - yl 
+
+    @login_required 
+    def drive_play_chart(self, game_id, drive_id):
+        game = GameModel.query.get_or_404(game_id)
+        drive = DriveModel.query.filter_by(game_id=game_id,id = drive_id).first_or_404()
+        plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
+        
+        plays_data = []
+        for play in plays:
+
+            raw_start = play.yard_line
+            raw_end   = play.yard_line 
+            start_yard = self.convert(raw_start)
+            end_yard = self.convert(raw_end)+play.gain_loss
+
+            start_yard = max(0, min(100, start_yard))
+            end_yard = max(0, min(100, end_yard))
+
+            loss_detected = (play.gain_loss or 0) < 0
+            if loss_detected:
+                temp = start_yard
+                start_yard = end_yard
+                end_yard = temp
+
+            plays_data.append({
+                'id': play.id,
+                'start': start_yard,
+                'end': end_yard,
+                'yards': play.gain_loss or 0,
+                'result': play.result or 'Unknown',
+                'play_count': len(plays),
+                'loss': loss_detected
+            })
+        print(f"Drives Data: {plays_data}")
+        return render_template('drive/drive_play_chart.html', game=game, drive=drive, plays=plays_data, max=max)
+    
+
     @login_required
     def drive_chart(self, game_id):
         game = GameModel.query.get_or_404(game_id)
@@ -85,34 +130,14 @@ class GameController:
             plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
             number_plays = len(plays)
 
-            # todo: enhance method to display a nice view when no plays for a drive
-            if number_plays == 0 or not plays:
-                drives_data.append({
-                    'id': drive.id,
-                    'team': game.game_name.split(' vs ')[0],
-                    'start': 0,
-                    'end': 0,
-                    'result': drive.result or 'Unknown',
-                    'play_count': len(plays),
-                    'loss': False
-                })
-                return render_template('drive/drive_chart.html', game=game, drives=drives_data, max=max)
+            if number_plays == 0 or not plays:continue #if no play in a drive, continue with the next 
 
-            start_yard = plays[0].yard_line
-            end_yard = plays[number_plays - 1].yard_line
-            if start_yard < 0:
-                start_yard = start_yard * (-1)
-                print(start_yard)
-            else:
-                start_yard = start_yard + 50
-            if end_yard < 0:
-                end_yard = end_yard * (-1)
-                print(end_yard)
-            if end_yard != 50 and end_yard > 0:
-                end_yard = end_yard
+            raw_start = plays[0].yard_line
+            raw_end   = plays[-1].yard_line 
+            start_yard = self.convert(raw_start)
+            end_yard = self.convert(raw_end)+plays[-1].gain_loss
 
-            if drive.result and drive.result.lower() == 'touchdown':
-                end_yard = 100
+            if drive.result and drive.result.lower() == 'touchdown': end_yard = 100
 
             start_yard = max(0, min(100, start_yard))
             end_yard = max(0, min(100, end_yard))
@@ -134,6 +159,7 @@ class GameController:
             })
         print(f"Drives Data: {drives_data}")
         return render_template('drive/drive_chart.html', game=game, drives=drives_data, max=max)
+
 
     @login_required
     def export_game(self, game_id):

@@ -7,6 +7,7 @@
     .drive-chart {
         position: relative;
         width: 100%;
+        margin-top: 40px !important;
         min-height: 400px;
         background: #f5f5f5;
         border: 1px solid #ccc;
@@ -14,8 +15,11 @@
         margin: 20px 0;
     }
     .field-container {
-        position: relative;
-        min-height: 100%;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
         width: 100%;
         left: 0;
         background: linear-gradient(
@@ -94,7 +98,7 @@
             {% elif drives|length == 1 %}
                 <p>This game has only one drive. Add more drives to see a full chart.</p>
             {% endif %}
-            <div class="drive-chart" style="height: {{ max(drives|length * 60 + 100, 400) }}px;">
+            <div class="drive-chart" style="height: {{ drives|length * 60 + 100 }}px;">
                 <div class="field-container">
                     <!-- Yard Lines -->
                     {% for i in range(1, 20) %} <!-- Start from 1 (5 yards) to 19 (95 yards) -->
