@@ -1,12 +1,10 @@
 <style>
-  /* Collapse cards by default */
   .card-collapsed {
     max-height: 200px;
     overflow: hidden;
     transition: max-height 0.3s ease;
   }
 
-  /* Alignment fixes */
   .pref-card .card-body {
     display: flex;
     flex-direction: column;
@@ -65,12 +63,12 @@
 
           <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Team</span>
 
-
           <div id="teamDisplay" class="pref-display-container">
             <div class="team-display">
-              {% if session.team_name and teams[session.team_name] %}
-                <img src="{{ teams[session.team_name].logo }}" alt="{{ session.team_name }} logo" style="height:40px; width:auto;" />
-                <h4 class="mb-0">{{ session.team_name }}</h4>
+              {% set selected_team = teams | selectattr("name", "equalto", session.team_name) | list | first %}
+              {% if selected_team %}
+                <img src="{{ selected_team.logo }}" alt="{{ selected_team.name }} logo" style="height:40px; width:auto;" />
+                <h4 class="mb-0">{{ selected_team.name }}</h4>
               {% else %}
                 <h5 class="text-muted fst-italic mb-0">No team selected</h5>
               {% endif %}
@@ -82,8 +80,8 @@
               <label for="teamSelect" class="form-label">Change Default Team</label>
               <select id="teamSelect" name="team_name" class="form-select mb-2" required>
                 <option value="" disabled selected>-- Select Team --</option>
-                {% for team, data in teams.items() %}
-                  <option value="{{ team }}" {% if session.team_name == team %}selected{% endif %}>{{ team }}</option>
+                {% for team in teams %}
+                  <option value="{{ team.name }}" {% if session.team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
                 {% endfor %}
               </select>
               <div class="btn-container">
@@ -119,7 +117,6 @@
           {% endif %}
           <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Play Call</span>
 
-
           <div id="defaultPlayCallDisplay" class="pref-display-container">
             <div class="playcall-display">
               {% if user_default and user_default.play_call %}
@@ -154,11 +151,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Cards
       const teamCard = document.querySelector('#btnEditTeam')?.closest('.card');
       const playCallCard = document.querySelector('#btnEditPlayCall')?.closest('.card');
 
-      // Team Edit toggles
       const btnEditTeam = document.getElementById('btnEditTeam');
       const btnCancelTeam = document.getElementById('btnCancelTeam');
       const teamDisplay = document.getElementById('teamDisplay');
@@ -182,7 +177,6 @@
         });
       }
 
-      // Play Call Edit toggles
       const btnEditPlayCall = document.getElementById('btnEditPlayCall');
       const btnCancelPlayCall = document.getElementById('btnCancelPlayCall');
       const displayPlayCall = document.getElementById('defaultPlayCallDisplay');

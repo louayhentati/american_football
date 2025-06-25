@@ -1,0 +1,274 @@
+{% extends "system/base.html" %}
+{% block title %}Create Team{% endblock %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr"></script>
+
+<style>
+  .container {
+  display: flex;
+  gap: 40px;
+  max-width: 1000px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  align-items: center;
+}
+  .form-panel, .preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; 
+}
+
+  .preview-box {
+    width: 200px;
+    height: 200px;
+    position: relative;
+    background: white;
+    overflow: hidden;
+    margin-top: 10px;
+
+  }
+
+  .preview-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    max-width: 100%;
+    max-height: 100%;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .preview-outline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .preview-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .preview-text {
+    position: absolute;
+    bottom: 5px;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    z-index: 4;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+  }
+
+  .color-pickers {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 10px;
+  }
+
+  .color-section {
+    flex: 1;
+  }
+
+  .color-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .form-control, .form-select {
+    width: 100%;
+  }
+
+  .slider-label {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+</style>
+
+<div class="container">
+  <div class="form-panel">
+    <h2>Create Team</h2>
+    <form method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="name" class="form-label">Team Name</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="font" class="form-label">Font</label>
+        <select class="form-select" id="fontSelector">
+          <option value="'Arial', sans-serif">Arial</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Georgia', serif">Georgia</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans</option>
+          <option value="'Tahoma', sans-serif" selected>Tahoma</option>
+        </select>
+      </div>
+
+      <div class="mb-3 color-pickers">
+        <div class="color-section">
+          <label class="color-label">Primary (Background)</label>
+          <div id="primaryColorPicker"></div>
+          <input type="hidden" name="primary_color" id="primaryColorInput" value="#ff0000">
+        </div>
+        <div class="color-section">
+          <label class="color-label">Secondary (Outline)</label>
+          <div id="secondaryColorPicker"></div>
+          <input type="hidden" name="secondary_color" id="secondaryColorInput" value="#000000">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="iconUpload" class="form-label">Team Icon (Transparent PNG)</label>
+        <input type="file" class="form-control" id="iconUpload" name="icon" accept="image/png">
+        <div class="note">Only transparent PNGs allowed</div>
+      </div>
+
+      <div class="mb-3">
+        <label for="iconSize" class="slider-label">Icon Size</label>
+        <input type="range" id="iconSize" min="0.1" max="2" step="0.05" value="1" class="form-range">
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-3">Create Team</button>
+    </form>
+  </div>
+
+  <div class="preview-panel">
+    <h3>Live Preview</h3>
+    <div class="preview-box" id="previewBox">
+      <div class="preview-bg" id="previewBackground"></div>
+      <svg class="preview-outline" width="200" height="200">
+        <rect x="0" y="0" width="200" height="200" fill="none" stroke="#000000" stroke-width="4" id="outlineShape"/>
+      </svg>
+      <img id="previewIcon" class="preview-icon" hidden>
+      <div id="previewText" class="preview-text">TEAM</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const previewBox = document.getElementById('previewBox');
+  const previewBackground = document.getElementById('previewBackground');
+  const outlineShape = document.getElementById('outlineShape');
+  const previewIcon = document.getElementById('previewIcon');
+  const nameInput = document.getElementById('name');
+  const previewText = document.getElementById('previewText');
+  const fontSelector = document.getElementById('fontSelector');
+  const iconUpload = document.getElementById('iconUpload');
+  const primaryColorInput = document.getElementById('primaryColorInput');
+  const secondaryColorInput = document.getElementById('secondaryColorInput');
+  const iconSizeSlider = document.getElementById('iconSize');
+
+  nameInput.addEventListener('input', () => {
+    previewText.textContent = nameInput.value;
+  });
+
+  fontSelector.addEventListener('change', () => {
+    previewText.style.fontFamily = fontSelector.value;
+  });
+
+  iconUpload.addEventListener('change', () => {
+    const file = iconUpload.files[0];
+    if (!file || file.type !== "image/png") {
+      alert("Only transparent PNG files are allowed.");
+      iconUpload.value = '';
+      previewIcon.hidden = true;
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.src = e.target.result;
+
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        let hasAlpha = false;
+        for (let i = 3; i < imageData.data.length; i += 4) {
+          if (imageData.data[i] < 255) {
+            hasAlpha = true;
+            break;
+          }
+        }
+
+        if (!hasAlpha) {
+          alert("Image must have transparency (alpha channel).");
+          iconUpload.value = '';
+          previewIcon.hidden = true;
+          return;
+        }
+
+        previewIcon.src = img.src;
+        previewIcon.hidden = false;
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+
+  iconSizeSlider.addEventListener('input', () => {
+    const scale = parseFloat(iconSizeSlider.value);
+    previewIcon.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  });
+
+  const pickrPrimary = Pickr.create({
+    el: '#primaryColorPicker',
+    theme: 'classic',
+    default: '#ff0000',
+    components: {
+      preview: true,
+      opacity: true,
+      hue: true,
+      interaction: { input: true, save: true }
+    }
+  });
+
+  pickrPrimary.on('save', (color) => {
+    const hex = color.toHEXA().toString();
+    primaryColorInput.value = hex;
+    previewBackground.style.backgroundColor = hex;
+    pickrPrimary.hide();
+  });
+
+  const pickrSecondary = Pickr.create({
+    el: '#secondaryColorPicker',
+    theme: 'classic',
+    default: '#000000',
+    components: {
+      preview: true,
+      opacity: true,
+      hue: true,
+      interaction: { input: true, save: true }
+    }
+  });
+
+  pickrSecondary.on('save', (color) => {
+    const hex = color.toHEXA().toString();
+    secondaryColorInput.value = hex;
+    outlineShape.setAttribute('stroke', hex);
+    pickrSecondary.hide();
+  });
+</script>
+
+{% endblock %}

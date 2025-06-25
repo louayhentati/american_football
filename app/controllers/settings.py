@@ -1,23 +1,22 @@
-from flask import Flask, render_template, abort, request, redirect, flash, url_for, session
+from flask import Flask, render_template, abort, request, redirect, flash, url_for
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.play_option import PlayOptionModel
 from app.models.play_call import PlayCallModel
 from app.models.user_prefs import UserPreference
+from app.models.team import TeamModel
 
 
 class SettingsController:
-    def __init__(self, app: Flask, play_parameters: dict, teams_data: dict) -> None:
+    def __init__(self, app: Flask, play_parameters: dict) -> None:
         self.app = app
-        self.teams_data = teams_data
         self.play_parameters = play_parameters
         self.register_routes()
 
     def register_routes(self) -> None:
-        self.app.add_url_rule(
-            rule='/settings',
-            view_func=self.settings)
+        self.app.add_url_rule(rule='/settings', view_func=self.settings)
+
         self.app.add_url_rule(
             rule='/settings/play/option/add/<param>',
             view_func=self.add_play_option,
@@ -74,6 +73,8 @@ class SettingsController:
             options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
 
         user_default = UserPreference.query.filter_by(user_id=current_user.id).first()
+        teams = TeamModel.query.all()
+
 
         return render_template(
             template_name_or_list='settings/settings.html',
@@ -81,6 +82,7 @@ class SettingsController:
             parameters=self.play_parameters,
             play_calls=calls,
             user_default=user_default,
+            teams=teams,  # Pass to template
             user=current_user
         )
 
@@ -170,9 +172,9 @@ class SettingsController:
 
     @login_required
     def set_team(self):
-        chosen_team = request.form.get('team_name')
-        if chosen_team in self.teams_data:
-            session['team_name'] = chosen_team
+        team_id = request.form.get('team_id', type=int)
+        if team_id:
+            session['team_id'] = team_id
         return redirect(url_for('settings'))
 
     @staticmethod

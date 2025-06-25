@@ -1,10 +1,11 @@
-from flask import Flask, render_template
+from flask import Flask
 from flask_login import LoginManager
 
 from app.extensions import db
 from app.models.user import UserModel
 from app.models.play_option import PlayOptionModel
 from app.models.play_call import PlayCallModel
+from app.models.team import TeamModel
 from app.config import ApplicationData as AD
 
 from app.controllers.user import UserController
@@ -15,6 +16,7 @@ from app.controllers.play import PlayController
 from app.controllers.call_sheet import CallSheetController
 from app.controllers.settings import SettingsController
 from app.controllers.error import ErrorController
+from app.controllers.team import team_bp
 
 
 class PlaybookApp:
@@ -48,14 +50,15 @@ class PlaybookApp:
     def _register_controllers(self) -> None:
         try:
             print("Registering controllers...")
-            UserController(app=self.app, login_manager=self.login_manager, teams_data=AD.TEAMS_DATA)
+            UserController(app=self.app, login_manager=self.login_manager)
             UserManagementController(app=self.app)
             GameController(app=self.app)
             DriveController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             PlayController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             CallSheetController(app=self.app)
-            SettingsController(app=self.app, play_parameters=AD.PLAY_PARAMETERS, teams_data=AD.TEAMS_DATA)
+            SettingsController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             ErrorController(app=self.app)
+            self.app.register_blueprint(team_bp)
             print("Controllers registered successfully")
         except Exception as e:
             print(f"[!] Controller registration error: {str(e)} ({type(e).__name__})")
@@ -63,7 +66,12 @@ class PlaybookApp:
     def _inject_context(self) -> None:
         @self.app.context_processor
         def inject_teams() -> dict:
-            return dict(teams=AD.TEAMS_DATA)
+            try:
+                teams = TeamModel.query.all()
+                return dict(teams=teams)
+            except Exception as e:
+                print(f"[!] Error injecting teams: {str(e)} ({type(e).__name__})")
+                return dict(teams=[])
 
     @staticmethod
     def _ensure_play_calls() -> None:

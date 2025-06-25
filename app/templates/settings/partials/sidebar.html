@@ -2,6 +2,7 @@
     <div class="sidebar-header">
         <h5><i class="bi bi-gear me-2"></i>Settings</h5>
     </div>
+
     <ul class="nav-menu">
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#playSubmenu" role="button" aria-expanded="false">
@@ -10,7 +11,6 @@
                 <span class="menu-toggle">
                     <i class="fas fa-chevron-down"></i>
                 </span>
-
             </a>
             <ul class="submenu collapse" id="playSubmenu" data-bs-parent=".nav-menu">
                 <li class="nav-item">
@@ -35,14 +35,12 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button"
-               aria-expanded="false">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button" aria-expanded="false">
                 <i class="fas fa-users"></i>
                 <span>User Management</span>
                 <span class="menu-toggle">
                     <i class="fas fa-chevron-down"></i>
                 </span>
-
             </a>
             <ul class="submenu collapse" id="userSubmenu" data-bs-parent=".nav-menu">
                 <li class="nav-item">
@@ -51,16 +49,20 @@
                         <span>All Users</span>
                     </a>
                 </li>
-                {% if current_user.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('add_user') }}">
-                            <i class="bi bi-person-add"></i>
-                            <span>Add User</span>
-                        </a>
-                    </li>
-                {% endif %}
-
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('add_user') }}">
+                        <i class="bi bi-person-add"></i>
+                        <span>Add User</span>
+                    </a>
+                </li>
             </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('team.create_team') }}">
+                <i class="bi bi-shield-fill me-2"></i>
+                <span>Create Team</span>
+            </a>
         </li>
     </ul>
 </div>

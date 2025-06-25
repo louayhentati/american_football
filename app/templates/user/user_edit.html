@@ -13,10 +13,15 @@
                 </div>
                 <div class="mb-3">
                     <label for="role" class="form-label">Role</label>
-                    <select class="form-select" id="role" name="role">
-                        <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
-                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
-                    </select>
+                    {% if user.role == 'admin' and admin_count == 1 and user.id == current_user_id %}
+                        <input type="text" class="form-control bg-light text-muted" id="role" name="role" value="admin" readonly disabled>
+                        <div class="form-text text-muted fst-italic">You are the only admin. You cannot change your role.</div>
+                    {% else %}
+                        <select class="form-select" id="role" name="role">
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                    {% endif %}
                 </div>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
                 <a href="{{ url_for('user_list') }}" class="btn btn-secondary">Cancel</a>

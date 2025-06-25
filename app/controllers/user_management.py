@@ -59,13 +59,27 @@ class UserManagementController:
         user = UserModel.query.get_or_404(user_id)
 
         if request.method == 'POST':
-            user.username = request.form['username']
-            user.role = request.form['role']
+            new_username = request.form['username']
+            new_role = request.form['role']
+
+            admin_count = UserModel.query.filter_by(role='admin').count()
+
+            if user.role == 'admin' and admin_count == 1 and new_role != 'admin':
+                flash('You are the only admin and cannot change your role.', 'danger')
+                return redirect(url_for('edit_user', user_id=user.id))
+
+            user.username = new_username
+            user.role = new_role
             db.session.commit()
             flash('User updated successfully', 'success')
             return redirect(url_for('user_list'))
 
-        return render_template('user/user_edit.html', user=user)
+        return render_template(
+            'user/user_edit.html',
+            user=user,
+            admin_count=UserModel.query.filter_by(role='admin').count(),
+            current_user_id=current_user.id
+        )
 
     @login_required
     @admin_required
