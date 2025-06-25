@@ -26,6 +26,10 @@ class DriveController:
     def add_play(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
 
+        if drive.ended:
+            flash("This drive has ended. Cannot add more plays!")
+            return redirect(url_for('drive_detail', drive_id=drive_id))
+
         if request.method == 'POST':
             return self._handle_add_play_post_request(drive_id, drive)
         else:
@@ -82,6 +86,8 @@ class DriveController:
 
         if next_fields.get('possession_change', False):
             drive.ended = True
+        elif play.result in ['Touchdown', 'Rush, TD', 'Complete, TD', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt']:
+            drive.ended = True
 
     @staticmethod
     def _get_previous_play(drive_id, current_play_id):
@@ -92,6 +98,11 @@ class DriveController:
                 .first())
 
     def _handle_add_play_get_request(self, drive_id):
+        drive = DriveModel.query.get_or_404(drive_id)
+        if drive.ended:
+            flash("This drive has ended. Cannot add more plays!")
+            return redirect(url_for('drive_detail',drive_id=drive_id))
+        
         play_call_details = self._get_play_call_details()
         options = self._get_add_play_form_options()
         down, distance, yard_line = self._get_default_play_fields(drive_id)

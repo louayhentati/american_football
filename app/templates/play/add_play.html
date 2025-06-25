@@ -44,7 +44,7 @@
                             </div>
                             <div class="col">
                                 <label class="form-label">Distance</label>
-                                <input type="number" class="form-control" name="distance"
+                                <input type="number" min="-100" max="100"class="form-control" name="distance"
                                        value="{{ play.distance if play else default_distance }}">
                             </div>
                         </div>
@@ -65,7 +65,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Yard Line</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" name="yard_line"
+                                    <input type="number" min="-100" max="100"class="form-control" name="yard_line"
                                            value="{{ play.yard_line if play else default_yard_line }}">
                                     <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()">
                                         Own / Opp
@@ -249,7 +249,7 @@
                         <div class="mb-3">
                             <label class="form-label">Gain/Loss</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" name="gain_loss"
+                                <input type="number" min="-100" max="100" class="form-control" name="gain_loss"
                                        value="{{ play.gain_loss if play else '' }}">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()">
                                     Toggle +/-
