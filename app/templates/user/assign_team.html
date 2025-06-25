@@ -1,0 +1,31 @@
+{% extends "system/base.html" %}
+{% block title %}Assign Team{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Assign Team to User</h2>
+    <form method="POST" action="{{ url_for('assign_team') }}">
+        <div class="mb-3">
+            <label for="user_id" class="form-label">Select User</label>
+            <select class="form-select" name="user_id" id="user_id" required>
+                <option value="">-- Select a user --</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="team_id" class="form-label">Select Team</label>
+            <select class="form-select" name="team_id" id="team_id" required>
+                <option value="">-- Select a team --</option>
+                {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Assign Team</button>
+    </form>
+</div>
+{% endblock %}

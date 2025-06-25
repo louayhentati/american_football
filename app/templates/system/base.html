@@ -24,6 +24,10 @@
             max-height: 300px;
             overflow-y: auto;
         }
+
+        .navbar {
+            transition: background 0.5s ease-in-out;
+        }
     </style>
 
     {% block head %}{% endblock %}
@@ -46,32 +50,6 @@
             </a>
 
             <div class="ms-auto d-flex align-items-center">
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="teamDropdown"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-check me-1"></i>
-                        {% if session.team_name %}
-                            {{ session.team_name }}
-                        {% else %}
-                            Choose Team
-                        {% endif %}
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end scrollable-dropdown" aria-labelledby="teamDropdown">
-                        {% for team in teams %}
-                            <li>
-                                <form action="{{ url_for('set_team') }}" method="POST" class="px-2">
-                                    <input type="hidden" name="team_id" value="{{ team.id }}"/>
-                                    <button type="submit" class="dropdown-item d-flex align-items-center">
-                                        <img src="{{ team.icon }}" alt="{{ team.name }} logo"
-                                             style="height:20px; margin-right:8px;"/>
-                                        {{ team.name }}
-                                    </button>
-                                </form>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-
                 <div class="dropdown me-2">
                     <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" type="button"
                             id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">

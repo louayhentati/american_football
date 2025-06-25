@@ -3,34 +3,19 @@
 {% block title %}Settings{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}"/>
 
-    <div class="settings-container">
-        {% include "settings/partials/sidebar.html" %}
+<div class="settings-container">
+    {% include "settings/partials/sidebar.html" %}
 
-        <div class="settings-content">
-            <div class="tab-content">
-                {% include "settings/partials/play/options_list.html" %}
-                {% include "settings/partials/play/calls_list.html" %}
-                {% include "settings/partials/play/default_prefs.html" %}
-
-                <hr>
-                <h3>Select Default Team</h3>
-                <form method="POST" action="{{ url_for('set_team') }}">
-                    <select name="team_id" required>
-                        <option value="">-- Select a team --</option>
-                        {% for team in teams %}
-                            <option value="{{ team.id }}"
-                                {% if session.get('team_id') == team.id %}selected{% endif %}>
-                                {{ team.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Save Default Team</button>
-                </form>
-            </div>
+    <div class="settings-content">
+        <div class="tab-content">
+            {% include "settings/partials/play/options_list.html" %}
+            {% include "settings/partials/play/calls_list.html" %}
+            {% include "settings/partials/play/default_prefs.html" %}
         </div>
     </div>
+</div>
 
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}

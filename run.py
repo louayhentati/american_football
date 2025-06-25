@@ -17,7 +17,7 @@ from app.controllers.call_sheet import CallSheetController
 from app.controllers.settings import SettingsController
 from app.controllers.error import ErrorController
 from app.controllers.team import team_bp
-
+from app.controllers.assign_team import assign_bp  # Correct import
 
 class PlaybookApp:
     app: Flask
@@ -59,6 +59,7 @@ class PlaybookApp:
             SettingsController(app=self.app, play_parameters=AD.PLAY_PARAMETERS)
             ErrorController(app=self.app)
             self.app.register_blueprint(team_bp)
+            self.app.register_blueprint(assign_bp)  # Register assign_team controller
             print("Controllers registered successfully")
         except Exception as e:
             print(f"[!] Controller registration error: {str(e)} ({type(e).__name__})")

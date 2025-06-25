@@ -1,5 +1,6 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models.team import TeamModel
 
@@ -19,23 +20,36 @@ def create_team():
 
     if request.method == 'POST':
         name = request.form.get('name')
-        icon = request.form.get('shape')
         primary_color = request.form.get('primary_color')
         secondary_color = request.form.get('secondary_color')
+        icon_file = request.files.get('icon')
 
-        if not name or not icon or not primary_color or not secondary_color:
+        if not name or not primary_color or not secondary_color or not icon_file:
             flash('All fields are required.', 'danger')
             return redirect(request.url)
 
+        if icon_file.filename == '' or not icon_file.filename.lower().endswith('.png'):
+            flash('Only PNG files are allowed.', 'danger')
+            return redirect(request.url)
+
+        filename = secure_filename(icon_file.filename)
+        upload_folder = os.path.join(current_app.static_folder, 'uploads')
+        os.makedirs(upload_folder, exist_ok=True)
+        save_path = os.path.join(upload_folder, filename)
+        icon_file.save(save_path)
+
+        icon_url = url_for('static', filename=f'uploads/{filename}')
+
         new_team = TeamModel(
             name=name,
-            icon=icon,
+            icon=icon_url,
             primary_color=primary_color,
             secondary_color=secondary_color
         )
 
         db.session.add(new_team)
         db.session.commit()
+
         flash(f'Team "{name}" created successfully!', 'success')
         return redirect(url_for('team.create_team'))
 

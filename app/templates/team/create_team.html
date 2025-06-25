@@ -83,7 +83,11 @@
 
   .color-section {
     flex: 1;
-  }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 
   .color-label {
     font-weight: bold;
@@ -124,12 +128,12 @@
 
       <div class="mb-3 color-pickers">
         <div class="color-section">
-          <label class="color-label">Primary (Background)</label>
+          <label class="color-label">Primary</label>
           <div id="primaryColorPicker"></div>
           <input type="hidden" name="primary_color" id="primaryColorInput" value="#ff0000">
         </div>
         <div class="color-section">
-          <label class="color-label">Secondary (Outline)</label>
+          <label class="color-label">Secondary </label>
           <div id="secondaryColorPicker"></div>
           <input type="hidden" name="secondary_color" id="secondaryColorInput" value="#000000">
         </div>

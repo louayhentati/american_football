@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.extensions import db
 from app.models.user import UserModel
+from app.models.team import TeamModel
 from functools import wraps
 
 
@@ -26,6 +27,7 @@ class UserManagementController:
         self.app.add_url_rule('/users/<int:user_id>/edit', view_func=self.edit_user, methods=['GET', 'POST'])
         self.app.add_url_rule('/users/<int:user_id>/delete', view_func=self.delete_user, methods=['POST'])
         self.app.add_url_rule('/users/<int:user_id>/reset-password', view_func=self.reset_password, methods=['GET', 'POST'])
+        self.app.add_url_rule('/assign-team', view_func=self.assign_team, methods=['GET', 'POST'])
 
     @login_required
     def user_list(self):
@@ -105,3 +107,27 @@ class UserManagementController:
             return redirect(url_for('user_list'))
 
         return render_template('user/user_reset_password.html', user=user)
+
+    @login_required
+    @admin_required
+    def assign_team(self):
+        users = UserModel.query.all()
+        teams = TeamModel.query.all()
+
+        if request.method == 'POST':
+            user_id = request.form.get('user_id')
+            team_id = request.form.get('team_id')
+
+            user = UserModel.query.get(user_id)
+            team = TeamModel.query.get(team_id)
+
+            if not user or not team:
+                flash("Invalid user or team selection", "danger")
+                return redirect(url_for('assign_team'))
+
+            user.team_id = team.id
+            db.session.commit()
+            flash(f"Team '{team.name}' assigned to user '{user.username}'", "success")
+            return redirect(url_for('assign_team'))
+
+        return render_template('user/user_assign_team.html', users=users, teams=teams)
