@@ -67,7 +67,7 @@
             <div class="team-display">
               {% set selected_team = teams | selectattr("name", "equalto", session.team_name) | list | first %}
               {% if selected_team %}
-                <img src="{{ selected_team.logo }}" alt="{{ selected_team.name }} logo" style="height:40px; width:auto;" />
+                <img src="{{ selected_team.icon }}" alt="{{ selected_team.name }} logo" style="height:40px; width:auto;" />
                 <h4 class="mb-0">{{ selected_team.name }}</h4>
               {% else %}
                 <h5 class="text-muted fst-italic mb-0">No team selected</h5>
@@ -78,10 +78,10 @@
           {% if current_user.role == 'admin' %}
             <form id="teamForm" method="POST" action="{{ url_for('set_team') }}" class="pref-form">
               <label for="teamSelect" class="form-label">Change Default Team</label>
-              <select id="teamSelect" name="team_name" class="form-select mb-2" required>
+              <select id="teamSelect" name="team_id" class="form-select mb-2" required>
                 <option value="" disabled selected>-- Select Team --</option>
                 {% for team in teams %}
-                  <option value="{{ team.name }}" {% if session.team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
+                  <option value="{{ team.id }}" {% if session.team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
                 {% endfor %}
               </select>
               <div class="btn-container">
