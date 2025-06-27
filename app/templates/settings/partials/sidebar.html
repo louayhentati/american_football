@@ -5,9 +5,10 @@
 
     <ul class="nav-menu">
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#playSubmenu" role="button" aria-expanded="false">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#playSubmenu" role="button"
+               aria-expanded="false">
                 <i class="bi bi-dice-5-fill"></i>
-                <span>Play Settings</span>
+                <span>Play Management</span>
                 <span class="menu-toggle">
                     <i class="fas fa-chevron-down"></i>
                 </span>
@@ -16,26 +17,27 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="#play-options" data-bs-toggle="tab" role="tab">
                         <i class="bi bi-card-checklist"></i>
-                        <span>Options</span>
+                        <span>Play Options</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#play-calls" data-bs-toggle="tab" role="tab">
                         <i class="bi bi-tags"></i>
-                        <span>Calls</span>
+                        <span>Play Categories</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
                         <i class="bi bi-sliders"></i>
-                        <span>Defaults</span>
+                        <span>User Preferences</span>
                     </a>
                 </li>
             </ul>
         </li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button" aria-expanded="false">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button"
+               aria-expanded="false">
                 <i class="fas fa-users"></i>
                 <span>User Management</span>
                 <span class="menu-toggle">
@@ -50,18 +52,18 @@
                     </a>
                 </li>
                 {% if current_user.role == 'admin' %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('add_user') }}">
-                        <i class="bi bi-person-add"></i>
-                        <span>Add User</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
-                        <i class="bi bi-shield-check"></i>
-                        <span>Assign Team</span>
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_user') }}">
+                            <i class="bi bi-person-add"></i>
+                            <span>Add User</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Assign Team</span>
+                        </a>
+                    </li>
                 {% endif %}
             </ul>
         </li>
@@ -71,6 +73,42 @@
                 <i class="bi bi-shield-fill me-2"></i>
                 <span>Create Team</span>
             </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#teamSubmenu" role="button"
+               aria-expanded="false">
+                <i class="bi bi-microsoft-teams"></i>
+                <span>Team Management</span>
+                <span class="menu-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+            </a>
+
+            <ul class="submenu collapse" id="teamSubmenu" data-bs-parent=".nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('team.list_all_teams') }}">
+                        <i class="bi bi-list-stars"></i>
+                        <span>All Teams</span>
+                    </a>
+                </li>
+
+                {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('team.create_team') }}">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Create Team</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
+                            <i class="bi bi-node-plus"></i>
+                            <span>Assign Team</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
         </li>
     </ul>
 </div>

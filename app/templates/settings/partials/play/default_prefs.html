@@ -1,204 +1,218 @@
 <style>
-  .card-collapsed {
-    max-height: 200px;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
+    .card-collapsed {
+        max-height: 200px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
 
-  .pref-card .card-body {
-    display: flex;
-    flex-direction: column;
-  }
+    .pref-card .card-body {
+        display: flex;
+        flex-direction: column;
+    }
 
-  .pref-display-container {
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-bottom: 15px;
-  }
+    .pref-display-container {
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
 
-  .team-display {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
+    .team-display {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
 
-  .playcall-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+    .playcall-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
 
-  .pref-form {
-    display: none;
-  }
+    .pref-form {
+        display: none;
+    }
 
-  .btn-container {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-  }
+    .btn-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="tab-pane fade" id="play-defaults" role="tabpanel">
-  <div class="content-header mb-4">
-    <h4><i class="bi bi-sliders me-2"></i>User Preferences</h4>
-  </div>
-
-  <div class="row g-4">
-    <!-- Default Team Card -->
-    <div class="col-12 col-md-6">
-      <div class="card shadow-sm h-100 card-collapsed">
-        <div class="card-body position-relative">
-
-          {% if current_user.role == 'admin' %}
-            <button id="btnEditTeam" type="button"
-              class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
-              style="width: 38px; height: 38px;" title="Edit default team">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
-          {% endif %}
-
-          <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Team</span>
-
-          <div id="teamDisplay" class="pref-display-container">
-            <div class="team-display">
-              {% set selected_team = teams | selectattr("name", "equalto", session.team_name) | list | first %}
-              {% if selected_team %}
-                <img src="{{ selected_team.icon }}" alt="{{ selected_team.name }} logo" style="height:40px; width:auto;" />
-                <h4 class="mb-0">{{ selected_team.name }}</h4>
-              {% else %}
-                <h5 class="text-muted fst-italic mb-0">No team selected</h5>
-              {% endif %}
-            </div>
-          </div>
-
-          {% if current_user.role == 'admin' %}
-            <form id="teamForm" method="POST" action="{{ url_for('set_team') }}" class="pref-form">
-              <label for="teamSelect" class="form-label">Change Default Team</label>
-              <select id="teamSelect" name="team_id" class="form-select mb-2" required>
-                <option value="" disabled selected>-- Select Team --</option>
-                {% for team in teams %}
-                  <option value="{{ team.id }}" {% if session.team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
-                {% endfor %}
-              </select>
-              <div class="btn-container">
-                <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
-                <button type="button" id="btnCancelTeam" class="btn btn-outline-secondary btn-sm px-4">Cancel</button>
-              </div>
-            </form>
-          {% else %}
-            <div class="form-text text-muted fst-italic">Only admins can change the default team.</div>
-            <select id="teamSelectDisabled" class="form-select" disabled>
-              <option>{{ session.team_name or 'No team selected' }}</option>
-            </select>
-          {% endif %}
-        </div>
-      </div>
+    <div class="content-header mb-4">
+        <h4><i class="bi bi-sliders me-2"></i>User Preferences</h4>
     </div>
 
-    <!-- Default Play Call Card -->
-    <div class="col-12 col-md-6">
-      <div class="card shadow-sm h-100 card-collapsed">
-        <div class="card-body position-relative">
+    <div class="row g-4">
+        <!-- Default Team Card -->
+        <div class="col-12 col-md-6">
+            <div class="card shadow-sm h-100 card-collapsed">
+                <div class="card-body position-relative">
 
-          {% if user_default and user_default.play_call %}
-            <button id="btnEditPlayCall" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
-              style="width: 38px; height: 38px;" title="Edit default play call">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
-          {% else %}
-            <button id="btnEditPlayCall" class="btn btn-primary btn-sm position-absolute top-0 end-0 m-3"
-              style="width: 38px; height: 38px;" title="Set default play call">
-              <i class="fas fa-plus"></i>
-            </button>
-          {% endif %}
-          <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Play Call</span>
+                    {% if current_user.role == 'admin' and teams|length > 0 %}
+                        <button id="btnEditTeam" type="button"
+                                class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Edit default team">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    {% else %}
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Edit default team" disabled>
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    {% endif %}
+                    <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Team</span>
 
-          <div id="defaultPlayCallDisplay" class="pref-display-container">
-            <div class="playcall-display">
-              {% if user_default and user_default.play_call %}
-                <h2 id="playCallName" class="fw-bold text-center" style="font-size: 1.75rem;">
-                  {{ user_default.play_call.name }}
-                </h2>
-              {% else %}
-                <h5 class="text-muted fst-italic">No default play call set</h5>
-              {% endif %}
+                    <div id="teamDisplay" class="pref-display-container">
+                        <div class="team-display">
+                            {% set selected_team = teams | selectattr("name", "equalto", session.team_name) | list | first %}
+                            {% if selected_team %}
+                                <img src="{{ selected_team.icon }}" alt="{{ selected_team.name }} logo"
+                                     style="height:40px; width:auto;"/>
+                                <h4 class="mb-0">{{ selected_team.name }}</h4>
+                            {% else %}
+                                <h5 class="text-muted fst-italic mb-0">No team selected</h5>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if current_user.role == 'admin' %}
+                        <form id="teamForm" method="POST" action="{{ url_for('set_team') }}" class="pref-form">
+                            <label for="teamSelect" class="form-label">Change Default Team</label>
+                            <select id="teamSelect" name="team_id" class="form-select mb-2" required>
+                                <option value="" disabled selected>-- Select Team --</option>
+                                {% for team in teams %}
+                                    <option value="{{ team.id }}"
+                                            {% if session.team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="btn-container">
+                                <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
+                                <button type="button" id="btnCancelTeam" class="btn btn-outline-secondary btn-sm px-4">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="form-text text-muted fst-italic">Only admins can change the default team.</div>
+                        <select id="teamSelectDisabled" class="form-select" disabled>
+                            <option>{{ session.team_name or 'No team selected' }}</option>
+                        </select>
+                    {% endif %}
+                </div>
             </div>
-          </div>
-
-          <form id="defaultPlayCallForm" method="POST" action="{{ url_for('set_user_play_default') }}" class="pref-form">
-            <label for="defaultPlayCallSelect" class="form-label">Choose Default Play Call</label>
-            <select class="form-select mb-3" id="defaultPlayCallSelect" name="play_call_id" required>
-              <option value="" disabled selected>-- Select Play Call --</option>
-              {% for call in play_calls %}
-                <option value="{{ call.id }}" {% if user_default and user_default.play_call_id == call.id %}selected{% endif %}>
-                  {{ call.name }}
-                </option>
-              {% endfor %}
-            </select>
-            <div class="btn-container">
-              <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
-              <button type="button" id="btnCancelPlayCall" class="btn btn-outline-secondary btn-sm px-4">Cancel</button>
-            </div>
-          </form>
         </div>
-      </div>
+
+        <!-- Default Play Call Card -->
+        <div class="col-12 col-md-6">
+            <div class="card shadow-sm h-100 card-collapsed">
+                <div class="card-body position-relative">
+
+                    {% if user_default and user_default.play_call %}
+                        <button id="btnEditPlayCall"
+                                class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Edit default play call">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    {% else %}
+                        <button id="btnEditPlayCall" class="btn btn-primary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Set default play call">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    {% endif %}
+                    <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Play Call</span>
+
+                    <div id="defaultPlayCallDisplay" class="pref-display-container">
+                        <div class="playcall-display">
+                            {% if user_default and user_default.play_call %}
+                                <h2 id="playCallName" class="fw-bold text-center" style="font-size: 1.75rem;">
+                                    {{ user_default.play_call.name }}
+                                </h2>
+                            {% else %}
+                                <h5 class="text-muted fst-italic">No default play call set</h5>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <form id="defaultPlayCallForm" method="POST" action="{{ url_for('set_user_play_default') }}"
+                          class="pref-form">
+                        <label for="defaultPlayCallSelect" class="form-label">Choose Default Play Call</label>
+                        <select class="form-select mb-3" id="defaultPlayCallSelect" name="play_call_id" required>
+                            <option value="" disabled selected>-- Select Play Call --</option>
+                            {% for call in play_calls %}
+                                <option value="{{ call.id }}"
+                                        {% if user_default and user_default.play_call_id == call.id %}selected{% endif %}>
+                                    {{ call.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="btn-container">
+                            <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
+                            <button type="button" id="btnCancelPlayCall" class="btn btn-outline-secondary btn-sm px-4">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const teamCard = document.querySelector('#btnEditTeam')?.closest('.card');
-      const playCallCard = document.querySelector('#btnEditPlayCall')?.closest('.card');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const teamCard = document.querySelector('#btnEditTeam')?.closest('.card');
+            const playCallCard = document.querySelector('#btnEditPlayCall')?.closest('.card');
 
-      const btnEditTeam = document.getElementById('btnEditTeam');
-      const btnCancelTeam = document.getElementById('btnCancelTeam');
-      const teamDisplay = document.getElementById('teamDisplay');
-      const teamForm = document.getElementById('teamForm');
+            const btnEditTeam = document.getElementById('btnEditTeam');
+            const btnCancelTeam = document.getElementById('btnCancelTeam');
+            const teamDisplay = document.getElementById('teamDisplay');
+            const teamForm = document.getElementById('teamForm');
 
-      if (btnEditTeam) {
-        btnEditTeam.addEventListener('click', () => {
-          teamDisplay.style.display = 'none';
-          btnEditTeam.style.display = 'none';
-          teamForm.style.display = 'block';
-          if (teamCard) teamCard.classList.remove('card-collapsed');
+            if (btnEditTeam) {
+                btnEditTeam.addEventListener('click', () => {
+                    teamDisplay.style.display = 'none';
+                    btnEditTeam.style.display = 'none';
+                    teamForm.style.display = 'block';
+                    if (teamCard) teamCard.classList.remove('card-collapsed');
+                });
+            }
+
+            if (btnCancelTeam) {
+                btnCancelTeam.addEventListener('click', () => {
+                    teamForm.style.display = 'none';
+                    teamDisplay.style.display = 'flex';
+                    btnEditTeam.style.display = 'inline-block';
+                    if (teamCard) teamCard.classList.add('card-collapsed');
+                });
+            }
+
+            const btnEditPlayCall = document.getElementById('btnEditPlayCall');
+            const btnCancelPlayCall = document.getElementById('btnCancelPlayCall');
+            const displayPlayCall = document.getElementById('defaultPlayCallDisplay');
+            const formPlayCall = document.getElementById('defaultPlayCallForm');
+
+            if (btnEditPlayCall) {
+                btnEditPlayCall.addEventListener('click', () => {
+                    displayPlayCall.style.display = 'none';
+                    btnEditPlayCall.style.display = 'none';
+                    formPlayCall.style.display = 'block';
+                    if (playCallCard) playCallCard.classList.remove('card-collapsed');
+                });
+            }
+
+            if (btnCancelPlayCall) {
+                btnCancelPlayCall.addEventListener('click', () => {
+                    formPlayCall.style.display = 'none';
+                    displayPlayCall.style.display = 'flex';
+                    btnEditPlayCall.style.display = 'inline-block';
+                    if (playCallCard) playCallCard.classList.add('card-collapsed');
+                });
+            }
         });
-      }
-
-      if (btnCancelTeam) {
-        btnCancelTeam.addEventListener('click', () => {
-          teamForm.style.display = 'none';
-          teamDisplay.style.display = 'flex';
-          btnEditTeam.style.display = 'inline-block';
-          if (teamCard) teamCard.classList.add('card-collapsed');
-        });
-      }
-
-      const btnEditPlayCall = document.getElementById('btnEditPlayCall');
-      const btnCancelPlayCall = document.getElementById('btnCancelPlayCall');
-      const displayPlayCall = document.getElementById('defaultPlayCallDisplay');
-      const formPlayCall = document.getElementById('defaultPlayCallForm');
-
-      if (btnEditPlayCall) {
-        btnEditPlayCall.addEventListener('click', () => {
-          displayPlayCall.style.display = 'none';
-          btnEditPlayCall.style.display = 'none';
-          formPlayCall.style.display = 'block';
-          if (playCallCard) playCallCard.classList.remove('card-collapsed');
-        });
-      }
-
-      if (btnCancelPlayCall) {
-        btnCancelPlayCall.addEventListener('click', () => {
-          formPlayCall.style.display = 'none';
-          displayPlayCall.style.display = 'flex';
-          btnEditPlayCall.style.display = 'inline-block';
-          if (playCallCard) playCallCard.classList.add('card-collapsed');
-        });
-      }
-    });
-  </script>
+    </script>
 </div>
