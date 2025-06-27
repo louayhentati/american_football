@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort, request, redirect, flash, url_for
+from flask import Flask, render_template, abort, request, redirect, flash, url_for, session
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -173,8 +173,34 @@ class SettingsController:
     @login_required
     def set_team(self):
         team_id = request.form.get('team_id', type=int)
-        if team_id:
-            session['team_id'] = team_id
+
+        if not team_id:
+            flash('No team selected.', category='warning')
+            return redirect(url_for('settings'))
+
+        team = TeamModel.query.get(team_id)
+        if not team:
+            flash('Selected team does not exist.', category='danger')
+            return redirect(url_for('settings'))
+
+        session['team_name'] = team.name
+        session['team_id'] = team.id
+        session['team_color'] = team.primary_color
+
+        pref = UserPreference.query.filter_by(user_id=current_user.id).first()
+        if not pref:
+            pref = UserPreference(user_id=current_user.id)
+            db.session.add(pref)
+
+        pref.team_id = team.id
+
+        try:
+            db.session.commit()
+            flash(f"Team updated: {team.name}", category='success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Failed to update team: {str(e)}", category='danger')
+
         return redirect(url_for('settings'))
 
     @staticmethod
