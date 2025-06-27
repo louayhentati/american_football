@@ -6,9 +6,13 @@
   <form method="POST" action="{{ url_for('assign_team.assign_team') }}">
     <div class="form-group">
       <label for="user_id">Select User:</label>
+
       <select name="user_id" class="form-control" required>
         {% for user in users %}
-        <option value="{{ user.id }}">{{ user.username }}</option>
+            {% if user.id != current_user.id %}
+                 <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endif %}
+
         {% endfor %}
       </select>
     </div>
@@ -23,6 +27,7 @@
     </div>
 
     <button type="submit" class="btn btn-primary mt-3">Assign</button>
+  <a href="{{ url_for('settings') }}" class="btn btn-secondary mt-3">Back to Settings</a>
   </form>
 </div>
 {% endblock %}
