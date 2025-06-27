@@ -3,6 +3,7 @@ import os
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models.team import TeamModel
+from app.models.user import UserModel
 
 team_bp = Blueprint('team', __name__, url_prefix='/team')  # <-- define first!
 
@@ -58,3 +59,31 @@ def create_team():
         return redirect(url_for('team.create_team'))
 
     return render_template('team/create_team.html', base_files=base_files, icon_filenames=icon_filenames)
+
+
+
+
+@team_bp.route('/list')
+def list_all_teams():
+    teams = TeamModel.query.all()
+
+    # Query all users with team_id in the teams list
+    team_ids = [team.id for team in teams]
+    if not team_ids:
+        return render_template(
+            'team/show_teams.html',
+            teams=[],
+            team_members={}
+        )
+
+    users = UserModel.query.filter(UserModel.team_id.in_(team_ids)).all()
+    team_members = {}
+    for user in users:
+        team_members.setdefault(user.team_id, []).append(user)
+
+    return render_template(
+        'team/show_teams.html',
+        teams=teams,
+        team_members=team_members
+    )
+
