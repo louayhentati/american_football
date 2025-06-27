@@ -1,48 +1,52 @@
-import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+import os
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models.team import TeamModel
 
-team_bp = Blueprint('team', __name__, url_prefix='/team')
+team_bp = Blueprint('team', __name__, url_prefix='/team')  # <-- define first!
 
 @team_bp.route('/create', methods=['GET', 'POST'])
 def create_team():
-    svg_list = []
-    shapes_dir = os.path.join(current_app.static_folder, "shapes")
-    try:
-        for filename in sorted(os.listdir(shapes_dir))[:8]:
-            if filename.endswith(".svg"):
-                with open(os.path.join(shapes_dir, filename), "r", encoding="utf-8") as f:
-                    svg_list.append(f.read())
-    except Exception as e:
-        print(f"[!] Failed to load SVGs: {str(e)}")
+    base_folder = os.path.join(current_app.static_folder, "team_creation_assets", "base")
+    icon_folder = os.path.join(current_app.static_folder, "team_creation_assets", "icons")
+    user_created_folder = os.path.join(current_app.static_folder, "user_created_icons")
+    os.makedirs(user_created_folder, exist_ok=True)  # Ensure the folder exists
+
+    base_files = [f for f in sorted(os.listdir(base_folder)) if f.endswith('.svg')]
+    icon_filenames = [f for f in sorted(os.listdir(icon_folder)) if f.endswith(('.svg', '.png'))]
 
     if request.method == 'POST':
         name = request.form.get('name')
         primary_color = request.form.get('primary_color')
         secondary_color = request.form.get('secondary_color')
-        icon_file = request.files.get('icon')
+        icon_file = request.form.get('icon_filename')
+        final_svg = request.form.get('final_svg')  # Get the serialized SVG string
 
-        if not name or not primary_color or not secondary_color or not icon_file:
+        uploaded_icon = request.files.get('icon-upload')
+        if uploaded_icon and uploaded_icon.filename != '':
+            filename = secure_filename(uploaded_icon.filename)
+            save_path = os.path.join(icon_folder, filename)
+            uploaded_icon.save(save_path)
+            icon_file = filename  # override with uploaded file
+
+        if not name or not primary_color or not secondary_color or not icon_file or not final_svg:
             flash('All fields are required.', 'danger')
             return redirect(request.url)
 
-        if icon_file.filename == '' or not icon_file.filename.lower().endswith('.png'):
-            flash('Only PNG files are allowed.', 'danger')
-            return redirect(request.url)
+        
+        team_folder = os.path.join(user_created_folder, secure_filename(name))
+        os.makedirs(team_folder, exist_ok=True)
 
-        filename = secure_filename(icon_file.filename)
-        upload_folder = os.path.join(current_app.static_folder, 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
-        save_path = os.path.join(upload_folder, filename)
-        icon_file.save(save_path)
+        svg_path = os.path.join(team_folder, "team_icon.svg")
+        with open(svg_path, "w", encoding="utf-8") as f:
+            f.write(final_svg)
 
-        icon_url = url_for('static', filename=f'uploads/{filename}')
+        icon_path = url_for('static', filename=f'user_created_icons/{secure_filename(name)}/team_icon.svg')
 
         new_team = TeamModel(
             name=name,
-            icon=icon_url,
+            icon=icon_path,
             primary_color=primary_color,
             secondary_color=secondary_color
         )
@@ -53,4 +57,4 @@ def create_team():
         flash(f'Team "{name}" created successfully!', 'success')
         return redirect(url_for('team.create_team'))
 
-    return render_template('team/create_team.html', svg_list=svg_list)
+    return render_template('team/create_team.html', base_files=base_files, icon_filenames=icon_filenames)
