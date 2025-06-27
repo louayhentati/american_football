@@ -1,9 +1,11 @@
 from flask import Flask, render_template, abort, request, redirect, flash, url_for, session
 from flask_login import login_required, current_user
 
+from app.controllers.assign_team import admin_required
 from app.extensions import db
 from app.models.play_option import PlayOptionModel
 from app.models.play_call import PlayCallModel
+from app.models.user import UserModel
 from app.models.user_prefs import UserPreference
 from app.models.team import TeamModel
 
@@ -75,14 +77,13 @@ class SettingsController:
         user_default = UserPreference.query.filter_by(user_id=current_user.id).first()
         teams = TeamModel.query.all()
 
-
         return render_template(
             template_name_or_list='settings/settings.html',
             options=options,
             parameters=self.play_parameters,
             play_calls=calls,
             user_default=user_default,
-            teams=teams,  # Pass to template
+            teams=teams,
             user=current_user
         )
 
@@ -171,37 +172,34 @@ class SettingsController:
         return redirect(url_for('settings'))
 
     @login_required
+    @admin_required
     def set_team(self):
-        team_id = request.form.get('team_id', type=int)
+        users = UserModel.query.all()
+        teams = TeamModel.query.all()
 
-        if not team_id:
-            flash('No team selected.', category='warning')
+        if request.method == 'POST':
+            user_id = current_user.id
+            team_id = request.form.get('team_id')
+
+            user = UserModel.query.get(user_id)
+            if user:
+                user.team_id = team_id
+                db.session.commit()
+
+                # If current user is the one updated, update session too
+                if current_user.id == user.id:
+                    assigned_team = TeamModel.query.get(team_id)
+                    session['team_color'] = assigned_team.primary_color if assigned_team else None
+                    session['team_id'] = int(team_id) if assigned_team else None
+
+                flash('Team assigned successfully!', 'success')
+            else:
+                flash('User not found.', 'danger')
+
             return redirect(url_for('settings'))
 
-        team = TeamModel.query.get(team_id)
-        if not team:
-            flash('Selected team does not exist.', category='danger')
-            return redirect(url_for('settings'))
+        return render_template('user/user_assign_team.html', users=users, teams=teams)
 
-        session['team_name'] = team.name
-        session['team_id'] = team.id
-        session['team_color'] = team.primary_color
-
-        pref = UserPreference.query.filter_by(user_id=current_user.id).first()
-        if not pref:
-            pref = UserPreference(user_id=current_user.id)
-            db.session.add(pref)
-
-        pref.team_id = team.id
-
-        try:
-            db.session.commit()
-            flash(f"Team updated: {team.name}", category='success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Failed to update team: {str(e)}", category='danger')
-
-        return redirect(url_for('settings'))
 
     @staticmethod
     def __load_play_calls():
