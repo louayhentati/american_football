@@ -1,20 +1,22 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.user import UserModel
 from app.models.team import TeamModel
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 
 assign_bp = Blueprint('assign_team', __name__, url_prefix='/assign')
 
+
 def admin_required(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def decorated_view(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != 'admin':
-            return "Access denied", 403
+            abort(403)
         return func(*args, **kwargs)
-    return wrapper
+
+    return decorated_view
+
 
 @assign_bp.route('/team', methods=['GET', 'POST'])
 @login_required
@@ -45,4 +47,3 @@ def assign_team():
         return redirect(url_for('assign_team.assign_team'))
 
     return render_template('user/user_assign_team.html', users=users, teams=teams)
-
