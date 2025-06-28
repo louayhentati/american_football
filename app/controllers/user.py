@@ -41,10 +41,10 @@ class UserController:
             if user and check_password_hash(user.password, password):
                 login_user(user)
 
-                if user.team:
-                    session['team_id'] = user.team.id
-                    session['team_name'] = user.team.name
-                    session['team_color'] = user.team.primary_color
+                # if user.team:
+                #     session['team_id'] = user.team.id
+                #     session['team_name'] = user.team.name
+                #     session['team_color'] = user.team.primary_color
 
                 flash('Login successful!', 'success')
                 return redirect(url_for('game_options'))

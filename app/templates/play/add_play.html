@@ -6,8 +6,11 @@
             <div class="card">
                 <div class="card-header">{{ 'Edit Play' if play else 'Add Play' }}</div>
                 <div class="card-body">
-                    <form method="POST"
-                          action="{{ url_for('edit_play', play_id=play.id) if play else url_for('add_play', drive_id=drive_id) }}">
+                    <form id="playForm"
+                          data-mode="add"
+                          data-endpoint-add="{{ url_for('add_play', drive_id=drive.id) }}"
+                          data-redirect="{{ url_for('drive_detail', drive_id=drive.id) }}"
+                          onsubmit="handleSubmit(event)">
 
                         <!-- ODK Selection -->
                         <div class="mb-3">
@@ -28,7 +31,6 @@
                         </div>
 
                         <!-- Down & Distance -->
-                        <!-- Update: FP-6 -->
                         <div class="row mb-3">
                             <div class="col">
                                 <label class="form-label">Down</label><br>
@@ -36,200 +38,177 @@
                                     {% for down_number in range(1, 5) %}
                                         <input type="radio" class="btn-check" name="down" id="down-{{ down_number }}"
                                                value="{{ down_number }}"
-                                                {{ 'checked' if play and play.down == down_number else 'checked' if down_number == default_down }}>
+                                                {% if play and play.down == down_number %}
+                                               checked
+                                                {% elif not play and down_number == default_down %}
+                                               checked
+                                                {% endif %}>
                                         <label class="btn btn-outline-primary"
                                                for="down-{{ down_number }}">{{ down_number }}</label>
                                     {% endfor %}
                                 </div>
                             </div>
                             <div class="col">
-                                <label class="form-label">Distance</label>
-                                <input type="number" class="form-control" name="distance"
+                                <label for="distance" class="form-label">Distance (yards to go)</label>
+                                <input type="number" name="distance" id="distance" class="form-control"
+                                       min="1" max="10" step="1" required
                                        value="{{ play.distance if play else default_distance }}">
                             </div>
                         </div>
 
-                        <!-- New Hash button group -->
+                        <!-- Hash -->
                         <div class="mb-3">
                             <label class="form-label">Hash</label><br>
                             <div class="btn-group">
                                 {% for h in ['L', 'M', 'R'] %}
-                                    <input type="radio" class="btn-check" name="hash" id="hash-{{ h }}"
-                                           value="{{ h }}" {{ 'checked' if play and play.hash == h }}>
+                                    <input type="radio" class="btn-check" name="hash" id="hash-{{ h }}" value="{{ h }}"
+                                           {% if play and play.hash == h %}checked{% endif %}>
                                     <label class="btn btn-outline-primary" for="hash-{{ h }}">{{ h }}</label>
                                 {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Yard Line -->
-                            <!-- Update: FP-6 -->
-                            <div class="mb-3">
-                                <label class="form-label">Yard Line</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="yard_line"
-                                           value="{{ play.yard_line if play else default_yard_line }}">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()">
-                                        Own / Opp
-                                    </button>
-                                </div>
+                        <!-- Yard Line -->
+                        <div class="mb-3">
+                            <label class="form-label">Yard Line</label>
+                            <div class="input-group">
+                                <input type="number" name="yard_line" id="yard_line" class="form-control"
+                                       min="-49" max="49" step="1" required
+                                       value="{{ default_yard_line }}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()"
+                                        title="Switch between own/opponent territory">
+                                    Own / Opp
+                                </button>
                             </div>
-
-                            <!-- Additional Parameters -->
-                            <!-- Example: Personnel -->
-                            <div class="mb-3">
-                                <label class="form-label">Personnel</label><br>
-                                <div class="btn-group">
-                                    {% for p in ['10', '11', '20', '21'] %}
-                                        <input type="radio" class="btn-check" name="personnel" id="pers-{{ p }}"
-                                               value="{{ p }}" {{ 'checked' if play and play.personnel == p }}>
-                                        <label class="btn btn-outline-primary" for="pers-{{ p }}">{{ p }}</label>
-                                    {% endfor %}
-                                </div>
+                            <div class="form-text">
+                                Negative = opponent territory, Positive = own territory
                             </div>
+                        </div>
 
-                            <!-- Add this after the Personnel section in add_play.html -->
 
-                            <!-- Offensive Formation -->
-                            <div class="mb-3">
-                                <label class="form-label">Offensive Formation</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.off_form %}
-                                        <input type="radio" class="btn-check"
-                                               name="off_form"
-                                               id="off_form-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.off_form == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="off_form-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Personnel -->
+                        <div class="mb-3">
+                            <label class="form-label">Personnel</label><br>
+                            <div class="btn-group">
+                                {% for p in ['10', '11', '20', '21'] %}
+                                    <input type="radio" class="btn-check" name="personnel" id="pers-{{ p }}"
+                                           value="{{ p }}"
+                                           {% if play and play.personnel == p %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="pers-{{ p }}">{{ p }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Formation Strength -->
-                            <div class="mb-3">
-                                <label class="form-label">Formation Strength</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.form_str %}
-                                        <input type="radio" class="btn-check"
-                                               name="form_str"
-                                               id="form_str-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.form_str == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="form_str-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Offensive Formation -->
+                        <div class="mb-3">
+                            <label class="form-label">Offensive Formation</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.off_form %}
+                                    <input type="radio" class="btn-check" name="off_form" id="off_form-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.off_form == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="off_form-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Formation Adjustment -->
-                            <div class="mb-3">
-                                <label class="form-label">Formation Adjustment</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.form_adj %}
-                                        <input type="radio" class="btn-check"
-                                               name="form_adj"
-                                               id="form_adj-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.form_adj == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="form_adj-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Formation Strength -->
+                        <div class="mb-3">
+                            <label class="form-label">Formation Strength</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.form_str %}
+                                    <input type="radio" class="btn-check" name="form_str" id="form_str-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.form_str == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="form_str-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Motion -->
-                            <div class="mb-3">
-                                <label class="form-label">Motion</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.motion %}
-                                        <input type="radio" class="btn-check"
-                                               name="motion"
-                                               id="motion-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.motion == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="motion-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Formation Adjustment -->
+                        <div class="mb-3">
+                            <label class="form-label">Formation Adjustment</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.form_adj %}
+                                    <input type="radio" class="btn-check" name="form_adj" id="form_adj-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.form_adj == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="form_adj-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Protection -->
-                            <div class="mb-3">
-                                <label class="form-label">Protection</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.protection %}
-                                        <input type="radio" class="btn-check"
-                                               name="protection"
-                                               id="protection-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.protection == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="protection-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Motion -->
+                        <div class="mb-3">
+                            <label class="form-label">Motion</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.motion %}
+                                    <input type="radio" class="btn-check" name="motion" id="motion-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.motion == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="motion-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Off Play -->
-                            <div class="mb-3">
-                                <label class="form-label">Off Play</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.off_play %}
-                                        <input type="radio" class="btn-check"
-                                               name="off_play"
-                                               id="off_play-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.off_play == option.value }}>
-                                        <label class="btn btn-outline-primary" for="off_play-{{ option.id }}">
-                                            {{ option.label }}
-                                        </label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Protection -->
+                        <div class="mb-3">
+                            <label class="form-label">Protection</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.protection %}
+                                    <input type="radio" class="btn-check" name="protection"
+                                           id="protection-{{ option.id }}" value="{{ option.value }}"
+                                           {% if play and play.protection == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="protection-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-
-                            <!-- Directional Call -->
-                            <div class="mb-3">
-                                <label class="form-label">Directional Call</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.dir_call %}
-                                        <input type="radio" class="btn-check"
-                                               name="dir_call"
-                                               id="dir_call-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.dir_call == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="dir_call-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Off Play -->
+                        <div class="mb-3">
+                            <label class="form-label">Off Play</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.off_play %}
+                                    <input type="radio" class="btn-check" name="off_play" id="off_play-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.off_play == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="off_play-{{ option.id }}">{{ option.label }}</label>
+                                {% endfor %}
                             </div>
+                        </div>
 
-                            <!-- Tags -->
-                            <div class="mb-3">
-                                <label class="form-label">Tags</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.tag %}
-                                        <input type="radio" class="btn-check"
-                                               name="tag"
-                                               id="tag-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.tag == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="tag-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Directional Call -->
+                        <div class="mb-3">
+                            <label class="form-label">Directional Call</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.dir_call %}
+                                    <input type="radio" class="btn-check" name="dir_call" id="dir_call-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.dir_call == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="dir_call-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
                             </div>
-                            <!-- Play Type -->
-                            {#<div class="mb-3">#}
-                            {#    <label class="form-label">Play Type Called</label>#}
-                            {#    <div class="btn-group d-flex flex-wrap">#}
-                            {#        {% for type in ['RPO', 'PASS', 'SCREEN', 'RUN'] %}#}
-                            {#            <input type="radio" class="btn-check" name="play_type"#}
-                            {#                   id="type-{{ type|lower }}"#}
-                            {#                   value="{{ type }}" {{ 'checked' if play and play.play_type == type }}>#}
-                            {#            <label class="btn btn-outline-primary"#}
-                            {#                   for="type-{{ type|lower }}">{{ type }}</label>#}
-                            {#        {% endfor %}#}
-                            {#    </div>#}
-                            {#</div>#}
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <div class="btn-group d-flex flex-wrap">
+                                {% for option in options.tag %}
+                                    <input type="radio" class="btn-check" name="tag" id="tag-{{ option.id }}"
+                                           value="{{ option.value }}"
+                                           {% if play and play.tag == option.value %}checked{% endif %}>
+                                    <label class="btn btn-outline-primary"
+                                           for="tag-{{ option.id }}">{{ option.value }}</label>
+                                {% endfor %}
+                            </div>
                         </div>
 
                         <!-- Result -->
@@ -238,7 +217,8 @@
                             <div class="btn-group d-flex flex-wrap">
                                 {% for result in ['Complete', 'Complete, TD', 'Incomplete', 'Rush', 'Rush, TD', 'Sack', 'Touchdown', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt', 'Penalty'] %}
                                     <input type="radio" class="btn-check" name="result" id="result-{{ result|lower }}"
-                                           value="{{ result }}" {{ 'checked' if play and play.result == result }}>
+                                           value="{{ result }}"
+                                           {% if play and play.result == result %}checked{% endif %}>
                                     <label class="btn btn-outline-primary"
                                            for="result-{{ result|lower }}">{{ result }}</label>
                                 {% endfor %}
@@ -250,28 +230,29 @@
                             <label class="form-label">Gain/Loss</label>
                             <div class="input-group">
                                 <input type="number" class="form-control" name="gain_loss"
-                                       value="{{ play.gain_loss if play else '' }}">
-                                <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()">
+                                       min="-99" max="99" required
+                                       id="gain_loss" value="{{ play.gain_loss if play else '' }}"
+                                       placeholder="Positive for gain, negative for loss">
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()"
+                                        title="Toggle between positive and negative">
                                     Toggle +/-
                                 </button>
                             </div>
                         </div>
+                        <div id="validationWarnings" class="alert alert-danger d-none"></div>
 
-                        <!-- Submit -->
-                        <form id="playForm" onsubmit="handleSubmit(event)">
-                            <button type="button" class="btn btn-secondary"
-                                    onclick="window.location.href='{{ url_for('drive_detail', drive_id=drive_id) }}'">Go
-                                Back
-                            </button>
-                            <button type="submit"
-                                    class="btn btn-primary">{{ 'Save Changes' if play else 'Add Play' }}</button>
-                        </form>
+                        <!-- Buttons -->
+                        <button type="button" class="btn btn-secondary"
+                                onclick="window.location.href='{{ url_for('drive_detail', drive_id=drive.id) }}'">Go
+                            Back
+                        </button>
+                        <button type="submit"
+                                class="btn btn-primary">{{ 'Save Changes' if play else 'Add Play' }}</button>
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="{{ url_for('static', filename='js/play.js') }}"></script>
-
 {% endblock %}

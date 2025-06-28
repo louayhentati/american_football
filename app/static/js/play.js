@@ -1,124 +1,94 @@
-// [!!] Bad FileName :)
-document.addEventListener('DOMContentLoaded', function () {
+// Toggle Gain/Loss sign
+function toggleGainLoss() {
+    const input = document.querySelector('input[name="gain_loss"]');
+    if (input && input.value) {
+        input.value = -1 * parseInt(input.value);
+    }
+}
+
+// Toggle Yard Line sign (Own/Opp)
+function toggleYardLine() {
+    const input = document.querySelector('input[name="yard_line"]');
+    if (input && input.value) {
+        input.value = -1 * parseInt(input.value);
+    }
+}
+
+// Live validation for all numeric fields
+document.addEventListener('DOMContentLoaded', () => {
+    // Distance validation (1-10)
+    const distanceInput = document.getElementById('distance');
+    if (distanceInput) {
+        distanceInput.addEventListener('input', () => {
+            const val = parseInt(distanceInput.value);
+            if (isNaN(val) || val < 1 || val > 10) {
+                distanceInput.setCustomValidity("Distance must be between 1 and 10 yards.");
+            } else {
+                distanceInput.setCustomValidity("");
+            }
+        });
+    }
+
+    // Yard Line validation (-49 to 49)
+    const yardLineInput = document.getElementById('yard_line');
+    if (yardLineInput) {
+        yardLineInput.addEventListener('input', () => {
+            const val = parseInt(yardLineInput.value);
+            if (isNaN(val) || val < -49 || val > 49) {
+                yardLineInput.setCustomValidity("Yard line must be between -49 (opponent) and 49 (own).");
+            } else {
+                yardLineInput.setCustomValidity("");
+            }
+        });
+    }
+
+    // Gain/Loss validation (-99 to 99)
+    const gainLossInput = document.getElementById('gain_loss');
+    if (gainLossInput) {
+        gainLossInput.addEventListener('input', () => {
+            const val = parseInt(gainLossInput.value);
+            if (isNaN(val) || val < -99 || val > 99) {
+                gainLossInput.setCustomValidity("Gain/Loss must be between -99 and 99 yards.");
+            } else {
+                gainLossInput.setCustomValidity("");
+            }
+        });
+    }
+}, {once: true});
+
+// Form submission handler
+document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('playForm');
     if (!form) return;
 
-    form.addEventListener('submit', function (event) {
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (form.dataset.submitting === "true") return;
+        form.dataset.submitting = "true";
 
-        const mode = form.dataset.mode; // "edit" or "add"
-        const endpoint = (mode === 'edit') ? form.dataset.endpointEdit : form.dataset.endpointAdd;
-
+        const formData = new FormData(form);
+        const mode = form.dataset.mode;
+        const endpoint = mode === 'edit' ? form.dataset.endpointEdit : form.dataset.endpointAdd;
         const redirectURL = form.dataset.redirect;
 
-        const formData = new FormData(form);
-
-        // Gain/Loss logic
-        const gainLoss = parseInt(formData.get('gain_loss')) || 0;
-        const currentDown = parseInt(formData.get('down'));
-        const currentDistance = parseInt(formData.get('distance'));
-        const currentYardLine = parseInt(formData.get('yard_line'));
-
-        let newDown = currentDown;
-        let newDistance = currentDistance;
-        let newYardLine = currentYardLine + gainLoss;
-
-        if (gainLoss >= currentDistance) {
-            newDown = 1;
-            newDistance = 10;
-        } else if (currentDown < 4) {
-            newDown = currentDown + 1;
-            newDistance = currentDistance - gainLoss;
-        } else {
-            // 4th down failure
-            newDown = 1;
-            newDistance = 10;
-            newYardLine = 100 - newYardLine;
-        }
-
-        // update form inputs before submit
-        const downInputs = document.querySelectorAll('input[name="down"]');
-        downInputs.forEach(input => input.checked = parseInt(input.value) === newDown);
-
-        document.querySelector('input[name="distance"]').value = newDistance;
-        document.querySelector('input[name="yard_line"]').value = newYardLine;
-
-        fetch(endpoint, {
-            method: 'POST', body: new FormData(form),
-        })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = redirectURL;
-                } else {
-                    response.text().then(text => console.error('Error details:', text));
-                }
-            })
-            .catch(error => console.error('Fetch error:', error));
-    });
-});
-
-// Utility toggles (unchanged)
-function toggleGainLoss() {
-    const input = document.querySelector('input[name="gain_loss"]');
-    input.value = input.value ? -1 * parseInt(input.value) : '';
-}
-
-function toggleYardLine() {
-    const input = document.querySelector('input[name="yard_line"]');
-    input.value = input.value ? -1 * parseInt(input.value) : '';
-}
-
-
-// Sprint Item: FP-6
-document.addEventListener('DOMContentLoaded', function () {
-    // handle form submission
-    const form = document.querySelector('form');
-
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        // get form data
-        const formData = new FormData(form);
-
-        // add calculated fields
-        const gainLoss = parseInt(formData.get('gain_loss')) || 0;
-        const currentDown = parseInt(formData.get('down'));
-        const currentDistance = parseInt(formData.get('distance'));
-        const currentYardLine = parseInt(formData.get('yard_line'));
-
-        // calc new vals
-        let newDown = currentDown;
-        let newDistance = currentDistance;
-        let newYardLine = currentYardLine + gainLoss;
-
-        if (gainLoss >= currentDistance) {
-            newDown = 1;
-            newDistance = 10;
-        } else if (currentDown < 4) {
-            newDown = currentDown + 1;
-            newDistance = currentDistance - gainLoss;
-        } else {
-            // 4th down not converted - possession change
-            newDown = 1;
-            newDistance = 10;
-            newYardLine = 100 - newYardLine; // flip field
-        }
-
-        // update form fields
-        document.querySelector('input[name="down"][value="' + newDown + '"]').checked = true;
-        document.querySelector('input[name="distance"]').value = newDistance;
-        document.querySelector('input[name="yard_line"]').value = newYardLine;
-
-        // submit the form
-        fetch(form.action, {
-            method: 'POST', body: new FormData(form),
-        })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = "{{ url_for('drive_detail', drive_id=drive_id) }}";
-                } else {
-                    console.error('Error saving data');
-                }
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
             });
-    });
+
+            if (response.ok) {
+                window.location.href = redirectURL;
+            } else {
+                const text = await response.text();
+                console.error("Submission failed:", text);
+                alert("There was an error submitting the play. Please try again.");
+                form.dataset.submitting = "false";
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+            alert("Network error. Check your connection.");
+            form.dataset.submitting = "false";
+        }
+    }, {once: true});
 });

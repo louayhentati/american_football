@@ -17,28 +17,49 @@ class DriveController:
         self.register_routes()
 
     def register_routes(self) -> None:
-        self.app.add_url_rule(rule='/drives/<int:drive_id>/add_play', view_func=self.add_play, methods=['GET', 'POST'])
-        self.app.add_url_rule(rule='/drive/<int:drive_id>', view_func=self.drive_detail)
-        self.app.add_url_rule(rule='/drive/<int:drive_id>/delete', view_func=self.delete_drive, methods=['POST'])
-        self.app.add_url_rule(rule='/drive/<int:drive_id>/export', view_func=self.export_drive, methods=['GET'])
+        self.app.add_url_rule('/drive/<int:drive_id>/add_play', view_func=self.add_play, methods=['GET', 'POST'])
+        self.app.add_url_rule('/drive/<int:drive_id>', view_func=self.drive_detail)
+        self.app.add_url_rule('/drive/<int:drive_id>/delete', view_func=self.delete_drive, methods=['POST'])
+        self.app.add_url_rule('/drive/<int:drive_id>/export', view_func=self.export_drive, methods=['GET'])
 
     @login_required
     def add_play(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
 
+        # Check if drive has ended
+        if self._has_drive_ended(drive_id):
+            flash("This drive has ended. Cannot add more plays.", "danger")
+            return redirect(url_for('drive_detail', drive_id=drive_id))
+
         if request.method == 'POST':
             return self._handle_add_play_post_request(drive_id, drive)
-        else:
-            return self._handle_add_play_get_request(drive_id)
+        return self._handle_add_play_get_request(drive_id, drive)
 
     def _handle_add_play_post_request(self, drive_id, drive):
+        # Validate inputs
+        try:
+            yard_line = int(request.form.get('yard_line', 25))
+            distance = int(request.form.get('distance', 10))
+            gain_loss = int(request.form.get('gain_loss', 0))
+        except ValueError:
+            flash("Invalid numeric input", "danger")
+            return redirect(url_for('add_play', drive_id=drive_id))
+
+        # NFL validation rules
+        if not (-49 <= yard_line <= 49):
+            flash("Yard line must be between -49 (opponent) and 49 (own)", "danger")
+            return redirect(url_for('add_play', drive_id=drive_id))
+        if not (1 <= distance <= 99):
+            flash("Distance must be between 1 and 99 yards", "danger")
+            return redirect(url_for('add_play', drive_id=drive_id))
+        if not (-99 <= gain_loss <= 99):
+            flash("Gain/Loss must be between -99 and 99 yards", "danger")
+            return redirect(url_for('add_play', drive_id=drive_id))
+
+        # Create and save play
         play = self._create_play_from_form(drive_id)
         db.session.add(play)
-        db.session.flush()
-
-        self._update_play_fields(play, drive_id, drive)
         db.session.commit()
-
         flash('Play added successfully!', 'success')
         return redirect(url_for('drive_detail', drive_id=drive_id))
 
@@ -49,12 +70,19 @@ class DriveController:
         play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
         play_type = play_option.play_call.name if play_option and play_option.play_call else None
 
+        # safely converts numeric fields with defaults
+        def to_int(val, default):
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return default
+
         return PlayModel(
             drive_id=drive_id,
-            odk=form['odk'],
-            down=int(form.get('down') or 1),
-            distance=int(form.get('distance') or 10),
-            yard_line=int(form.get('yard_line') or 25),
+            odk=form.get('odk', 'O'),
+            down=to_int(form.get('down'), 1),
+            distance=to_int(form.get('distance'), 10),
+            yard_line=to_int(form.get('yard_line'), 25),
             hash=form.get('hash', 'M'),
             personnel=form.get('personnel'),
             off_form=form.get('off_form'),
@@ -67,54 +95,36 @@ class DriveController:
             dir_call=form.get('dir_call'),
             tag=form.get('tag'),
             result=form.get('result'),
-            gain_loss=int(form.get('gain_loss') or 0)
+            gain_loss=to_int(form.get('gain_loss'), 0)
         )
 
-    def _update_play_fields(self, play, drive_id, drive):
-        previous_play = self._get_previous_play(drive_id, play.id)
-        if not previous_play:
-            return
-
-        next_fields = self.__calculate_next_play_fields(last_play=previous_play)
-        play.down = next_fields.get('down', play.down)
-        play.distance = next_fields.get('distance', play.distance)
-        play.yard_line = next_fields.get('yard_line', play.yard_line)
-
-        if next_fields.get('possession_change', False):
-            drive.ended = True
-
-    @staticmethod
-    def _get_previous_play(drive_id, current_play_id):
-        return (PlayModel.query
-                .filter(PlayModel.drive_id == drive_id,
-                        PlayModel.id != current_play_id)
-                .order_by(PlayModel.id.desc())
-                .first())
-
-    def _handle_add_play_get_request(self, drive_id):
-        play_call_details = self._get_play_call_details()
-        options = self._get_add_play_form_options()
+    def _handle_add_play_get_request(self, drive_id, drive):
+        # Get default values based on previous play or NFL defaults
         down, distance, yard_line = self._get_default_play_fields(drive_id)
+        options = self._get_add_play_form_options()
 
         return render_template(
-            template_name_or_list='play/add_play.html',
+            'play/add_play.html',
             drive_id=drive_id,
+            drive=drive,
             play=None,
             options=options,
             default_down=down,
             default_distance=distance,
-            default_yard_line=yard_line,
-            play_call_details=play_call_details
+            default_yard_line=yard_line
         )
 
-    @staticmethod
-    def _get_play_call_details():
-        off_play_name = request.args.get('off_play') or None
-        if not off_play_name:
-            return {}
+    def _get_default_play_fields(self, drive_id):
+        """Get next play defaults based on previous play or NFL rules"""
+        last_play = PlayModel.query.filter_by(drive_id=drive_id) \
+            .order_by(PlayModel.id.desc()).first()
 
-        play_call = PlayOptionModel.query.filter_by(value=off_play_name).first()
-        return {'id': play_call.id, 'name': play_call.name} if play_call else {}
+        # NFL defaults for new drive
+        if not last_play:
+            return 1, 10, 25  # down, distance, yard_line
+
+        # Calculate next play based on NFL rules
+        return self._calculate_next_play_fields(last_play)
 
     def _get_add_play_form_options(self):
         options = {}
@@ -127,11 +137,6 @@ class DriveController:
                 for entry in entries:
                     play_call = PlayCallModel.query.get(entry.play_call_id)
                     label = f"{entry.value} ({play_call.name})" if play_call else entry.value
-                    # enriched.append({
-                    #     'id': entry.id,
-                    #     'value': entry.value,
-                    #     'label': label
-                    # })
                     enriched.append({
                         'id': entry.id,
                         'value': entry.value,
@@ -141,36 +146,14 @@ class DriveController:
 
                 options[param] = enriched
             else:
-                options[param] = [
-                    {'id': entry.id, 'value': entry.value, 'label': entry.value}
-                    for entry in entries
-                ]
+                options[param] = [{'id': e.id, 'value': e.value, 'label': e.value} for e in entries]
 
         return options
-
-    def _get_default_play_fields(self, drive_id):
-        last_play = (
-            PlayModel.query
-            .filter_by(drive_id=drive_id)
-            .order_by(PlayModel.id.desc())
-            .first()
-        )
-
-        if not last_play:
-            return 1, 10, 25
-
-        next_fields = self.__calculate_next_play_fields(last_play)
-        return (
-            next_fields.get('down', 1),
-            next_fields.get('distance', 10),
-            next_fields.get('yard_line', 25)
-        )
 
     @login_required
     def drive_detail(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
         for play in drive.plays:
-            # Here we replace the 'None' with '-'
             for column in play.__table__.columns:
                 if getattr(play, column.name) is None:
                     setattr(play, column.name, '-')
@@ -186,7 +169,8 @@ class DriveController:
             flash('Drive deleted successfully', 'success')
         except Exception as e:
             db.session.rollback()
-            flash(f'Error deleting drive: {str(e)}', 'error')
+            flash("An unexpected error occurred while deleting the drive. Please try again.", 'danger')
+            print(f"[{type(e).__name__}] Error deleting drive: {e}")
         return redirect(url_for('game_detail', game_id=game_id))
 
     @login_required
@@ -203,8 +187,10 @@ class DriveController:
         ])
 
         for index_, play in enumerate(plays, start=1):
+            # Handle missing attribute quarter gracefully
+            quarter = getattr(play, 'quarter', '-')
             writer.writerow([
-                index_, play.odk, play.quarter, play.down, play.distance, play.yard_line,
+                index_, play.odk, quarter, play.down, play.distance, play.yard_line,
                 play.play_type, play.result, play.gain_loss, play.personnel, play.off_form,
                 play.form_str, play.form_adj, play.motion, play.protection, play.off_play,
                 play.dir_call, play.tag, play.hash
@@ -212,53 +198,66 @@ class DriveController:
 
         response = make_response(csv_data.getvalue())
         response.headers['Content-Disposition'] = f'attachment; filename=drive_{drive.id}.csv'
-        response.headers['Content-type'] = 'text/csv'
-
+        response.headers['Content-Type'] = 'text/csv'
         return response
 
     @staticmethod
-    def __calculate_next_play_fields(last_play):
-        gained = last_play.gain_loss if hasattr(last_play, 'gain_loss') else last_play['gain_loss']
-        down = last_play.down if hasattr(last_play, 'down') else last_play['down']
-        distance = last_play.distance if hasattr(last_play, 'distance') else last_play['distance']
-        yard_line = last_play.yard_line if hasattr(last_play, 'yard_line') else last_play['yard_line']
+    def _calculate_next_play_fields(last_play):
+        """Calculate next play state based on NFL rules"""
+        gained = last_play.gain_loss
+        down = last_play.down
+        distance = last_play.distance
+        yard_line = last_play.yard_line
 
+        # Calculate new position with midfield crossing handling
+        new_yard_line = yard_line - gained
+
+        # Handle midfield crossing and clamping
+        if new_yard_line > 49:
+            # Crossed opponent's 50 from own territory
+            new_yard_line = -(new_yard_line - 50)
+        elif new_yard_line < -49:
+            # Crossed own 50 from opponent territory
+            new_yard_line = -(new_yard_line + 50)
+
+        # Clamp to field boundaries
+        new_yard_line = max(-49, min(49, new_yard_line))
+
+        # Successful conversion
+        if gained >= distance:
+            return 1, 10, new_yard_line
+
+        # Continue drive
+        if down < 4:
+            return down + 1, distance - gained, new_yard_line
+
+        # Turnover on downs - flip field
+        return 1, 10, -new_yard_line
+
+    def _has_drive_ended(self, drive_id):
+        """Check if drive has ended by examining plays"""
+        last_play = PlayModel.query.filter_by(drive_id=drive_id) \
+            .order_by(PlayModel.id.desc()).first()
+
+        if not last_play:
+            return False
+
+        return self._does_play_end_drive(last_play)
+
+    def _does_play_end_drive(self, play):
+        """Check if play ends drive based on NFL rules"""
         turnover_results = [
             'Interception', 'Interception, Def TD',
             'Fumble', 'Fumble, Def TD',
-            'Punt', 'Sack',
-            'Touchdown', 'Rush, TD', 'Complete, TD'
+            'Punt', 'Touchdown', 'Rush, TD', 'Complete, TD'
         ]
 
-        result = last_play.result if hasattr(last_play, 'result') else last_play.get('result')
+        # Turnover results always end drive
+        if play.result and play.result in turnover_results:
+            return True
 
-        if result in turnover_results:
-            return {
-                'possession_change': True,
-                'down': 1,
-                'distance': 10,
-                'yard_line': 100 - (yard_line + gained)
-            }
+        # 4th down failure
+        if play.down == 4 and play.gain_loss < play.distance:
+            return True
 
-        new_yard_line = yard_line + gained
-
-        if gained >= distance:
-            return {
-                'down': 1,
-                'distance': 10,
-                'yard_line': new_yard_line
-            }
-
-        if down == 4:
-            return {
-                'possession_change': True,
-                'down': 1,
-                'distance': 10,
-                'yard_line': 100 - new_yard_line
-            }
-
-        return {
-            'down': down + 1,
-            'distance': distance - gained,
-            'yard_line': new_yard_line
-        }
+        return False

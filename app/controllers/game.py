@@ -30,7 +30,6 @@ class GameController:
     @login_required
     def game_options(self) -> str:
         games = GameModel.query.all()
-        print(games)
         return render_template(template_name_or_list='game/game_options.html', games=games)
 
     @login_required
@@ -156,7 +155,7 @@ class GameController:
                 'play_count': len(plays),
                 'loss': loss_detected
             })
-        print(f"Drives Data: {plays_data}")
+
         return render_template(
             template_name_or_list='drive/drive_play_chart.html',
             game=game,
