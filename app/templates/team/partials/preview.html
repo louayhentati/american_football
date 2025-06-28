@@ -1,0 +1,24 @@
+<!-- Live Preview -->
+<div class="col-lg-6 text-center">
+    <h5 class="mb-3">Live Preview</h5>
+    <svg id="live-preview" width="300" height="300" xmlns="http://www.w3.org/2000/svg"
+         class="border rounded" style="background-color: white;">
+        <defs>
+            {% for num in range(1, 7) %}
+            <pattern id="pattern{{ num }}" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                <image href="/static/team_creation_assets/pattern/pattern{{ num }}.svg" width="60" height="60" />
+            </pattern>
+            {% endfor %}
+            <clipPath id="shield-clip">
+                <path id="clip-path-shape" d="" />
+            </clipPath>
+        </defs>
+        <g id="shield-group">
+            <g clip-path="url(#shield-clip)">
+                <rect id="pattern-fill" width="100%" height="100%" fill="none" />
+                <image id="shield-icon" href="" width="60" height="60" x="120" y="120" visibility="hidden"/>
+            </g>
+            <path id="shield-outline" d="" fill="none" stroke="#333" stroke-width="1.5"/>
+        </g>
+    </svg>
+</div>

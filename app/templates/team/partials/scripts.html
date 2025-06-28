@@ -1,0 +1,414 @@
+<script>
+const steps = ["step-shape", "step-pattern", "step-color", "step-icon"];
+let currentStep = 0;
+
+const btnNext = document.getElementById("btn-next");
+const btnBack = document.getElementById("btn-back");
+
+const shapeThumbs = document.querySelectorAll(".shape-thumb");
+const patternThumbs = document.querySelectorAll(".pattern-thumb");
+const clipPathShape = document.getElementById("clip-path-shape");
+const shieldOutline = document.getElementById("shield-outline");
+const patternFill = document.getElementById("pattern-fill");
+const livePreview = document.getElementById("live-preview");
+const shieldIcon = document.getElementById("shield-icon");
+const iconUploadInput = document.getElementById("icon-upload");
+const resetBtn = document.getElementById("reset-icon-choice");
+
+let selectedShape = null;
+let selectedPattern = null;
+let selectedIcon = null;
+let primaryColor = "#d32f2f";
+let secondaryColor = "#fdd835";
+
+const primaryPicker = new iro.ColorPicker("#primary-picker", { width: 150, color: primaryColor });
+const secondaryPicker = new iro.ColorPicker("#secondary-picker", { width: 150, color: secondaryColor });
+let patternOffsetX = 0;
+let patternOffsetY = 0;
+let patternScale = 60; // default tile size
+
+function movePattern(dx, dy) {
+    patternOffsetX += dx;
+    patternOffsetY += dy;
+
+    updatePatternTransform();
+}
+
+function zoomPattern(delta) {
+    patternScale = Math.max(10, patternScale + delta); // prevent zero or negative scale
+    updatePatternTransform();
+}
+
+function updatePatternTransform() {
+    const patternFill = document.getElementById("pattern-fill");
+    const patternUrl = patternFill.getAttribute("fill");
+    if (!patternUrl) return;
+
+    const patternId = patternUrl.replace("url(#", "").replace(")", "");
+    const patternElement = document.getElementById(patternId);
+    if (!patternElement) return;
+
+    // Set patternUnits to userSpaceOnUse (already done in your HTML)
+    patternElement.setAttribute("patternTransform", `translate(${patternOffsetX}, ${patternOffsetY}) scale(${patternScale / 60})`);
+
+    // Also update the <image> inside the pattern if it exists
+    const image = patternElement.querySelector("image");
+    if (image) {
+        image.setAttribute("width", 60);  // stay at base size
+        image.setAttribute("height", 60);
+    }
+}
+
+let iconX = 120;
+let iconY = 120;
+
+function moveIcon(dx, dy) {
+    iconX += dx;
+    iconY += dy;
+
+    const icon = document.getElementById("shield-icon");
+    if (icon) {
+        icon.setAttribute("x", iconX);
+        icon.setAttribute("y", iconY);
+    }
+}
+
+
+primaryPicker.on(["color:change", "input:change"], color => {
+    primaryColor = color.hexString;
+    updatePatternColors();
+    updateIconContrastColor();
+});
+
+secondaryPicker.on(["color:change", "input:change"], color => {
+    secondaryColor = color.hexString;
+    updatePatternColors();
+    updateIconContrastColor();
+});
+
+shapeThumbs.forEach(thumb => {
+    thumb.addEventListener("click", () => {
+        shapeThumbs.forEach(t => t.style.border = "3px solid transparent");
+        thumb.style.border = "3px solid #007bff";
+        selectedShape = thumb.dataset.shape;
+        fetchShapePath(selectedShape);
+        btnNext.disabled = false;
+    });
+});
+
+patternThumbs.forEach(thumb => {
+    thumb.addEventListener("click", () => {
+        patternThumbs.forEach(t => t.style.border = "2px solid transparent");
+        thumb.style.border = "2px solid #007bff";
+        selectedPattern = thumb.dataset.pattern;
+        patternFill.setAttribute("fill", `url(#${selectedPattern})`);
+        updatePatternColors();
+        btnNext.disabled = false;
+    });
+});
+
+btnNext.addEventListener("click", () => {
+    document.getElementById(steps[currentStep]).style.display = "none";
+    currentStep++;
+
+    if (currentStep < steps.length) {
+        document.getElementById(steps[currentStep]).style.display = "block";
+        btnBack.style.display = "inline-block";
+        btnNext.disabled = (steps[currentStep] === "step-pattern" && !selectedPattern);
+
+        if (steps[currentStep] === "step-icon") loadIcons();
+    }
+
+    // Show the form only AFTER the icon step is completed
+    if (currentStep === steps.length) {
+        btnNext.style.display = "none";
+    }
+});
+
+
+
+btnBack.addEventListener("click", () => {
+    document.getElementById(steps[currentStep]).style.display = "none";
+    currentStep--;
+    document.getElementById(steps[currentStep]).style.display = "block";
+    btnNext.style.display = "inline-block";
+    btnBack.style.display = currentStep === 0 ? "none" : "inline-block";
+    btnNext.disabled = (steps[currentStep] === "step-shape" && !selectedShape) ||
+                       (steps[currentStep] === "step-pattern" && !selectedPattern);
+});
+
+function fetchShapePath(filename) {
+    fetch(`/static/team_creation_assets/base/${filename}`)
+        .then(res => res.text())
+        .then(svgText => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, "image/svg+xml");
+            const path = doc.querySelector("path");
+            if (!path) return;
+            const d = path.getAttribute("d");
+            const tempSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            tempPath.setAttribute("d", d);
+            tempSVG.appendChild(tempPath);
+            document.body.appendChild(tempSVG);
+            const bbox = tempPath.getBBox();
+            document.body.removeChild(tempSVG);
+
+            livePreview.setAttribute("viewBox", `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+            clipPathShape.setAttribute("d", d);
+            shieldOutline.setAttribute("d", d);
+            if (selectedPattern) patternFill.setAttribute("fill", `url(#${selectedPattern})`);
+        });
+}
+
+function updatePatternColors() {
+    for (let i = 1; i <= 6; i++) {
+        const pattern = document.getElementById(`pattern${i}`);
+        const thumbPattern = document.getElementById(`thumb-pattern${i}`);
+        if (!pattern || !thumbPattern) continue;
+
+        let svgContent = "";
+        switch (i) {
+            case 1: svgContent = `<rect width="30" height="60" fill="${primaryColor}"/><rect x="30" width="30" height="60" fill="${secondaryColor}"/>`; break;
+            case 2: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="0" y1="60" x2="60" y2="0" stroke="${primaryColor}" stroke-width="10"/>`; break;
+            case 3: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="-30" y1="0" x2="30" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="30" y1="0" x2="90" y2="60" stroke="${primaryColor}" stroke-width="10"/>`; break;
+            case 4: svgContent = `<rect width="60" height="60" fill="${primaryColor}"/><rect y="20" width="60" height="20" fill="${secondaryColor}"/>`; break;
+            case 5: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><circle cx="30" cy="30" r="20" fill="${primaryColor}"/>`; break;
+            case 6: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><rect x="0" y="0" width="30" height="30" fill="${primaryColor}"/><rect x="30" y="30" width="30" height="30" fill="${primaryColor}"/>`; break;
+        }
+
+        pattern.innerHTML = svgContent;
+        thumbPattern.innerHTML = svgContent;
+    }
+
+    if (selectedPattern) patternFill.setAttribute("fill", `url(#${selectedPattern})`);
+}
+
+function hexToLuminance(hex) {
+    const rgb = hex.replace("#", "").match(/.{2}/g).map(h => parseInt(h, 16) / 255);
+    const [r, g, b] = rgb.map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function updateIconContrastColor() {
+    const avgLuminance = (hexToLuminance(primaryColor) + hexToLuminance(secondaryColor)) / 2;
+    const iconColor = avgLuminance < 0.5 ? "#ffffff" : "#000000";
+    shieldIcon.setAttribute("style", `filter: invert(${iconColor === "#ffffff" ? 1 : 0});`);
+}
+
+function disableIconUpload() {
+    iconUploadInput.disabled = true;
+}
+
+function disableIconCatalog() {
+    document.querySelectorAll(".icon-thumb").forEach(img => {
+        img.style.pointerEvents = "none";
+        img.style.opacity = 0.3;
+    });
+}
+
+function enableAllIconOptions() {
+    iconUploadInput.disabled = false;
+    iconUploadInput.value = "";
+    document.querySelectorAll(".icon-thumb").forEach(img => {
+        img.style.pointerEvents = "auto";
+        img.style.opacity = 1;
+        img.classList.remove("border-primary");
+    });
+    selectedIcon = null;
+    shieldIcon.setAttribute("visibility", "hidden");
+    document.getElementById("save-form").style.display = "none";
+}
+
+resetBtn.addEventListener("click", () => {
+    enableAllIconOptions();
+});
+
+const iconContainer = document.getElementById("icon-container");
+const iconPrev = document.getElementById("icon-prev");
+const iconNext = document.getElementById("icon-next");
+
+let iconList = {{ icon_filenames|tojson }};
+let currentIconPage = 0;
+const iconsPerPage = 8;
+
+function loadIcons() {
+    iconContainer.innerHTML = "";
+    const start = currentIconPage * iconsPerPage;
+    const pageIcons = iconList.slice(start, start + iconsPerPage);
+
+    pageIcons.forEach(filename => {
+        const col = document.createElement("div");
+        col.className = "col-3";
+        col.innerHTML = `
+            <img src="/static/team_creation_assets/icons/${filename}"
+                 data-icon="${filename}"
+                 class="img-thumbnail icon-thumb"
+                 style="cursor: pointer; max-height: 70px;" />
+        `;
+        const img = col.querySelector("img");
+        img.addEventListener("click", () => {
+            disableIconUpload();
+
+            document.querySelectorAll(".icon-thumb").forEach(img => img.classList.remove("border-primary"));
+            img.classList.add("border-primary");
+            selectedIcon = filename;
+
+            const vb = livePreview.viewBox.baseVal;
+            const iconWidth = 400;
+            const iconHeight = 400;
+            const centerX = vb.x + vb.width / 2 - iconWidth / 2;
+            const centerY = vb.y + vb.height / 2 - iconHeight / 2;
+
+            shieldIcon.setAttribute("href", `/static/team_creation_assets/icons/${filename}`);
+            shieldIcon.setAttribute("visibility", "visible");
+            shieldIcon.setAttribute("width", iconWidth);
+            shieldIcon.setAttribute("height", iconHeight);
+            shieldIcon.setAttribute("x", centerX);
+            shieldIcon.setAttribute("y", centerY);
+            updateIconContrastColor();
+
+            document.getElementById("form_icon_filename").value = selectedIcon;
+            document.getElementById("form_primary_color").value = primaryColor;
+            document.getElementById("form_secondary_color").value = secondaryColor;
+            
+        });
+        iconContainer.appendChild(col);
+    });
+
+    iconPrev.disabled = currentIconPage === 0;
+    iconNext.disabled = start + iconsPerPage >= iconList.length;
+}
+
+iconPrev.addEventListener("click", () => {
+    if (currentIconPage > 0) {
+        currentIconPage--;
+        loadIcons();
+    }
+});
+
+iconNext.addEventListener("click", () => {
+    if ((currentIconPage + 1) * iconsPerPage < iconList.length) {
+        currentIconPage++;
+        loadIcons();
+    }
+});
+
+iconUploadInput.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validTypes = ["image/png", "image/svg+xml"];
+    if (!validTypes.includes(file.type)) {
+        alert("Only transparent PNG or SVG files are allowed.");
+        iconUploadInput.value = "";
+        return;
+    }
+
+    disableIconCatalog();
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const vb = livePreview.viewBox.baseVal;
+        const iconWidth = 400;
+        const iconHeight = 400;
+        const centerX = vb.x + vb.width / 2 - iconWidth / 2;
+        const centerY = vb.y + vb.height / 2 - iconHeight / 2;
+
+        shieldIcon.setAttribute("href", event.target.result);
+        shieldIcon.setAttribute("visibility", "visible");
+        shieldIcon.setAttribute("width", iconWidth);
+        shieldIcon.setAttribute("height", iconHeight);
+        shieldIcon.setAttribute("x", centerX);
+        shieldIcon.setAttribute("y", centerY);
+        updateIconContrastColor();
+
+        document.getElementById("form_icon_filename").value = file.name;
+        document.getElementById("form_primary_color").value = primaryColor;
+        document.getElementById("form_secondary_color").value = secondaryColor;
+        document.getElementById("save-form").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});
+
+document.getElementById("save-form").addEventListener("submit", function (e) {
+    const svg = document.getElementById("live-preview");
+    const clone = svg.cloneNode(true);
+
+    const vb = svg.getAttribute("viewBox");
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("viewBox", vb);
+
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clone);
+    document.getElementById("final_svg").value = svgString;
+});
+
+updatePatternColors();
+
+// --- Pattern Move Pad ---
+const pad = document.getElementById("pattern-move-pad");
+const indicator = document.getElementById("pad-indicator");
+let isDragging = false;
+let originX, originY;
+
+pad.addEventListener("mousedown", function (e) {
+    isDragging = true;
+    originX = e.offsetX;
+    originY = e.offsetY;
+    pad.style.cursor = "grabbing";
+});
+
+pad.addEventListener("mousemove", function (e) {
+    if (!isDragging) return;
+
+    const dx = e.offsetX - originX;
+    const dy = e.offsetY - originY;
+    originX = e.offsetX;
+    originY = e.offsetY;
+
+    movePattern(dx * 1.5, dy * 1.5);
+
+    const newLeft = Math.max(0, Math.min(140, parseFloat(indicator.style.left) + dx));
+    const newTop = Math.max(0, Math.min(140, parseFloat(indicator.style.top) + dy));
+    indicator.style.left = `${newLeft}px`;
+    indicator.style.top = `${newTop}px`;
+});
+
+pad.addEventListener("mouseup", () => {
+    isDragging = false;
+    pad.style.cursor = "grab";
+});
+pad.addEventListener("mouseleave", () => {
+    isDragging = false;
+    pad.style.cursor = "grab";
+});
+
+// --- Zoom Slider and Number Input ---
+const zoomSlider = document.getElementById("zoom-range");
+const zoomInput = document.getElementById("zoom-value");
+
+zoomSlider.addEventListener("input", () => {
+    patternScale = parseFloat(zoomSlider.value);
+    zoomInput.value = patternScale;
+    updatePatternTransform();
+});
+
+zoomInput.addEventListener("input", () => {
+    patternScale = parseFloat(zoomInput.value);
+    zoomSlider.value = patternScale;
+    updatePatternTransform();
+});
+
+// --- Mouse Wheel Zoom Support ---
+document.getElementById("live-preview").addEventListener("wheel", function (e) {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 2 : -2;
+    patternScale = Math.max(10, Math.min(200, patternScale + delta));
+    zoomSlider.value = patternScale;
+    zoomInput.value = patternScale;
+    updatePatternTransform();
+});
+
+
+</script>
