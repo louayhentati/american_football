@@ -1,5 +1,5 @@
 <script>
-const steps = ["step-shape", "step-pattern", "step-color", "step-icon"];
+const steps = ["step-shape", "step-pattern", "step-color", "step-icon", "step-name"];
 let currentStep = 0;
 
 const btnNext = document.getElementById("btn-next");
@@ -119,11 +119,14 @@ btnNext.addEventListener("click", () => {
         if (steps[currentStep] === "step-icon") loadIcons();
     }
 
-    // Show the form only AFTER the icon step is completed
+    // Show the form only AFTER all steps
     if (currentStep === steps.length) {
         btnNext.style.display = "none";
+        document.getElementById("final-step").style.display = "block";
+        document.getElementById("final-step").scrollIntoView({ behavior: "smooth" });
     }
 });
+
 
 
 
@@ -327,6 +330,8 @@ iconUploadInput.addEventListener("change", function (e) {
         document.getElementById("form_primary_color").value = primaryColor;
         document.getElementById("form_secondary_color").value = secondaryColor;
         document.getElementById("save-form").style.display = "block";
+        document.getElementById("save-form").scrollIntoView({ behavior: "smooth" });
+
     };
     reader.readAsDataURL(file);
 });
