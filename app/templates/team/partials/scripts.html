@@ -1,5 +1,15 @@
 <script>
-const steps = ["step-shape", "step-pattern", "step-color", "step-icon", "step-name"];
+const steps = [
+    "step-shape",
+    "step-pattern",
+    "step-color",
+    "step-adjust",
+    "step-icon",
+    "step-adjust-icon",
+    "step-name"
+];
+
+
 let currentStep = 0;
 
 const btnNext = document.getElementById("btn-next");
@@ -21,11 +31,21 @@ let selectedIcon = null;
 let primaryColor = "#d32f2f";
 let secondaryColor = "#fdd835";
 
+
 const primaryPicker = new iro.ColorPicker("#primary-picker", { width: 150, color: primaryColor });
 const secondaryPicker = new iro.ColorPicker("#secondary-picker", { width: 150, color: secondaryColor });
 let patternOffsetX = 0;
 let patternOffsetY = 0;
-let patternScale = 60; // default tile size
+let patternScale = 60; 
+const iconZoomSlider = document.getElementById("icon-zoom-range");
+const iconZoomInput = document.getElementById("icon-zoom-value");
+
+const iconPad = document.getElementById("icon-move-pad");
+const iconIndicator = document.getElementById("icon-pad-indicator");
+
+let isIconDragging = false;
+let iconOriginX, iconOriginY;
+
 
 function movePattern(dx, dy) {
     patternOffsetX += dx;
@@ -108,22 +128,23 @@ patternThumbs.forEach(thumb => {
 });
 
 btnNext.addEventListener("click", () => {
-    document.getElementById(steps[currentStep]).style.display = "none";
-    currentStep++;
-
-    if (currentStep < steps.length) {
+    if (currentStep < steps.length - 1) {
+        document.getElementById(steps[currentStep]).style.display = "none";
+        currentStep++;
         document.getElementById(steps[currentStep]).style.display = "block";
-        btnBack.style.display = "inline-block";
-        btnNext.disabled = (steps[currentStep] === "step-pattern" && !selectedPattern);
+
+        btnBack.style.display = currentStep === 0 ? "none" : "inline-block";
+
+        // Handle disabled state
+        if (steps[currentStep] === "step-pattern" && !selectedPattern) {
+            btnNext.disabled = true;
+        } else if (steps[currentStep] === "step-shape" && !selectedShape) {
+            btnNext.disabled = true;
+        } else {
+            btnNext.disabled = false;
+        }
 
         if (steps[currentStep] === "step-icon") loadIcons();
-    }
-
-    // Show the form only AFTER all steps
-    if (currentStep === steps.length) {
-        btnNext.style.display = "none";
-        document.getElementById("final-step").style.display = "block";
-        document.getElementById("final-step").scrollIntoView({ behavior: "smooth" });
     }
 });
 
@@ -211,21 +232,29 @@ function disableIconCatalog() {
 }
 
 function enableAllIconOptions() {
+    // Re-enable upload field
     iconUploadInput.disabled = false;
     iconUploadInput.value = "";
+
+    // Re-enable catalog icons
     document.querySelectorAll(".icon-thumb").forEach(img => {
         img.style.pointerEvents = "auto";
         img.style.opacity = 1;
         img.classList.remove("border-primary");
     });
+
+    // Clear selected icon and hide from preview
     selectedIcon = null;
     shieldIcon.setAttribute("visibility", "hidden");
-    document.getElementById("save-form").style.display = "none";
-}
+    shieldIcon.removeAttribute("href");
 
+    // Keep form state visible if already filled
+    // Do not reset form or hide #save-form
+}
 resetBtn.addEventListener("click", () => {
     enableAllIconOptions();
 });
+
 
 const iconContainer = document.getElementById("icon-container");
 const iconPrev = document.getElementById("icon-prev");
@@ -337,6 +366,24 @@ iconUploadInput.addEventListener("change", function (e) {
 });
 
 document.getElementById("save-form").addEventListener("submit", function (e) {
+    if (currentStep !== steps.length - 1) {
+        e.preventDefault(); // block early submission
+        return;
+    }
+
+    const teamName = document.getElementById("team-name").value.trim();
+    const nameError = document.getElementById("name-error");
+
+    if (teamName === "") {
+        e.preventDefault();
+        nameError.style.display = "block";
+        document.getElementById("team-name").classList.add("is-invalid");
+        return;
+    } else {
+        nameError.style.display = "none";
+        document.getElementById("team-name").classList.remove("is-invalid");
+    }
+
     const svg = document.getElementById("live-preview");
     const clone = svg.cloneNode(true);
 
@@ -348,6 +395,7 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
     const svgString = serializer.serializeToString(clone);
     document.getElementById("final_svg").value = svgString;
 });
+
 
 updatePatternColors();
 
@@ -405,8 +453,9 @@ zoomInput.addEventListener("input", () => {
     updatePatternTransform();
 });
 
-// --- Mouse Wheel Zoom Support ---
 document.getElementById("live-preview").addEventListener("wheel", function (e) {
+    if (steps[currentStep] !== "step-adjust") return;
+
     e.preventDefault();
     const delta = e.deltaY < 0 ? 2 : -2;
     patternScale = Math.max(10, Math.min(200, patternScale + delta));
@@ -415,5 +464,77 @@ document.getElementById("live-preview").addEventListener("wheel", function (e) {
     updatePatternTransform();
 });
 
+
+function setIconSize(w, h) {
+  const vb = livePreview.viewBox.baseVal;
+  const x  = vb.x + vb.width/2  - w/2;
+  const y  = vb.y + vb.height/2 - h/2;
+
+  shieldIcon.setAttribute("width",  w);
+  shieldIcon.setAttribute("height", h);
+  shieldIcon.setAttribute("x",      x);
+  shieldIcon.setAttribute("y",      y);
+
+  iconX = x;
+  iconY = y;
+}
+
+// slider ⇄ input
+iconZoomSlider.addEventListener("input", () => {
+  const w = parseInt(iconZoomSlider.value, 10);
+  iconZoomInput.value = w;
+  setIconSize(w, w);
+});
+iconZoomInput.addEventListener("input", () => {
+  const w = parseInt(iconZoomInput.value, 10);
+  iconZoomSlider.value = w;
+  setIconSize(w, w);
+});
+
+// wheel‐zoom (only when an icon is visible)
+livePreview.addEventListener("wheel", function(e) {
+  if (steps[currentStep] !== "step-adjust-icon") return;
+
+  const icon = shieldIcon;
+  if (!icon || icon.getAttribute("visibility") === "hidden") return;
+
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 10 : -10;
+  const cur   = parseInt(icon.getAttribute("width"), 10);
+  const next  = Math.max(10, Math.min(600, cur + delta));
+  setIconSize(next, next);
+  iconZoomSlider.value = next;
+  iconZoomInput.value  = next;
+});
+
+iconPad.addEventListener("mousedown", e => {
+  isIconDragging = true;
+  iconOriginX    = e.offsetX;
+  iconOriginY    = e.offsetY;
+  iconPad.style.cursor = "grabbing";
+});
+iconPad.addEventListener("mousemove", e => {
+  if (!isIconDragging) return;
+  const dx = e.offsetX - iconOriginX;
+  const dy = e.offsetY - iconOriginY;
+  iconOriginX = e.offsetX;
+  iconOriginY = e.offsetY;
+
+  moveIcon(dx*1.5, dy*1.5);
+
+  // move indicator dot
+  let left = (parseFloat(iconIndicator.style.left)||70) + dx;
+  let top  = (parseFloat(iconIndicator.style.top )||70) + dy;
+  iconIndicator.style.left = `${Math.max(0, Math.min(140, left))}px`;
+  iconIndicator.style.top  = `${Math.max(0, Math.min(140, top ))}px`;
+});
+iconPad.addEventListener("mouseup", () => {
+  isIconDragging = false;
+  iconPad.style.cursor = "grab";
+});
+iconPad.addEventListener("mouseleave", () => {
+  isIconDragging = false;
+  iconPad.style.cursor = "grab";
+});
 
 </script>
