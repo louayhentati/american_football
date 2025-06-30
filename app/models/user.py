@@ -9,8 +9,8 @@ class UserModel(db.Model, UserMixin):
     password = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(10), nullable=False, default='user')
 
-    # team_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
-    # team = db.relationship('TeamModel', backref='users')
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.id'))
+    team = db.relationship('TeamModel', backref='users')
 
     preference = db.relationship(
         'UserPreference',
