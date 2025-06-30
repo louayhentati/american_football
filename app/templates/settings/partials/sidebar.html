@@ -4,6 +4,7 @@
     </div>
 
     <ul class="nav-menu">
+        <!-- Play Management without User Preferences -->
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#playSubmenu" role="button"
                aria-expanded="false">
@@ -26,15 +27,37 @@
                         <span>Play Categories</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
-                        <i class="bi bi-sliders"></i>
-                        <span>User Preferences</span>
-                    </a>
-                </li>
             </ul>
         </li>
 
+        <!-- New User Preferences Tab Folder -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userPrefsSubmenu" role="button"
+               aria-expanded="false">
+                <i class="bi bi-sliders"></i>
+                <span>Acc. Preferences</span>
+                <span class="menu-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+            </a>
+            <ul class="submenu collapse" id="userPrefsSubmenu" data-bs-parent=".nav-menu">
+                <!-- Admin-only additional items -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
+                            <i class="bi bi-sliders"></i>
+                            <span>Default Team</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#admin-item-2" data-bs-toggle="tab" role="tab">
+                            <i class="bi bi-shield-lock"></i>
+                            <span>Dummy Item</span>
+                        </a>
+                    </li>
+            </ul>
+        </li>
+
+        <!-- User Management -->
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#userSubmenu" role="button"
                aria-expanded="false">
@@ -60,7 +83,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
-                            <i class="bi bi-shield-check"></i>
+                            <i class="bi bi-node-plus"></i>
                             <span>Assign Team</span>
                         </a>
                     </li>
@@ -68,13 +91,7 @@
             </ul>
         </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('team.create_team') }}">
-                <i class="bi bi-shield-fill me-2"></i>
-                <span>Create Team</span>
-            </a>
-        </li>
-
+        <!-- Team Management -->
         <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#teamSubmenu" role="button"
                aria-expanded="false">
@@ -98,13 +115,6 @@
                         <a class="nav-link" href="{{ url_for('team.create_team') }}">
                             <i class="bi bi-plus-circle"></i>
                             <span>Create Team</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
-                            <i class="bi bi-node-plus"></i>
-                            <span>Assign Team</span>
                         </a>
                     </li>
                 {% endif %}
