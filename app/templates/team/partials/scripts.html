@@ -10,6 +10,8 @@ const steps = [
     "step-name"
 ];
 
+let iconX = 120;
+let iconY = 120;
 
 let currentStep = 0;
 
@@ -81,31 +83,34 @@ function updatePatternTransform() {
     }
 }
 
-let iconX = 120;
-let iconY = 120;
+
 
 function moveIcon(dx, dy) {
     iconX += dx;
     iconY += dy;
 
-    const icon = document.getElementById("shield-icon");
-    if (icon) {
-        icon.setAttribute("x", iconX);
-        icon.setAttribute("y", iconY);
+    const img = document.getElementById("shield-icon");
+    const svg = document.getElementById("inline-shield-icon");
+
+    if (img && img.getAttribute("visibility") === "visible") {
+        img.setAttribute("x", iconX);
+        img.setAttribute("y", iconY);
+    } else if (svg) {
+        svg.setAttribute("x", iconX);
+        svg.setAttribute("y", iconY);
     }
 }
+
 
 
 primaryPicker.on(["color:change", "input:change"], color => {
     primaryColor = color.hexString;
     updatePatternColors();
-    updateIconContrastColor();
 });
 
 secondaryPicker.on(["color:change", "input:change"], color => {
     secondaryColor = color.hexString;
     updatePatternColors();
-    updateIconContrastColor();
 });
 
 shapeThumbs.forEach(thumb => {
@@ -223,11 +228,7 @@ function hexToLuminance(hex) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function updateIconContrastColor() {
-    const avgLuminance = (hexToLuminance(primaryColor) + hexToLuminance(secondaryColor)) / 2;
-    const iconColor = avgLuminance < 0.5 ? "#ffffff" : "#000000";
-    shieldIcon.setAttribute("style", `filter: invert(${iconColor === "#ffffff" ? 1 : 0});`);
-}
+
 
 function disableIconUpload() {
     iconUploadInput.disabled = true;
@@ -292,36 +293,58 @@ function loadIcons() {
         img.addEventListener("click", () => {
             disableIconUpload(); // disable upload once catalog icon is chosen
 
-            // Remove selection border from all icons
             document.querySelectorAll(".icon-thumb").forEach(img => img.classList.remove("border-primary"));
-
-            // Highlight selected icon
             img.classList.add("border-primary");
+
             selectedIcon = filename;
-
-            // ✅ Mark that an icon has been chosen
             iconChosen = true;
-
-            // ✅ Allow user to proceed to the next step
             btnNext.disabled = false;
 
-            // Calculate placement in live preview
             const vb = livePreview.viewBox.baseVal;
             const iconWidth = 400;
             const iconHeight = 400;
             const centerX = vb.x + vb.width / 2 - iconWidth / 2;
             const centerY = vb.y + vb.height / 2 - iconHeight / 2;
 
-            // Set icon attributes in SVG
-            shieldIcon.setAttribute("href", `/static/team_creation_assets/icons/${filename}`);
-            shieldIcon.setAttribute("visibility", "visible");
-            shieldIcon.setAttribute("width", iconWidth);
-            shieldIcon.setAttribute("height", iconHeight);
-            shieldIcon.setAttribute("x", centerX);
-            shieldIcon.setAttribute("y", centerY);
-            updateIconContrastColor();
+            const isSVG = filename.toLowerCase().endsWith(".svg");
 
-            // Update form fields
+            if (isSVG) {
+                fetch(`/static/team_creation_assets/icons/${filename}`)
+                    .then(res => res.text())
+                    .then(svgText => {
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+                        const svgEl = svgDoc.querySelector("svg");
+
+                        if (!svgEl) return;
+
+                        const oldInline = document.getElementById("inline-shield-icon");
+                        if (oldInline) oldInline.remove();
+
+                        svgEl.setAttribute("id", "inline-shield-icon");
+                        svgEl.setAttribute("width", iconWidth);
+                        svgEl.setAttribute("height", iconHeight);
+                        svgEl.setAttribute("x", centerX);
+                        svgEl.setAttribute("y", centerY);
+                        svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+                        shieldIcon.setAttribute("visibility", "hidden");
+                        shieldIcon.removeAttribute("href");
+
+                        livePreview.appendChild(svgEl);
+                    });
+            } else {
+                shieldIcon.setAttribute("href", `/static/team_creation_assets/icons/${filename}`);
+                shieldIcon.setAttribute("visibility", "visible");
+                shieldIcon.setAttribute("width", iconWidth);
+                shieldIcon.setAttribute("height", iconHeight);
+                shieldIcon.setAttribute("x", centerX);
+                shieldIcon.setAttribute("y", centerY);
+
+                const oldInline = document.getElementById("inline-shield-icon");
+                if (oldInline) oldInline.remove();
+            }
+
             document.getElementById("form_icon_filename").value = selectedIcon;
             document.getElementById("form_primary_color").value = primaryColor;
             document.getElementById("form_secondary_color").value = secondaryColor;
@@ -330,10 +353,10 @@ function loadIcons() {
         iconContainer.appendChild(col);
     });
 
-    // Disable/enable icon pagination buttons
     iconPrev.disabled = currentIconPage === 0;
     iconNext.disabled = start + iconsPerPage >= iconList.length;
 }
+
 
 iconNext.addEventListener("click", () => {
     if ((currentIconPage + 1) * iconsPerPage < iconList.length) {
@@ -363,12 +386,51 @@ iconUploadInput.addEventListener("change", function (e) {
         const centerX = vb.x + vb.width / 2 - iconWidth / 2;
         const centerY = vb.y + vb.height / 2 - iconHeight / 2;
 
-        shieldIcon.setAttribute("href", event.target.result);
-        shieldIcon.setAttribute("visibility", "visible");
-        shieldIcon.setAttribute("width", iconWidth);
-        shieldIcon.setAttribute("height", iconHeight);
-        shieldIcon.setAttribute("x", centerX);
-        shieldIcon.setAttribute("y", centerY);
+        iconX = centerX;
+        iconY = centerY;
+        iconZoomSlider.value = iconWidth;
+        iconZoomInput.value = iconWidth;
+
+        // Remove any old icon (image or inline SVG)
+        const oldInline = document.getElementById("inline-shield-icon");
+        if (oldInline) oldInline.remove();
+        shieldIcon.setAttribute("visibility", "hidden");
+
+        if (file.type === "image/svg+xml") {
+            // Inline SVG icon
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(event.target.result, "image/svg+xml");
+            const innerSVG = svgDoc.querySelector("svg");
+
+            if (!innerSVG) {
+                alert("Invalid SVG format.");
+                return;
+            }
+
+            const inline = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            inline.setAttribute("id", "inline-shield-icon");
+            inline.setAttribute("width", iconWidth);
+            inline.setAttribute("height", iconHeight);
+            inline.setAttribute("x", centerX);
+            inline.setAttribute("y", centerY);
+            inline.setAttribute("viewBox", innerSVG.getAttribute("viewBox") || "0 0 100 100");
+
+            // Copy over all child nodes of innerSVG
+            for (const node of innerSVG.childNodes) {
+                inline.appendChild(node.cloneNode(true));
+            }
+
+            livePreview.querySelector("#shield-group > g").appendChild(inline);
+        } else {
+            // PNG fallback
+            shieldIcon.setAttribute("href", event.target.result);
+            shieldIcon.setAttribute("visibility", "visible");
+            shieldIcon.setAttribute("width", iconWidth);
+            shieldIcon.setAttribute("height", iconHeight);
+            shieldIcon.setAttribute("x", centerX);
+            shieldIcon.setAttribute("y", centerY);
+        }
+
         updateIconContrastColor();
 
         document.getElementById("form_icon_filename").value = file.name;
@@ -380,8 +442,11 @@ iconUploadInput.addEventListener("change", function (e) {
         iconChosen = true;
         btnNext.disabled = false;
     };
+
     reader.readAsDataURL(file);
 });
+
+
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
         e.preventDefault(); 
@@ -528,17 +593,27 @@ document.getElementById("live-preview").addEventListener("wheel", function (e) {
 
 
 function setIconSize(w, h) {
-  const vb = livePreview.viewBox.baseVal;
-  const x  = vb.x + vb.width/2  - w/2;
-  const y  = vb.y + vb.height/2 - h/2;
+    const vb = livePreview.viewBox.baseVal;
+    const x = vb.x + vb.width / 2 - w / 2;
+    const y = vb.y + vb.height / 2 - h / 2;
 
-  shieldIcon.setAttribute("width",  w);
-  shieldIcon.setAttribute("height", h);
-  shieldIcon.setAttribute("x",      x);
-  shieldIcon.setAttribute("y",      y);
+    iconX = x;
+    iconY = y;
 
-  iconX = x;
-  iconY = y;
+    const img = document.getElementById("shield-icon");
+    const svg = document.getElementById("inline-shield-icon");
+
+    if (img && img.getAttribute("visibility") === "visible") {
+        img.setAttribute("width", w);
+        img.setAttribute("height", h);
+        img.setAttribute("x", x);
+        img.setAttribute("y", y);
+    } else if (svg) {
+        svg.setAttribute("width", w);
+        svg.setAttribute("height", h);
+        svg.setAttribute("x", x);
+        svg.setAttribute("y", y);
+    }
 }
 
 // slider ⇄ input
