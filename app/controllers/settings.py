@@ -6,7 +6,6 @@ from app.extensions import db
 from app.models.play_option import PlayOptionModel
 from app.models.play_call import PlayCallModel
 from app.models.user import UserModel
-from app.models.user_prefs import UserPreference
 from app.models.team import TeamModel
 
 
@@ -56,12 +55,6 @@ class SettingsController:
         )
 
         self.app.add_url_rule(
-            rule='/settings/play/default/save',
-            view_func=self.set_user_play_default,
-            methods=['POST']
-        )
-
-        self.app.add_url_rule(
             rule='/settings/team/default/save',
             view_func=self.set_team,
             methods=['POST']
@@ -74,16 +67,14 @@ class SettingsController:
         for param in self.play_parameters:
             options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
 
-        user_default = UserPreference.query.filter_by(user_id=current_user.id).first()
-        teams = TeamModel.query.all()
+        user_team = TeamModel.query.filter_by(id=current_user.team_id).first()
 
         return render_template(
             template_name_or_list='settings/settings.html',
             options=options,
             parameters=self.play_parameters,
             play_calls=calls,
-            user_default=user_default,
-            teams=teams,
+            user_team=user_team,
             user=current_user
         )
 
@@ -157,19 +148,6 @@ class SettingsController:
         flash(f'Play Call "{call.name}" {state}.', 'success')
         return redirect(url_for('settings'))
 
-    @login_required
-    def set_user_play_default(self):
-        play_call_id = request.form.get('play_call_id', type=int)
-
-        pref = UserPreference.query.filter_by(user_id=current_user.id).first()
-        if not pref:
-            pref = UserPreference(user_id=current_user.id)
-
-        pref.play_call_id = play_call_id
-        db.session.add(pref)
-        db.session.commit()
-        flash('Default Play Call updated.', 'success')
-        return redirect(url_for('settings'))
 
     @login_required
     @admin_required
@@ -191,6 +169,7 @@ class SettingsController:
                     assigned_team = TeamModel.query.get(team_id)
                     session['team_color'] = assigned_team.primary_color if assigned_team else None
                     session['team_id'] = int(team_id) if assigned_team else None
+                    session['team_icon'] = assigned_team.icon if assigned_team else None
 
                 flash('Team assigned successfully!', 'success')
             else:
