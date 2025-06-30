@@ -232,24 +232,20 @@ function disableIconCatalog() {
 }
 
 function enableAllIconOptions() {
-    // Re-enable upload field
     iconUploadInput.disabled = false;
     iconUploadInput.value = "";
 
-    // Re-enable catalog icons
     document.querySelectorAll(".icon-thumb").forEach(img => {
         img.style.pointerEvents = "auto";
         img.style.opacity = 1;
         img.classList.remove("border-primary");
     });
 
-    // Clear selected icon and hide from preview
     selectedIcon = null;
     shieldIcon.setAttribute("visibility", "hidden");
     shieldIcon.removeAttribute("href");
 
-    // Keep form state visible if already filled
-    // Do not reset form or hide #save-form
+   
 }
 resetBtn.addEventListener("click", () => {
     enableAllIconOptions();
@@ -367,7 +363,7 @@ iconUploadInput.addEventListener("change", function (e) {
 
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
-        e.preventDefault(); // block early submission
+        e.preventDefault(); 
         return;
     }
 
