@@ -1,4 +1,5 @@
 <script>
+    ///stable version?!
 const steps = [
     "step-shape",
     "step-pattern",
@@ -381,8 +382,6 @@ iconUploadInput.addEventListener("change", function (e) {
     };
     reader.readAsDataURL(file);
 });
-
-
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
         e.preventDefault(); 
@@ -404,8 +403,53 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
 
     const svg = document.getElementById("live-preview");
     const clone = svg.cloneNode(true);
-
     const vb = svg.getAttribute("viewBox");
+
+    // Remove white background rects
+    clone.querySelectorAll("rect").forEach(rect => {
+        const fill = rect.getAttribute("fill");
+        if (fill && (fill === "#fff" || fill === "#ffffff" || fill.toLowerCase() === "white")) {
+            rect.remove();
+        }
+    });
+
+    // Replace image href if user uploaded a PNG or SVG icon
+    const iconFilename = document.getElementById("form_icon_filename").value;
+    const iconImage = clone.querySelector("image");
+    if (iconImage && iconFilename && (iconFilename.endsWith(".png") || iconFilename.endsWith(".svg"))) {
+        const safeTeamName = teamName.replace(/[^\w.-]/g, "_"); // sanitize
+        iconImage.setAttribute("href", `/static/user_created_icons/${safeTeamName}/${iconFilename}`);
+    }
+
+    // Create a shape-based mask
+    const shapePath = document.getElementById("clip-path-shape").getAttribute("d");
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+
+    const mask = document.createElementNS("http://www.w3.org/2000/svg", "mask");
+    mask.setAttribute("id", "shield-mask");
+
+    const maskRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    maskRect.setAttribute("width", "100%");
+    maskRect.setAttribute("height", "100%");
+    maskRect.setAttribute("fill", "black");
+
+    const maskShape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    maskShape.setAttribute("d", shapePath);
+    maskShape.setAttribute("fill", "white");
+
+    mask.appendChild(maskRect);
+    mask.appendChild(maskShape);
+    defs.appendChild(mask);
+    clone.insertBefore(defs, clone.firstChild);
+
+    // Wrap all non-defs content in a <g> using the mask
+    const contentGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    contentGroup.setAttribute("mask", "url(#shield-mask)");
+
+    const children = Array.from(clone.children).filter(child => child.tagName !== "defs");
+    children.forEach(child => contentGroup.appendChild(child));
+    clone.appendChild(contentGroup);
+
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("viewBox", vb);
 
