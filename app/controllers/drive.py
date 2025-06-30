@@ -47,7 +47,7 @@ class DriveController:
 
         # NFL validation rules
         if not (-49 <= yard_line <= 49):
-            flash("Yard line must be between -49 (opponent) and 49 (own)", "danger")
+            flash("Yard line must be between -49 (own 1) and 49 (opponent 1)", "danger")
             return redirect(url_for('add_play', drive_id=drive_id))
         if not (1 <= distance <= 99):
             flash("Distance must be between 1 and 99 yards", "danger")
@@ -209,21 +209,22 @@ class DriveController:
         distance = last_play.distance
         yard_line = last_play.yard_line
 
-        # Calculate new position with midfield crossing handling
-        new_yard_line = yard_line - gained
-
-        # Handle midfield crossing and clamping
-        if new_yard_line > 49:
-            # Crossed opponent's 50 from own territory
-            new_yard_line = -(new_yard_line - 50)
-        elif new_yard_line < -49:
-            # Crossed own 50 from opponent territory
-            new_yard_line = -(new_yard_line + 50)
+        # Calculate new yard line with proper midfield crossing
+        if yard_line >= 0:  # Own territory
+            new_yard_line = yard_line - gained
+            if new_yard_line < 0:  # Crossed midfield
+                # Convert to opponent territory representation
+                new_yard_line = max(-49, new_yard_line)
+        else:  # Opponent territory
+            new_yard_line = yard_line - gained
+            if new_yard_line > 0:  # Crossed back to own territory
+                # Convert to own territory representation
+                new_yard_line = min(49, new_yard_line)
 
         # Clamp to field boundaries
         new_yard_line = max(-49, min(49, new_yard_line))
 
-        # Successful conversion
+        # Successful conversion (first down)
         if gained >= distance:
             return 1, 10, new_yard_line
 
@@ -231,7 +232,7 @@ class DriveController:
         if down < 4:
             return down + 1, distance - gained, new_yard_line
 
-        # Turnover on downs - flip field
+        # Turnover on downs - flip field (shouldn't reach here for same drive)
         return 1, 10, -new_yard_line
 
     def _has_drive_ended(self, drive_id):
