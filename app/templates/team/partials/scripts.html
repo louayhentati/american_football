@@ -137,27 +137,23 @@ patternThumbs.forEach(thumb => {
 btnNext.addEventListener("click", () => {
     if (currentStep < steps.length - 1) {
 
-        if (steps[currentStep] === "step-icon" && !iconChosen) {
-            btnNext.disabled = true;
-            return;
-        }
-
+        // FIX: Do not block transition even if iconChosen is false
         document.getElementById(steps[currentStep]).style.display = "none";
         currentStep++;
         document.getElementById(steps[currentStep]).style.display = "block";
 
         btnBack.style.display = currentStep === 0 ? "none" : "inline-block";
 
-        if (steps[currentStep] === "step-pattern" && !selectedPattern) {
+        // Only disable Next if shape or pattern is missing on relevant steps
+        if (steps[currentStep] === "step-shape" && !selectedShape) {
             btnNext.disabled = true;
-        } else if (steps[currentStep] === "step-shape" && !selectedShape) {
-            btnNext.disabled = true;
-        } else if (steps[currentStep] === "step-icon" && !iconChosen) {
+        } else if (steps[currentStep] === "step-pattern" && !selectedPattern) {
             btnNext.disabled = true;
         } else {
             btnNext.disabled = false;
         }
 
+        // Refresh icon list if needed
         if (steps[currentStep] === "step-icon") loadIcons();
     }
 });
@@ -446,7 +442,6 @@ iconUploadInput.addEventListener("change", function (e) {
     reader.readAsDataURL(file);
 });
 
-
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
         e.preventDefault(); 
@@ -517,6 +512,12 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
 
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("viewBox", vb);
+
+    // Fill hidden inputs before serialization
+    document.getElementById("form_primary_color").value = primaryColor;
+    document.getElementById("form_secondary_color").value = secondaryColor;
+    document.getElementById("form_icon_filename").value =
+        selectedIcon || iconUploadInput.files[0]?.name || "";
 
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(clone);
