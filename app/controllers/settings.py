@@ -157,21 +157,17 @@ class SettingsController:
         if request.method == 'POST':
             user_id = current_user.id
             team_id = request.form.get('team_id')
-
+            team_id = int(team_id) if team_id else None
             user = UserModel.query.get(user_id)
 
-            # added check for admin roles also (FP-48)
             if user and user.role == 'admin':
-                user.team_id = team_id
-                # FP-48
-                # update user set team_id = (select team_id from user where id = {user.id})
                 UserModel.query.update({UserModel.team_id: team_id})
                 db.session.commit()
 
                 if current_user.id == user.id:
-                    assigned_team = TeamModel.query.get(team_id)
+                    assigned_team = TeamModel.query.get(team_id) if team_id else None
                     session['team_color'] = assigned_team.primary_color if assigned_team else None
-                    session['team_id'] = int(team_id) if assigned_team else None
+                    session['team_id'] = team_id
                     session['team_icon'] = assigned_team.icon if assigned_team else None
 
                 flash('Team assigned successfully!', 'success')
