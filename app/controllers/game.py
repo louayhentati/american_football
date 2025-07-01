@@ -26,6 +26,20 @@ class GameController:
         self.app.add_url_rule(rule='/game/<int:game_id>/export', view_func=self.export_game)
         self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
+        self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
+
+
+    @login_required
+    def filter_games(self):
+
+        selected_team = request.args.get('Team')
+        print(selected_team)
+        games = GameModel.query
+        if selected_team:
+            games = games.join(GameModel.away_team).filter(TeamModel.name == selected_team)
+
+        return render_template("game/partials/_game_rows.html", games=games.all())
+
 
     @login_required
     def game_options(self) -> str:
