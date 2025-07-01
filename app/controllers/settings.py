@@ -148,7 +148,6 @@ class SettingsController:
         flash(f'Play Call "{call.name}" {state}.', 'success')
         return redirect(url_for('settings'))
 
-
     @login_required
     @admin_required
     def set_team(self):
@@ -160,11 +159,15 @@ class SettingsController:
             team_id = request.form.get('team_id')
 
             user = UserModel.query.get(user_id)
-            if user:
+
+            # added check for admin roles also (FP-48)
+            if user and user.role == 'admin':
                 user.team_id = team_id
+                # FP-48
+                # update user set team_id = (select team_id from user where id = {user.id})
+                UserModel.query.update({UserModel.team_id: team_id})
                 db.session.commit()
 
-                # If current user is the one updated, update session too
                 if current_user.id == user.id:
                     assigned_team = TeamModel.query.get(team_id)
                     session['team_color'] = assigned_team.primary_color if assigned_team else None
@@ -178,7 +181,6 @@ class SettingsController:
             return redirect(url_for('settings'))
 
         return render_template('user/user_assign_team.html', users=users, teams=teams)
-
 
     @staticmethod
     def __load_play_calls():
