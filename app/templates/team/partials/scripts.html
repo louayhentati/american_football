@@ -203,12 +203,52 @@ function updatePatternColors() {
 
         let svgContent = "";
         switch (i) {
-            case 1: svgContent = `<rect width="30" height="60" fill="${primaryColor}"/><rect x="30" width="30" height="60" fill="${secondaryColor}"/>`; break;
-            case 2: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="0" y1="60" x2="60" y2="0" stroke="${primaryColor}" stroke-width="10"/>`; break;
-            case 3: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="-30" y1="0" x2="30" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="30" y1="0" x2="90" y2="60" stroke="${primaryColor}" stroke-width="10"/>`; break;
-            case 4: svgContent = `<rect width="60" height="60" fill="${primaryColor}"/><rect y="20" width="60" height="20" fill="${secondaryColor}"/>`; break;
-            case 5: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><circle cx="30" cy="30" r="20" fill="${primaryColor}"/>`; break;
-            case 6: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><rect x="0" y="0" width="30" height="30" fill="${primaryColor}"/><rect x="30" y="30" width="30" height="30" fill="${primaryColor}"/>`; break;
+            case 1:
+                // Vertical split
+                svgContent = `
+                    <rect width="30" height="60" fill="${secondaryColor}"/>
+                    <rect x="30" width="30" height="60" fill="${primaryColor}"/>
+                `;
+                break;
+            case 2:
+                // X-shaped diagonal cross
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="0" y1="60" x2="60" y2="0" stroke="${secondaryColor}" stroke-width="10"/>
+                `;
+                break;
+            case 3:
+                // Triple diagonal lines
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="-30" y1="0" x2="30" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="30" y1="0" x2="90" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                `;
+                break;
+            case 4:
+                // Horizontal stripe in the center
+                svgContent = `
+                    <rect width="60" height="60" fill="${secondaryColor}"/>
+                    <rect y="20" width="60" height="20" fill="${primaryColor}"/>
+                `;
+                break;
+            case 5:
+                // Dots
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <circle cx="30" cy="30" r="20" fill="${secondaryColor}"/>
+                `;
+                break;
+            case 6:
+                // Two small boxes
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <rect x="0" y="0" width="30" height="30" fill="${secondaryColor}"/>
+                    <rect x="30" y="30" width="30" height="30" fill="${secondaryColor}"/>
+                `;
+                break;
         }
 
         pattern.innerHTML = svgContent;
@@ -217,6 +257,7 @@ function updatePatternColors() {
 
     if (selectedPattern) patternFill.setAttribute("fill", `url(#${selectedPattern})`);
 }
+
 
 function hexToLuminance(hex) {
     const rgb = hex.replace("#", "").match(/.{2}/g).map(h => parseInt(h, 16) / 255);

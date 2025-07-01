@@ -28,7 +28,17 @@
 
 {% if current_user.is_authenticated %}
     <nav class="navbar navbar-expand-lg navbar-dark"
-         style="{% if session.team_color %}background: linear-gradient(135deg, {{ session.team_color }}, #343a40);{% else %}background: linear-gradient(135deg, #4b6cb7, #182848);{% endif %}">
+         style="
+         {% if session.team_id %}
+             {% for team in teams %}
+                 {% if team.id == session.team_id %}
+                     background: linear-gradient(135deg, {{ team.secondary_color }}, #343a40);
+                 {% endif %}
+             {% endfor %}
+         {% else %}
+             background: linear-gradient(135deg, #4b6cb7, #182848);
+         {% endif %}
+         ">
         <div class="container-fluid position-relative">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                 {% if session.team_id %}
@@ -78,6 +88,7 @@
         </div>
     </nav>
 {% endif %}
+
 
 <!-- Main Content -->
 <div class="content-wrapper">
