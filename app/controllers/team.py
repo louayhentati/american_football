@@ -24,7 +24,6 @@ def create_team():
         icon_file = request.form.get('icon_filename')
         final_svg = request.form.get('final_svg')
         uploaded_icon = request.files.get('icon-upload')
-        print(f"{name},{primary_color},{secondary_color},{final_svg}")
         # Validate required fields
         if not name or not primary_color or not secondary_color or not final_svg:
             flash('All fields are required.', 'danger')
