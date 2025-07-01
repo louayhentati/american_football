@@ -6,10 +6,21 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Saved Games</h2>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-end">
                 <a href="{{ url_for('add_game') }}" class="btn btn-primary">Add New Game</a>
                 <a href="{{ url_for('settings') }}" class="btn btn-secondary">Play Options Settings</a>
-                <a href="{{ url_for('callsheet') }}" class="btn btn-info">Callsheet</a>
+				<a href="{{ url_for('callsheet') }}{% if selected_team %}?Team={{ selected_team }}{% endif %}" class="btn btn-info">Callsheet</a>
+			<form method="get" class="d-flex flex-column">
+				<label for="Team">Away Team:</label>
+					<select name="Team" id = "Team" class="form-select mb-2">
+					<option value="">All Teams</option>
+					{% for team in teams %}
+					<option value="{{ team.name }}"
+					{% if selected_team == team.name %} selected {%endif%}	
+					>{{ team.name }}</option>
+					{% endfor %}
+					</select>
+					<button type="submit"class = "btn btn-outline-primary">Filter</button>
             </div>
         </div>
     </div>

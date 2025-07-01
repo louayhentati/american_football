@@ -29,8 +29,25 @@ class GameController:
 
     @login_required
     def game_options(self) -> str:
+        # filter away team
+        teams = TeamModel.query.all()
         games = GameModel.query.all()
-        return render_template(template_name_or_list='game/game_options.html', games=games)
+        selected_team = request.args.get('Team')
+        filtered_games = []
+        if selected_team and selected_team != '':
+
+            for game in games:
+                print(game.away_team.name)
+                print(selected_team)
+                if game.away_team.name == selected_team:
+                    filtered_games.append(game)
+        else:
+            print('nothing selected')
+            filtered_games = games
+        return render_template(template_name_or_list='game/game_options.html',
+                               games=filtered_games,
+                               teams=teams,
+                               selected_team = selected_team)
 
     @login_required
     def game_detail(self, game_id: int) -> str:
