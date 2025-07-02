@@ -1,0 +1,49 @@
+<svg id="live-preview" width="300" height="300" xmlns="http://www.w3.org/2000/svg" class="border rounded" viewBox="0.00286865234375 -0.00015978964802343398 593.88916015625 594.0718994140625"><defs><mask id="shield-mask"><rect width="100%" height="100%" fill="black"/><path d="M593.89,296.77c.6,162.67-134.43,296.72-296.53,297.3C133.53,594.64-2.58,457.76.04,291.12,2.49,134.33,134.25.17,297.18,0c161.63-.17,296.73,135.33,296.71,296.77Z" fill="white"/></mask></defs>
+        <defs>
+            
+            <pattern id="pattern1" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="30" height="60" fill="#000000"/>
+                    <rect x="30" width="30" height="60" fill="#000000"/>
+                </pattern>
+            
+            <pattern id="pattern2" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="60" height="60" fill="#000000"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="#000000" stroke-width="10"/>
+                    <line x1="0" y1="60" x2="60" y2="0" stroke="#000000" stroke-width="10"/>
+                </pattern>
+            
+            <pattern id="pattern3" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="60" height="60" fill="#000000"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="#000000" stroke-width="10"/>
+                    <line x1="-30" y1="0" x2="30" y2="60" stroke="#000000" stroke-width="10"/>
+                    <line x1="30" y1="0" x2="90" y2="60" stroke="#000000" stroke-width="10"/>
+                </pattern>
+            
+            <pattern id="pattern4" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="60" height="60" fill="#000000"/>
+                    <rect y="20" width="60" height="20" fill="#000000"/>
+                </pattern>
+            
+            <pattern id="pattern5" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="60" height="60" fill="#000000"/>
+                    <circle cx="30" cy="30" r="20" fill="#000000"/>
+                </pattern>
+            
+            <pattern id="pattern6" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+                    <rect width="60" height="60" fill="#000000"/>
+                    <rect x="0" y="0" width="30" height="30" fill="#000000"/>
+                    <rect x="30" y="30" width="30" height="30" fill="#000000"/>
+                </pattern>
+            
+            <clipPath id="shield-clip">
+                <path id="clip-path-shape" d="M593.89,296.77c.6,162.67-134.43,296.72-296.53,297.3C133.53,594.64-2.58,457.76.04,291.12,2.49,134.33,134.25.17,297.18,0c161.63-.17,296.73,135.33,296.71,296.77Z"/>
+            </clipPath>
+        </defs>
+        
+    <g mask="url(#shield-mask)"><g id="shield-group">
+            <g clip-path="url(#shield-clip)">
+                <rect id="pattern-fill" width="100%" height="100%" fill="url(#pattern1)"/>
+                <image id="shield-icon" width="512" height="512" x="40.94744873046875" y="41.03578991738323" visibility="visible" href="data:image/png;base64,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"/>
+            </g>
+            <path id="shield-outline" d="M593.89,296.77c.6,162.67-134.43,296.72-296.53,297.3C133.53,594.64-2.58,457.76.04,291.12,2.49,134.33,134.25.17,297.18,0c161.63-.17,296.73,135.33,296.71,296.77Z" fill="none" stroke="#333" stroke-width="1.5"/>
+        </g></g></svg>
