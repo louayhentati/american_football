@@ -3,21 +3,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <form method="POST" action="{{ url_for('add_play_call') }}" class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addPlayCallModalLabel"><i class="fas fa-plus me-2"></i>Add Play Call
+                    <h5 class="modal-title" id="addPlayCallModalLabel"><i class="fas fa-plus me-2"></i>Add Play Category
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="playCallNameInput" class="form-label">Play Call Name <small
+                        <label for="playCallNameInput" class="form-label">Play Category Name <small
                                 class="text-danger">*</small></label>
                         <input type="text"
                                class="form-control"
                                id="playCallNameInput"
                                name="name"
                                maxlength="50"
-                               placeholder="Enter play call name"
+                               placeholder="Enter play category name"
                                required>
                     </div>
                 </div>
