@@ -97,3 +97,18 @@ def list_all_teams():
         teams=teams,
         team_members=team_members
     )
+
+@team_bp.route('/delete/<int:team_id>', methods=['POST'])
+def delete_team(team_id):
+    team = TeamModel.query.get_or_404(team_id)
+
+    # Optional: prevent deletion if users are still assigned
+    users_assigned = UserModel.query.filter_by(team_id=team_id).all()
+    if users_assigned:
+        flash('Cannot delete team while users are assigned to it.', 'danger')
+        return redirect(url_for('team.list_all_teams'))
+
+    db.session.delete(team)
+    db.session.commit()
+    flash(f"Team '{team.name}' has been deleted successfully.", 'success')
+    return redirect(url_for('team.list_all_teams'))

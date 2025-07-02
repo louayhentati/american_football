@@ -137,27 +137,23 @@ patternThumbs.forEach(thumb => {
 btnNext.addEventListener("click", () => {
     if (currentStep < steps.length - 1) {
 
-        if (steps[currentStep] === "step-icon" && !iconChosen) {
-            btnNext.disabled = true;
-            return;
-        }
-
+        // FIX: Do not block transition even if iconChosen is false
         document.getElementById(steps[currentStep]).style.display = "none";
         currentStep++;
         document.getElementById(steps[currentStep]).style.display = "block";
 
         btnBack.style.display = currentStep === 0 ? "none" : "inline-block";
 
-        if (steps[currentStep] === "step-pattern" && !selectedPattern) {
+        // Only disable Next if shape or pattern is missing on relevant steps
+        if (steps[currentStep] === "step-shape" && !selectedShape) {
             btnNext.disabled = true;
-        } else if (steps[currentStep] === "step-shape" && !selectedShape) {
-            btnNext.disabled = true;
-        } else if (steps[currentStep] === "step-icon" && !iconChosen) {
+        } else if (steps[currentStep] === "step-pattern" && !selectedPattern) {
             btnNext.disabled = true;
         } else {
             btnNext.disabled = false;
         }
 
+        // Refresh icon list if needed
         if (steps[currentStep] === "step-icon") loadIcons();
     }
 });
@@ -207,12 +203,52 @@ function updatePatternColors() {
 
         let svgContent = "";
         switch (i) {
-            case 1: svgContent = `<rect width="30" height="60" fill="${primaryColor}"/><rect x="30" width="30" height="60" fill="${secondaryColor}"/>`; break;
-            case 2: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="0" y1="60" x2="60" y2="0" stroke="${primaryColor}" stroke-width="10"/>`; break;
-            case 3: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><line x1="0" y1="0" x2="60" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="-30" y1="0" x2="30" y2="60" stroke="${primaryColor}" stroke-width="10"/><line x1="30" y1="0" x2="90" y2="60" stroke="${primaryColor}" stroke-width="10"/>`; break;
-            case 4: svgContent = `<rect width="60" height="60" fill="${primaryColor}"/><rect y="20" width="60" height="20" fill="${secondaryColor}"/>`; break;
-            case 5: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><circle cx="30" cy="30" r="20" fill="${primaryColor}"/>`; break;
-            case 6: svgContent = `<rect width="60" height="60" fill="${secondaryColor}"/><rect x="0" y="0" width="30" height="30" fill="${primaryColor}"/><rect x="30" y="30" width="30" height="30" fill="${primaryColor}"/>`; break;
+            case 1:
+                // Vertical split
+                svgContent = `
+                    <rect width="30" height="60" fill="${secondaryColor}"/>
+                    <rect x="30" width="30" height="60" fill="${primaryColor}"/>
+                `;
+                break;
+            case 2:
+                // X-shaped diagonal cross
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="0" y1="60" x2="60" y2="0" stroke="${secondaryColor}" stroke-width="10"/>
+                `;
+                break;
+            case 3:
+                // Triple diagonal lines
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <line x1="0" y1="0" x2="60" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="-30" y1="0" x2="30" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                    <line x1="30" y1="0" x2="90" y2="60" stroke="${secondaryColor}" stroke-width="10"/>
+                `;
+                break;
+            case 4:
+                // Horizontal stripe in the center
+                svgContent = `
+                    <rect width="60" height="60" fill="${secondaryColor}"/>
+                    <rect y="20" width="60" height="20" fill="${primaryColor}"/>
+                `;
+                break;
+            case 5:
+                // Dots
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <circle cx="30" cy="30" r="20" fill="${secondaryColor}"/>
+                `;
+                break;
+            case 6:
+                // Two small boxes
+                svgContent = `
+                    <rect width="60" height="60" fill="${primaryColor}"/>
+                    <rect x="0" y="0" width="30" height="30" fill="${secondaryColor}"/>
+                    <rect x="30" y="30" width="30" height="30" fill="${secondaryColor}"/>
+                `;
+                break;
         }
 
         pattern.innerHTML = svgContent;
@@ -221,6 +257,7 @@ function updatePatternColors() {
 
     if (selectedPattern) patternFill.setAttribute("fill", `url(#${selectedPattern})`);
 }
+
 
 function hexToLuminance(hex) {
     const rgb = hex.replace("#", "").match(/.{2}/g).map(h => parseInt(h, 16) / 255);
@@ -446,7 +483,6 @@ iconUploadInput.addEventListener("change", function (e) {
     reader.readAsDataURL(file);
 });
 
-
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
         e.preventDefault(); 
@@ -517,6 +553,12 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
 
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("viewBox", vb);
+
+    // Fill hidden inputs before serialization
+    document.getElementById("form_primary_color").value = primaryColor;
+    document.getElementById("form_secondary_color").value = secondaryColor;
+    document.getElementById("form_icon_filename").value =
+        selectedIcon || iconUploadInput.files[0]?.name || "";
 
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(clone);

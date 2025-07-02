@@ -2,155 +2,213 @@
 {% block title %}All Teams{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="row mb-4">
-            <div class="col d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">All Teams</h2>
-            </div>
-        </div>
-
-        <!-- Header and actions -->
-        <div>
-            <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">
-                <i class="bi bi-arrow-left-circle"></i> Back to Settings
-            </a>
-            {% if current_user.role == 'admin' %}
-                <a href="{{ url_for('team.create_team') }}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-plus-circle"></i> Create Team
-                </a>
-                <a href="{{ url_for('assign_team.assign_team') }}" class="btn btn-sm btn-primary">
-                    <i class="bi bi-shield-check"></i> Assign Team
-                </a>
-            {% endif %}
-        </div>
-
-        <!-- Search -->
-        <div class="row mb-3">
-            <div class="col d-flex justify-content-end">
-                <input type="text" id="customSearch" class="form-control custom-search" placeholder="Search teams...">
-            </div>
-        </div>
-
-        <!-- Table -->
-        <div class="table-responsive">
-            <table id="teamTable" class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th>#</th>
-                    <th>Team Name</th>
-                    <th>Primary Color</th>
-                    <th>Members</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% if teams and teams|length > 0 %}
-                    {% for team in teams %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ team.name }}</td>
-                            <td>
-                                {% set color = team.primary_color|lower %}
-                                {% if color.startswith('#fff') or color == '' or color is none %}
-                                    {% set badge_text_color = '#000' %}
-                                {% else %}
-                                    {% set badge_text_color = '#fff' %}
-                                {% endif %}
-
-                                <span class="badge border"
-                                      style="background-color: {{ team.primary_color }}; color: {{ badge_text_color }};">
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                </span>
-                                <span class="ms-2 px-2 py-1 border rounded"
-                                      style="background-color: #f8f9fa; color: #333; font-family: monospace;">
-                                {{ team.primary_color }}
-                            </span>
-                            </td>
-
-                            <td>
-                                {% set members = team_members.get(team.id, []) %}
-                                {% if members %}
-                                    <div class="d-flex flex-wrap gap-1">
-                                        {% for user in members %}
-                                            <span class="badge bg-secondary">{{ user.username }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted">No members</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td class="text-center">No teams</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                {% endif %}
-
-                </tbody>
-            </table>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">All Teams</h2>
         </div>
     </div>
 
-    <!-- Styles -->
-    <style>
-        .table-responsive {
-            overflow-x: auto;
-        }
+    <!-- Header and actions -->
+    <div>
+        <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left-circle"></i> Back to Settings
+        </a>
+        {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('team.create_team') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Team
+            </a>
+            <a href="{{ url_for('assign_team.assign_team') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-shield-check"></i> Assign Team
+            </a>
+        {% endif %}
+    </div>
 
-        .table th, .table td {
-            white-space: nowrap;
-            padding: 0.5rem;
-        }
+    <!-- Search -->
+    <div class="row mb-3">
+        <div class="col d-flex justify-content-end">
+            <input type="text" id="customSearch" class="form-control custom-search" placeholder="Search teams...">
+        </div>
+    </div>
 
-        .table-hover tbody tr:hover {
-            background-color: #f8f9fa;
-        }
+    <!-- Table -->
+    <div class="table-responsive">
+        <table id="teamTable" class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Team Name</th>
+                <th>Primary Color</th>
+                <th>Secondary Color</th>
+                <th>Members</th>
+                {% if current_user.role == 'admin' %}
+                    <th>Actions</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% if teams and teams|length > 0 %}
+                {% for team in teams %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ team.name }}</td>
 
-        .custom-search {
-            max-width: 300px;
-            background-color: transparent;
-            border: 1px solid #ccc;
-            transition: border-color 0.3s ease;
-        }
+                        <!-- Primary Color -->
+                        <td>
+                            {% set color = team.primary_color|lower %}
+                            {% set badge_text_color = '#000' if color.startswith('#fff') or color == '' or color is none else '#fff' %}
 
-        .custom-search:focus {
-            outline: none;
-            box-shadow: none;
-            border-color: #999;
-            background-color: transparent;
-        }
+                            <span class="badge border" style="background-color: {{ team.primary_color }}; color: {{ badge_text_color }};">
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            </span>
+                            <span class="ms-2 px-2 py-1 border rounded" style="background-color: #f8f9fa; color: #333; font-family: monospace;">
+                                {{ team.primary_color }}
+                            </span>
+                        </td>
 
-        table.dataTable thead .sorting {
-            background-image: none !important;
-        }
+                        <!-- Secondary Color -->
+                        <td>
+                            {% set sec = team.secondary_color|lower %}
+                            {% set sec_text = '#000' if sec.startswith('#fff') or sec == '' or sec is none else '#fff' %}
 
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.4em 0.6em;
-        }
-    </style>
+                            <span class="badge border" style="background-color: {{ team.secondary_color }}; color: {{ sec_text }};">
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            </span>
+                            <span class="ms-2 px-2 py-1 border rounded" style="background-color: #f8f9fa; color: #333; font-family: monospace;">
+                                {{ team.secondary_color }}
+                            </span>
+                        </td>
 
-    <!-- Scripts -->
-    {% block scripts %}
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                if (!$.fn.DataTable.isDataTable('#teamTable')) {
-                    const table = $('#teamTable').DataTable({
-                        paging: false,
-                        info: false,
-                        fixedHeader: true,
-                        dom: 't'
-                    });
+                        <!-- Members -->
+                        <td>
+                            {% set members = team_members.get(team.id, []) %}
+                            {% if members %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for user in members %}
+                                        <span class="badge bg-secondary">{{ user.username }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">No members</span>
+                            {% endif %}
+                        </td>
 
-                    $('#customSearch').on('keyup', function () {
-                        table.search(this.value).draw();
-                    });
-                }
+                        <!-- Actions -->
+                        {% if current_user.role == 'admin' %}
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal"
+                                        data-team-id="{{ team.id }}"
+                                        data-team-name="{{ team.name }}">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td class="text-center">No teams</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    {% if current_user.role == 'admin' %}
+                        <td></td>
+                    {% endif %}
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete the team <strong id="modalTeamName"></strong>?
+      </div>
+      <div class="modal-footer">
+        <form id="deleteForm" method="POST">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Styles -->
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table th, .table td {
+        white-space: nowrap;
+        padding: 0.5rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .custom-search {
+        max-width: 300px;
+        background-color: transparent;
+        border: 1px solid #ccc;
+        transition: border-color 0.3s ease;
+    }
+
+    .custom-search:focus {
+        outline: none;
+        box-shadow: none;
+        border-color: #999;
+        background-color: transparent;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+    }
+</style>
+
+<!-- Scripts -->
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (!$.fn.DataTable.isDataTable('#teamTable')) {
+            const table = $('#teamTable').DataTable({
+                paging: false,
+                info: false,
+                fixedHeader: true,
+                dom: 't'
             });
 
-        </script>
-    {% endblock scripts %}
+            $('#customSearch').on('keyup', function () {
+                table.search(this.value).draw();
+            });
+        }
+
+        const deleteModal = document.getElementById('deleteModal');
+        const modalTeamName = document.getElementById('modalTeamName');
+        const deleteForm = document.getElementById('deleteForm');
+
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const teamId = button.getAttribute('data-team-id');
+            const teamName = button.getAttribute('data-team-name');
+            modalTeamName.textContent = teamName;
+            deleteForm.action = `/team/delete/${teamId}`;
+        });
+    });
+</script>
+{% endblock scripts %}
 {% endblock %}
