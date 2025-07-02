@@ -108,7 +108,23 @@ def delete_team(team_id):
         flash('Cannot delete team while users are assigned to it.', 'danger')
         return redirect(url_for('team.list_all_teams'))
 
+    # Remove the team folder from the filesystem
+    from shutil import rmtree
+    import os
+
+    safe_name = team.name.replace(" ", "_")  # in case team name has spaces
+    team_folder_path = os.path.join(current_app.static_folder, 'user_created_icons', safe_name)
+
+    if os.path.exists(team_folder_path):
+        try:
+            rmtree(team_folder_path)
+        except Exception as e:
+            flash(f"Error deleting team files: {str(e)}", 'danger')
+            return redirect(url_for('team.list_all_teams'))
+
+    # Delete the team from the database
     db.session.delete(team)
     db.session.commit()
+
     flash(f"Team '{team.name}' has been deleted successfully.", 'success')
     return redirect(url_for('team.list_all_teams'))
