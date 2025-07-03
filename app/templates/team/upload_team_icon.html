@@ -17,7 +17,6 @@
       <svg id="icon-preview" width="300" height="300" viewBox="0 0 300 300"
            class="border rounded" xmlns="http://www.w3.org/2000/svg">
         <rect width="300" height="300" fill="white" stroke="#ccc" />
-        <!-- Image inserted here -->
       </svg>
     </div>
 
@@ -71,7 +70,6 @@
     }).join("");
   }
 
-  // Color extraction helper
   function extractColorsFromImage(img, callback) {
     const canvas = document.createElement('canvas');
     canvas.width = 300;
@@ -131,6 +129,7 @@
           imageEl.setAttribute("height", 200);
           preview.appendChild(imageEl);
           extractColorsFromImage(img, (primary, secondary) => {
+            // Corrected: assign colors properly
             primaryPicker.color.hexString = primary;
             secondaryPicker.color.hexString = secondary;
           });
@@ -138,7 +137,6 @@
         };
       }
 
-      // Save original for form resubmission
       const hiddenInput = document.getElementById("icon-hidden");
       hiddenInput.files = e.target.files;
 
@@ -166,7 +164,7 @@
     document.getElementById("form_secondary_color").value = secondaryPicker.color.hexString;
   });
 
-  // Color Pickers
+  // Init Pickr: Primary on left, Secondary on right
   window.onload = function () {
     primaryPicker = new iro.ColorPicker("#primary-picker", {
       width: 120,
