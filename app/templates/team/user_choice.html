@@ -1,0 +1,32 @@
+{% extends "system/base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2 class="mb-4">How would you like to create your team icon?</h2>
+    <p class="lead">Choose a method to continue:</p>
+
+    <div class="row justify-content-center mt-4">
+        <!-- Step-by-Step Builder -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm p-4 h-100">
+                <h4 class="mb-3">Build Shield with Custom Options</h4>
+                <p>Create your own shield using shapes, patterns, colors, and icons.</p>
+                <a href="{{ url_for('team.create_team') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-pencil-square me-1"></i> Start Builder
+                </a>
+            </div>
+        </div>
+
+        <!-- Upload Own Icon -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm p-4 h-100">
+                <h4 class="mb-3">Upload Your Own Icon</h4>
+                <p>Skip customization and upload your transparent PNG or SVG icon directly.</p>
+                <a href="{{ url_for('team.upload_team_icon_page') }}" class="btn btn-secondary mt-3">
+                    <i class="bi bi-upload me-1"></i> Upload Icon
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -42,18 +42,18 @@
             </a>
             <ul class="submenu collapse" id="userPrefsSubmenu" data-bs-parent=".nav-menu">
                 <!-- Admin-only additional items -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
-                            <i class="bi bi-sliders"></i>
-                            <span>Default Team</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#admin-item-2" data-bs-toggle="tab" role="tab">
-                            <i class="bi bi-shield-lock"></i>
-                            <span>Dummy Item</span>
-                        </a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#play-defaults" data-bs-toggle="tab" role="tab">
+                        <i class="bi bi-sliders"></i>
+                        <span>Default Team</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#admin-item-2" data-bs-toggle="tab" role="tab">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Dummy Item</span>
+                    </a>
+                </li>
             </ul>
         </li>
 
@@ -75,18 +75,18 @@
                     </a>
                 </li>
                 {% if current_user.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('add_user') }}">
-                            <i class="bi bi-person-add"></i>
-                            <span>Add User</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
-                            <i class="bi bi-node-plus"></i>
-                            <span>Assign Team</span>
-                        </a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('add_user') }}">
+                        <i class="bi bi-person-add"></i>
+                        <span>Add User</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('assign_team.assign_team') }}">
+                        <i class="bi bi-node-plus"></i>
+                        <span>Assign Team</span>
+                    </a>
+                </li>
                 {% endif %}
             </ul>
         </li>
@@ -111,12 +111,12 @@
                 </li>
 
                 {% if current_user.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('team.create_team') }}">
-                            <i class="bi bi-plus-circle"></i>
-                            <span>Create Team</span>
-                        </a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('team.choose_creation_method') }}">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Create Team</span>
+                    </a>
+                </li>
                 {% endif %}
             </ul>
         </li>

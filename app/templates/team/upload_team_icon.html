@@ -1,0 +1,182 @@
+{% extends "system/base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+  <h2 class="mb-4">Upload Your Team Icon</h2>
+
+  <!-- Step 1: Upload Image -->
+  <div id="step-upload">
+    <p class="lead">Use a transparent PNG or SVG.</p>
+    <input type="file" name="icon" id="icon-upload" accept=".png,.svg" class="form-control mb-3" required>
+
+    <div class="my-3">
+      <svg id="icon-preview" width="300" height="300" viewBox="0 0 300 300"
+           class="border rounded" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="300" fill="white" stroke="#ccc" />
+        <!-- Image inserted here -->
+      </svg>
+    </div>
+
+    <button class="btn btn-primary" id="btn-to-color" disabled>Next: Set Colors</button>
+  </div>
+
+  <!-- Step 2: Color Picker -->
+  <div id="step-colors" style="display: none;">
+    <h4 class="mb-3">Choose Primary & Secondary Colors</h4>
+    <div class="d-flex justify-content-center gap-5">
+      <div class="text-center">
+        <p>Primary</p>
+        <div id="primary-picker"></div>
+      </div>
+      <div class="text-center">
+        <p>Secondary</p>
+        <div id="secondary-picker"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary mt-4" id="btn-to-name">Next: Team Name</button>
+  </div>
+
+  <!-- Step 3: Team Name and Submit -->
+  <div id="step-name" style="display: none;">
+    <h4 class="mb-3">Team Name</h4>
+    <form id="upload-form" method="POST" action="{{ url_for('team.upload_team_icon_page') }}" enctype="multipart/form-data">
+      <input type="text" class="form-control mb-2" name="name" placeholder="Enter team name" required>
+      <input type="hidden" name="primary_color" id="form_primary_color">
+      <input type="hidden" name="secondary_color" id="form_secondary_color">
+      <input type="hidden" name="final_svg" id="final_svg">
+      <input type="file" name="icon" id="icon-hidden" style="display: none;" />
+      <button type="submit" class="btn btn-success mt-3">
+        <i class="bi bi-cloud-arrow-up"></i> Save Team Icon
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const uploadInput = document.getElementById("icon-upload");
+  const preview = document.getElementById("icon-preview");
+  const btnToColor = document.getElementById("btn-to-color");
+  const btnToName = document.getElementById("btn-to-name");
+
+  let primaryPicker, secondaryPicker;
+
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    }).join("");
+  }
+
+  // Color extraction helper
+  function extractColorsFromImage(img, callback) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, 300, 300);
+
+    const data = ctx.getImageData(0, 0, 300, 300).data;
+    const colorCount = {};
+    for (let i = 0; i < data.length; i += 4) {
+      const [r, g, b, a] = [data[i], data[i+1], data[i+2], data[i+3]];
+      if (a < 200) continue;
+      const key = `${r},${g},${b}`;
+      colorCount[key] = (colorCount[key] || 0) + 1;
+    }
+    const sortedColors = Object.entries(colorCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([rgb]) => rgbToHex(...rgb.split(',').map(Number)));
+    callback(sortedColors[0], sortedColors[1]);
+  }
+
+  uploadInput.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      while (preview.lastChild && preview.lastChild.tagName !== "rect") {
+        preview.removeChild(preview.lastChild);
+      }
+
+      let img;
+
+      if (file.type === "image/svg+xml") {
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(event.target.result, "image/svg+xml");
+        const svgEl = svgDoc.querySelector("svg");
+        if (!svgEl) return;
+
+        const imported = document.importNode(svgEl, true);
+        imported.setAttribute("width", 200);
+        imported.setAttribute("height", 200);
+        imported.setAttribute("x", 50);
+        imported.setAttribute("y", 50);
+        preview.appendChild(imported);
+        btnToColor.disabled = false;
+
+      } else if (file.type === "image/png") {
+        img = new Image();
+        img.src = event.target.result;
+        img.onload = function () {
+          const imageEl = document.createElementNS("http://www.w3.org/2000/svg", "image");
+          imageEl.setAttribute("href", img.src);
+          imageEl.setAttribute("x", 50);
+          imageEl.setAttribute("y", 50);
+          imageEl.setAttribute("width", 200);
+          imageEl.setAttribute("height", 200);
+          preview.appendChild(imageEl);
+          extractColorsFromImage(img, (primary, secondary) => {
+            primaryPicker.color.hexString = primary;
+            secondaryPicker.color.hexString = secondary;
+          });
+          btnToColor.disabled = false;
+        };
+      }
+
+      // Save original for form resubmission
+      const hiddenInput = document.getElementById("icon-hidden");
+      hiddenInput.files = e.target.files;
+
+      setTimeout(() => {
+        const clone = preview.cloneNode(true);
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(clone);
+        document.getElementById("final_svg").value = svgString;
+      }, 200);
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  btnToColor.addEventListener("click", () => {
+    document.getElementById("step-upload").style.display = "none";
+    document.getElementById("step-colors").style.display = "block";
+  });
+
+  btnToName.addEventListener("click", () => {
+    document.getElementById("step-colors").style.display = "none";
+    document.getElementById("step-name").style.display = "block";
+    document.getElementById("form_primary_color").value = primaryPicker.color.hexString;
+    document.getElementById("form_secondary_color").value = secondaryPicker.color.hexString;
+  });
+
+  // Color Pickers
+  window.onload = function () {
+    primaryPicker = new iro.ColorPicker("#primary-picker", {
+      width: 120,
+      color: "#ff0000"
+    });
+
+    secondaryPicker = new iro.ColorPicker("#secondary-picker", {
+      width: 120,
+      color: "#0000ff"
+    });
+  };
+</script>
+{% endblock %}
