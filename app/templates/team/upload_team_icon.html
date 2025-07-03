@@ -94,7 +94,53 @@
     const sortedColors = Object.entries(colorCount)
       .sort((a, b) => b[1] - a[1])
       .map(([rgb]) => rgbToHex(...rgb.split(',').map(Number)));
-    callback(sortedColors[0] || "#000000", sortedColors[1] || "#ffffff");
+
+    const primary = sortedColors[0] || "#ff0000";
+    const secondary = sortedColors[1] || "#0000ff";
+
+    initializePickers(primary, secondary);
+    callback(primary, secondary);
+  }
+
+  function initializePickers(primary, secondary) {
+    const primaryPickerEl = document.getElementById("primary-picker");
+    const secondaryPickerEl = document.getElementById("secondary-picker");
+
+    primaryPickerEl.innerHTML = "";
+    secondaryPickerEl.innerHTML = "";
+
+    primaryPicker = new iro.ColorPicker(primaryPickerEl, {
+      width: 120,
+      color: primary
+    });
+    secondaryPicker = new iro.ColorPicker(secondaryPickerEl, {
+      width: 120,
+      color: secondary
+    });
+
+    const primaryHexInput = document.getElementById("primary-hex");
+    const secondaryHexInput = document.getElementById("secondary-hex");
+
+    primaryHexInput.value = primary;
+    secondaryHexInput.value = secondary;
+
+    primaryPicker.on("color:change", color => {
+      primaryHexInput.value = color.hexString;
+    });
+    secondaryPicker.on("color:change", color => {
+      secondaryHexInput.value = color.hexString;
+    });
+
+    primaryHexInput.addEventListener("change", function () {
+      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
+        primaryPicker.color.hexString = this.value;
+      }
+    });
+    secondaryHexInput.addEventListener("change", function () {
+      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
+        secondaryPicker.color.hexString = this.value;
+      }
+    });
   }
 
   function cropAndCenterImage(img, callback) {
@@ -119,7 +165,6 @@
     const w = maxX - minX + 1;
     const h = maxY - minY + 1;
 
-    // Scale it to max 200x200
     const scale = Math.min(200 / w, 200 / h, 1);
     const newW = Math.round(w * scale);
     const newH = Math.round(h * scale);
@@ -180,18 +225,14 @@
             imageEl.setAttribute("height", h);
             preview.appendChild(imageEl);
 
-            extractColorsFromImage(croppedImg, (primary, secondary) => {
-              primaryPicker.color.hexString = primary;
-              secondaryPicker.color.hexString = secondary;
+            extractColorsFromImage(croppedImg, () => {
+              const clone = preview.cloneNode(true);
+              clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+              const serializer = new XMLSerializer();
+              const svgString = serializer.serializeToString(clone);
+              document.getElementById("final_svg").value = svgString;
+              btnToColor.disabled = false;
             });
-
-            const clone = preview.cloneNode(true);
-            clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(clone);
-            document.getElementById("final_svg").value = svgString;
-
-            btnToColor.disabled = false;
           });
         };
       }
@@ -212,34 +253,9 @@
   });
 
   window.onload = function () {
-    primaryPicker = new iro.ColorPicker("#primary-picker", {
-      width: 120,
-      color: "#ff0000"
-    });
-    secondaryPicker = new iro.ColorPicker("#secondary-picker", {
-      width: 120,
-      color: "#0000ff"
-    });
-    const primaryHexInput = document.getElementById("primary-hex");
-    const secondaryHexInput = document.getElementById("secondary-hex");
-
-    primaryPicker.on("color:change", color => {
-      primaryHexInput.value = color.hexString;
-    });
-    secondaryPicker.on("color:change", color => {
-      secondaryHexInput.value = color.hexString;
-    });
-
-    primaryHexInput.addEventListener("change", function () {
-      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
-        primaryPicker.color.hexString = this.value;
-      }
-    });
-    secondaryHexInput.addEventListener("change", function () {
-      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
-        secondaryPicker.color.hexString = this.value;
-      }
-    });
+    while (preview.lastChild && preview.lastChild.tagName !== "rect") {
+      preview.removeChild(preview.lastChild);
+    }
   };
 </script>
 
