@@ -15,7 +15,6 @@
     <div class="my-3">
       <svg id="icon-preview" width="300" height="300" viewBox="0 0 300 300"
            class="border rounded" xmlns="http://www.w3.org/2000/svg">
-        <rect width="300" height="300" fill="white" stroke="#ccc" />
       </svg>
     </div>
 
@@ -28,18 +27,18 @@
   <div id="step-colors" style="display: none;">
     <h4 class="mb-4">Choose Primary & Secondary Colors</h4>
     <div class="d-flex justify-content-center gap-4 flex-wrap">
-        <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
+      <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Primary</p>
         <div id="primary-picker" class="mb-2"></div>
         <input type="text" id="primary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
-    </div>
-    <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
+      </div>
+      <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Secondary</p>
         <div id="secondary-picker" class="mb-2"></div>
         <input type="text" id="secondary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+      </div>
     </div>
-    </div>
-  <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
+    <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
   </div>
 
   <!-- Step 3: Team Name and Submit -->
@@ -80,12 +79,13 @@
     canvas.width = 300;
     canvas.height = 300;
     const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 300, 300);
     ctx.drawImage(img, 0, 0, 300, 300);
 
     const data = ctx.getImageData(0, 0, 300, 300).data;
     const colorCount = {};
     for (let i = 0; i < data.length; i += 4) {
-      const [r, g, b, a] = [data[i], data[i+1], data[i+2], data[i+3]];
+      const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
       if (a < 200) continue;
       const key = `${r},${g},${b}`;
       colorCount[key] = (colorCount[key] || 0) + 1;
@@ -93,27 +93,63 @@
     const sortedColors = Object.entries(colorCount)
       .sort((a, b) => b[1] - a[1])
       .map(([rgb]) => rgbToHex(...rgb.split(',').map(Number)));
-    callback(sortedColors[0], sortedColors[1]);
+    callback(sortedColors[0] || "#000000", sortedColors[1] || "#ffffff");
+  }
+
+  function cropAndCenterImage(img, callback) {
+    const tempCanvas = document.createElement("canvas");
+    const ctx = tempCanvas.getContext("2d");
+    tempCanvas.width = img.width;
+    tempCanvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        if (imageData.data[i + 3] > 10) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+
+    // Scale it to max 200x200
+    const scale = Math.min(200 / w, 200 / h, 1);
+    const newW = Math.round(w * scale);
+    const newH = Math.round(h * scale);
+
+    const cropped = document.createElement("canvas");
+    cropped.width = newW;
+    cropped.height = newH;
+    const croppedCtx = cropped.getContext("2d");
+    croppedCtx.drawImage(tempCanvas, minX, minY, w, h, 0, 0, newW, newH);
+
+    const resultImg = new Image();
+    resultImg.onload = () => callback(resultImg, newW, newH);
+    resultImg.src = cropped.toDataURL();
   }
 
   uploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function (event) {
       while (preview.lastChild && preview.lastChild.tagName !== "rect") {
         preview.removeChild(preview.lastChild);
       }
-
-      let img;
+      const hiddenInput = document.getElementById("icon-hidden");
+      hiddenInput.files = e.target.files;
 
       if (file.type === "image/svg+xml") {
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(event.target.result, "image/svg+xml");
         const svgEl = svgDoc.querySelector("svg");
         if (!svgEl) return;
-
         const imported = document.importNode(svgEl, true);
         imported.setAttribute("width", 200);
         imported.setAttribute("height", 200);
@@ -122,37 +158,43 @@
         preview.appendChild(imported);
         btnToColor.disabled = false;
 
-      } else if (file.type === "image/png") {
-        img = new Image();
-        img.src = event.target.result;
-        img.onload = function () {
-          const imageEl = document.createElementNS("http://www.w3.org/2000/svg", "image");
-          imageEl.setAttribute("href", img.src);
-          imageEl.setAttribute("x", 50);
-          imageEl.setAttribute("y", 50);
-          imageEl.setAttribute("width", 200);
-          imageEl.setAttribute("height", 200);
-          preview.appendChild(imageEl);
-          extractColorsFromImage(img, (primary, secondary) => {
-            primaryPicker.color.hexString = primary;
-            secondaryPicker.color.hexString = secondary;
-          });
-          btnToColor.disabled = false;
-        };
-      }
-
-      const hiddenInput = document.getElementById("icon-hidden");
-      hiddenInput.files = e.target.files;
-
-      setTimeout(() => {
         const clone = preview.cloneNode(true);
         clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         const serializer = new XMLSerializer();
         const svgString = serializer.serializeToString(clone);
         document.getElementById("final_svg").value = svgString;
-      }, 200);
-    };
 
+      } else if (file.type === "image/png") {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function () {
+          cropAndCenterImage(img, (croppedImg, w, h) => {
+            const x = (300 - w) / 2;
+            const y = (300 - h) / 2;
+            const imageEl = document.createElementNS("http://www.w3.org/2000/svg", "image");
+            imageEl.setAttribute("href", croppedImg.src);
+            imageEl.setAttribute("x", x);
+            imageEl.setAttribute("y", y);
+            imageEl.setAttribute("width", w);
+            imageEl.setAttribute("height", h);
+            preview.appendChild(imageEl);
+
+            extractColorsFromImage(croppedImg, (primary, secondary) => {
+              primaryPicker.color.hexString = primary;
+              secondaryPicker.color.hexString = secondary;
+            });
+
+            const clone = preview.cloneNode(true);
+            clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(clone);
+            document.getElementById("final_svg").value = svgString;
+
+            btnToColor.disabled = false;
+          });
+        };
+      }
+    };
     reader.readAsDataURL(file);
   });
 
@@ -173,12 +215,10 @@
       width: 120,
       color: "#ff0000"
     });
-
     secondaryPicker = new iro.ColorPicker("#secondary-picker", {
       width: 120,
       color: "#0000ff"
     });
-
     const primaryHexInput = document.getElementById("primary-hex");
     const secondaryHexInput = document.getElementById("secondary-hex");
 
@@ -194,7 +234,6 @@
         primaryPicker.color.hexString = this.value;
       }
     });
-
     secondaryHexInput.addEventListener("change", function () {
       if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
         secondaryPicker.color.hexString = this.value;
@@ -202,4 +241,5 @@
     });
   };
 </script>
+
 {% endblock %}
