@@ -1,32 +1,63 @@
 {% extends "system/base.html" %}
 
 {% block content %}
-<div class="container mt-5 text-center">
-    <h2 class="mb-4">How would you like to create your team icon?</h2>
-    <p class="lead">Choose a method to continue:</p>
+<div class="container py-5">
+  <h2 class="text-center mb-3">How would you like to create your team icon?</h2>
+  <p class="text-center mb-4 text-muted">Choose a method to continue:</p>
 
-    <div class="row justify-content-center mt-4">
-        <!-- Step-by-Step Builder -->
-        <div class="col-md-5 mb-4">
-            <div class="card shadow-sm p-4 h-100">
-                <h4 class="mb-3">Build Shield with Custom Options</h4>
-                <p>Create your own shield using shapes, patterns, colors, and icons.</p>
-                <a href="{{ url_for('team.create_team') }}" class="btn btn-primary mt-3">
-                    <i class="bi bi-pencil-square me-1"></i> Start Builder
-                </a>
-            </div>
+  <div class="row justify-content-center g-4">
+    <!-- Custom Shield Builder -->
+    <div class="col-md-6 col-lg-5 d-flex">
+      <div class="card border-dark rounded-4 text-center shadow-sm w-100">
+        <div class="card-body d-flex flex-column justify-content-between">
+          <div>
+            <h5 class="card-title fw-bold">Build Shield with Custom Options</h5>
+            <p class="card-text text-muted mb-4">Create your own shield using shapes, patterns, colors, and icons.</p>
+          </div>
+          <a href="{{ url_for('team.create_team') }}" class="btn btn-primary mt-auto mx-auto px-4 py-2 d-inline-flex align-items-center gap-2" style="max-width: 180px;">
+            <i class="bi bi-pencil-square"></i> <span>Start Builder</span>
+          </a>
         </div>
-
-        <!-- Upload Own Icon -->
-        <div class="col-md-5 mb-4">
-            <div class="card shadow-sm p-4 h-100">
-                <h4 class="mb-3">Upload Your Own Icon</h4>
-                <p>Skip customization and upload your transparent PNG or SVG icon directly.</p>
-                <a href="{{ url_for('team.upload_team_icon_page') }}" class="btn btn-secondary mt-3">
-                    <i class="bi bi-upload me-1"></i> Upload Icon
-                </a>
-            </div>
-        </div>
+      </div>
     </div>
+
+    <!-- Upload Icon Option -->
+    <div class="col-md-6 col-lg-5 d-flex">
+      <div class="card border-dark rounded-4 text-center shadow-sm w-100">
+        <div class="card-body d-flex flex-column justify-content-between">
+          <div>
+            <h5 class="card-title fw-bold">Upload Your Own Icon</h5>
+            <p class="card-text text-muted mb-4">Skip customization and upload your own icon directly.</p>
+          </div>
+          <a href="{{ url_for('team.upload_team_icon_page') }}" class="btn btn-secondary mt-auto mx-auto px-4 py-2 d-inline-flex align-items-center gap-2" style="max-width: 180px;">
+            <i class="bi bi-upload"></i> <span>Upload Icon</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<style>
+  .card.border-dark {
+    border: 2px solid #000 !important;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    transition: 0.2s ease-in-out;
+  }
+
+  .btn span {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    .d-inline-flex {
+      flex-direction: row;
+      justify-content: center;
+    }
+  }
+</style>
 {% endblock %}
