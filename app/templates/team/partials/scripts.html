@@ -104,14 +104,17 @@ function moveIcon(dx, dy) {
 
 
 primaryPicker.on(["color:change", "input:change"], color => {
-    primaryColor = color.hexString;
-    updatePatternColors();
+  primaryColor = color.hexString; // This includes the "#" prefix
+  document.getElementById("primary-hex").value = primaryColor; // Set full hex string including #
+  updatePatternColors();
 });
 
 secondaryPicker.on(["color:change", "input:change"], color => {
-    secondaryColor = color.hexString;
-    updatePatternColors();
+  secondaryColor = color.hexString;
+  document.getElementById("secondary-hex").value = secondaryColor; // Set full hex string including #
+  updatePatternColors();
 });
+
 
 shapeThumbs.forEach(thumb => {
     thumb.addEventListener("click", () => {

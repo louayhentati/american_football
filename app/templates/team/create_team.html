@@ -27,7 +27,7 @@
   }
 
   .shape-wrapper.selected {
-  border: 3px solid red !important;
+    border: 3px solid red !important;
   }
 
   .shape-wrapper:focus-within {
@@ -39,8 +39,19 @@
   *:focus {
     outline: none !important;
   }
-</style>
 
+  /* FIX: Keep step container height fixed to prevent vertical shifting */
+  .step-container {
+    min-height: 540px; /* adjust as needed */
+    position: relative;
+  }
+
+  /* FIX: Fix card height and allow scroll inside */
+  .step-container > .card {
+    height: 540px; /* same as above */
+    overflow-y: auto;
+  }
+</style>
 
 <div class="container mt-5">
   <h2 class="text-center mb-4">Create Your Team Shield</h2>
