@@ -11,7 +11,6 @@
   <!-- Step 1: Upload Image -->
   <div id="step-upload">
     <p class="lead">Use a transparent PNG or SVG.</p>
-    <input type="file" name="icon" id="icon-upload" accept=".png,.svg" class="form-control mb-3" required>
 
     <div class="my-3">
       <svg id="icon-preview" width="300" height="300" viewBox="0 0 300 300"
@@ -20,7 +19,8 @@
       </svg>
     </div>
 
-    <button class="btn btn-primary" id="btn-to-color" disabled>Next: Set Colors</button>
+    <input type="file" name="icon" id="icon-upload" accept=".png,.svg" class="form-control mb-3 mx-auto" style="max-width: 300px;" required>
+    <button class="btn btn-primary mt-2" id="btn-to-color" disabled>Next</button>
   </div>
 
   <!-- Step 2: Color Picker -->
@@ -36,7 +36,7 @@
         <div id="secondary-picker"></div>
       </div>
     </div>
-    <button class="btn btn-primary mt-4" id="btn-to-name">Next: Team Name</button>
+    <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
   </div>
 
   <!-- Step 3: Team Name and Submit -->
@@ -129,7 +129,6 @@
           imageEl.setAttribute("height", 200);
           preview.appendChild(imageEl);
           extractColorsFromImage(img, (primary, secondary) => {
-            // Corrected: assign colors properly
             primaryPicker.color.hexString = primary;
             secondaryPicker.color.hexString = secondary;
           });
@@ -164,7 +163,6 @@
     document.getElementById("form_secondary_color").value = secondaryPicker.color.hexString;
   });
 
-  // Init Pickr: Primary on left, Secondary on right
   window.onload = function () {
     primaryPicker = new iro.ColorPicker("#primary-picker", {
       width: 120,
