@@ -1,24 +1,27 @@
-<!-- Live Preview -->
-<div class="col-lg-6 text-center">
-    <h5 class="mb-3">Live Preview</h5>
-    <svg id="live-preview" width="300" height="300" xmlns="http://www.w3.org/2000/svg"
-         class="border rounded">
+<div class="col-lg-6 d-flex flex-column align-items-center">
+  <div class="card shadow-lg bg-light rounded-4 p-3 w-100" style="border: 2px solid #333; max-width: 350px;">
+    <h5 class="mb-3 fw-bold text-center">Live Preview</h5>
+    <div style="width: 300px; height: 300px; margin: 0 auto; border: 1px solid #ccc; box-sizing: border-box;">
+      <svg id="live-preview" width="300" height="300" xmlns="http://www.w3.org/2000/svg"
+           style="display: block; margin: 0; box-sizing: border-box;">
         <defs>
-            {% for num in range(1, 7) %}
-            <pattern id="pattern{{ num }}" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
-                <!-- Pattern content will be injected dynamically by JavaScript -->
-            </pattern>
-            {% endfor %}
-            <clipPath id="shield-clip">
-                <path id="clip-path-shape" d="" />
-            </clipPath>
+          {% for num in range(1, 7) %}
+          <pattern id="pattern{{ num }}" patternUnits="userSpaceOnUse" width="60" height="60" x="0" y="0">
+            <!-- Pattern content will be injected dynamically by JavaScript -->
+          </pattern>
+          {% endfor %}
+          <clipPath id="shield-clip">
+            <path id="clip-path-shape" d="" />
+          </clipPath>
         </defs>
         <g id="shield-group">
-            <g clip-path="url(#shield-clip)">
-                <rect id="pattern-fill" width="100%" height="100%" fill="none" />
-                <image id="shield-icon" href="" width="60" height="60" x="120" y="120" visibility="hidden"/>
-            </g>
-            <path id="shield-outline" d="" fill="none" stroke="#333" stroke-width="1.5"/>
+          <g clip-path="url(#shield-clip)">
+            <rect id="pattern-fill" width="100%" height="100%" fill="none" />
+            <image id="shield-icon" href="" width="60" height="60" x="120" y="120" visibility="hidden" />
+          </g>
+          <path id="shield-outline" d="" fill="none" stroke="#333" stroke-width="1.5" />
         </g>
-    </svg>
+      </svg>
+    </div>
+  </div>
 </div>
