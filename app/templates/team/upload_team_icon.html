@@ -19,39 +19,44 @@
       </svg>
     </div>
 
-    <input type="file" name="icon" id="icon-upload" accept=".png,.svg" class="form-control mb-3 mx-auto" style="max-width: 300px;" required>
+    <input type="file" name="icon" id="icon-upload" accept=".png,.svg"
+           class="form-control mb-3 mx-auto" style="max-width: 300px;" required>
     <button class="btn btn-primary mt-2" id="btn-to-color" disabled>Next</button>
   </div>
 
   <!-- Step 2: Color Picker -->
   <div id="step-colors" style="display: none;">
-    <h4 class="mb-3">Choose Primary & Secondary Colors</h4>
-    <div class="d-flex justify-content-center gap-5">
-      <div class="text-center">
-        <p>Primary</p>
-        <div id="primary-picker"></div>
-      </div>
-      <div class="text-center">
-        <p>Secondary</p>
-        <div id="secondary-picker"></div>
-      </div>
+    <h4 class="mb-4">Choose Primary & Secondary Colors</h4>
+    <div class="d-flex justify-content-center gap-4 flex-wrap">
+        <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
+        <p class="fw-bold mb-2">Primary</p>
+        <div id="primary-picker" class="mb-2"></div>
+        <input type="text" id="primary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
     </div>
-    <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
+    <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
+        <p class="fw-bold mb-2">Secondary</p>
+        <div id="secondary-picker" class="mb-2"></div>
+        <input type="text" id="secondary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+    </div>
+    </div>
+  <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
   </div>
 
   <!-- Step 3: Team Name and Submit -->
   <div id="step-name" style="display: none;">
-    <h4 class="mb-3">Team Name</h4>
-    <form id="upload-form" method="POST" action="{{ url_for('team.upload_team_icon_page') }}" enctype="multipart/form-data">
-      <input type="text" class="form-control mb-2" name="name" placeholder="Enter team name" required>
-      <input type="hidden" name="primary_color" id="form_primary_color">
-      <input type="hidden" name="secondary_color" id="form_secondary_color">
-      <input type="hidden" name="final_svg" id="final_svg">
-      <input type="file" name="icon" id="icon-hidden" style="display: none;" />
-      <button type="submit" class="btn btn-success mt-3">
-        <i class="bi bi-cloud-arrow-up"></i> Save Team Icon
-      </button>
-    </form>
+    <div class="mx-auto mt-4 p-4 border border-dark rounded" style="max-width: 600px;">
+      <h4 class="mb-3">Team Name</h4>
+      <form id="upload-form" method="POST" action="{{ url_for('team.upload_team_icon_page') }}" enctype="multipart/form-data">
+        <input type="text" class="form-control mb-3" name="name" placeholder="Enter team name" required>
+        <input type="hidden" name="primary_color" id="form_primary_color">
+        <input type="hidden" name="secondary_color" id="form_secondary_color">
+        <input type="hidden" name="final_svg" id="final_svg">
+        <input type="file" name="icon" id="icon-hidden" style="display: none;" />
+        <button type="submit" class="btn btn-success mt-2 px-4">
+          <i class="bi bi-cloud-arrow-up"></i> Save Team Icon
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -172,6 +177,28 @@
     secondaryPicker = new iro.ColorPicker("#secondary-picker", {
       width: 120,
       color: "#0000ff"
+    });
+
+    const primaryHexInput = document.getElementById("primary-hex");
+    const secondaryHexInput = document.getElementById("secondary-hex");
+
+    primaryPicker.on("color:change", color => {
+      primaryHexInput.value = color.hexString;
+    });
+    secondaryPicker.on("color:change", color => {
+      secondaryHexInput.value = color.hexString;
+    });
+
+    primaryHexInput.addEventListener("change", function () {
+      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
+        primaryPicker.color.hexString = this.value;
+      }
+    });
+
+    secondaryHexInput.addEventListener("change", function () {
+      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
+        secondaryPicker.color.hexString = this.value;
+      }
     });
   };
 </script>
