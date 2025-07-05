@@ -759,5 +759,34 @@ iconPad.addEventListener("mouseleave", () => {
   iconPad.style.cursor = "grab";
 });
 
+// Sync default color values to input fields
+document.getElementById("primary-hex").value = primaryColor;
+document.getElementById("secondary-hex").value = secondaryColor;
+
+// Validate and handle manual hex input for primary color
+document.getElementById("primary-hex").addEventListener("input", function () {
+    const val = this.value.trim().replace("#", "");
+    if (/^[0-9a-fA-F]{0,6}$/.test(val)) {
+        this.value = "#" + val;
+        if (val.length === 6) {
+            primaryPicker.color.hexString = "#" + val;
+        }
+    } else {
+        this.value = primaryColor;
+    }
+});
+
+// Validate and handle manual hex input for secondary color
+document.getElementById("secondary-hex").addEventListener("input", function () {
+    const val = this.value.trim().replace("#", "");
+    if (/^[0-9a-fA-F]{0,6}$/.test(val)) {
+        this.value = "#" + val;
+        if (val.length === 6) {
+            secondaryPicker.color.hexString = "#" + val;
+        }
+    } else {
+        this.value = secondaryColor;
+    }
+});
 
 </script>
