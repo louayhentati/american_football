@@ -431,13 +431,11 @@ iconUploadInput.addEventListener("change", function (e) {
         iconZoomSlider.value = iconWidth;
         iconZoomInput.value = iconWidth;
 
-        // Remove any old icon (image or inline SVG)
         const oldInline = document.getElementById("inline-shield-icon");
         if (oldInline) oldInline.remove();
         shieldIcon.setAttribute("visibility", "hidden");
 
         if (file.type === "image/svg+xml") {
-            // Inline SVG icon
             const parser = new DOMParser();
             const svgDoc = parser.parseFromString(event.target.result, "image/svg+xml");
             const innerSVG = svgDoc.querySelector("svg");
@@ -455,14 +453,12 @@ iconUploadInput.addEventListener("change", function (e) {
             inline.setAttribute("y", centerY);
             inline.setAttribute("viewBox", innerSVG.getAttribute("viewBox") || "0 0 100 100");
 
-            // Copy over all child nodes of innerSVG
             for (const node of innerSVG.childNodes) {
                 inline.appendChild(node.cloneNode(true));
             }
 
             livePreview.querySelector("#shield-group > g").appendChild(inline);
         } else {
-            // PNG fallback
             shieldIcon.setAttribute("href", event.target.result);
             shieldIcon.setAttribute("visibility", "visible");
             shieldIcon.setAttribute("width", iconWidth);
@@ -485,6 +481,10 @@ iconUploadInput.addEventListener("change", function (e) {
 
     reader.readAsDataURL(file);
 });
+
+
+
+
 
 document.getElementById("save-form").addEventListener("submit", function (e) {
     if (currentStep !== steps.length - 1) {
