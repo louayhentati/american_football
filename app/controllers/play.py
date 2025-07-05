@@ -28,10 +28,9 @@ class PlayController:
         play_type = play_option.play_call.name if play_option and play_option.play_call else None
         print(f'play_type: {play_type}')
 
-
         options = self._get_add_play_form_options()
         play = PlayModel.query.get_or_404(play_id)
-        drive = DriveModel.query.get_or_404(play.drive_id)
+
         if request.method == 'POST':
             try:
                 result_form = request.form.get('result')
@@ -70,35 +69,34 @@ class PlayController:
 
         return render_template('play/add_play.html',
                                play=play,
-                               drive=drive,
                                options=options,
                                drive_id=play.drive_id)
 
     @login_required
     def _recalculate_drive_ended(self, drive):
         last_play = (
-        PlayModel.query
-        .filter_by(drive_id=drive.id)
-        .order_by(PlayModel.id.desc())
-        .first()
-    )
+            PlayModel.query
+            .filter_by(drive_id=drive.id)
+            .order_by(PlayModel.id.desc())
+            .first()
+        )
         if not last_play:
             drive.ended = False
         else:
             turnover_results = [
-            'Interception', 'Interception, Def TD',
-            'Fumble', 'Fumble, Def TD',
-            'Punt', 'Sack',
-            'Touchdown', 'Rush, TD', 'Complete, TD'
+                'Interception', 'Interception, Def TD',
+                'Fumble', 'Fumble, Def TD',
+                'Punt', 'Sack',
+                'Touchdown', 'Rush, TD', 'Complete, TD'
             ]
 
-            if (last_play.result in turnover_results or 
-                (last_play.down == 4 and last_play.gain_loss < last_play.distance)):
+            if (last_play.result in turnover_results or
+                    (last_play.down == 4 and last_play.gain_loss < last_play.distance)):
                 drive.ended = True
             else:
                 drive.ended = False
         db.session.commit()
-    
+
     @login_required
     def delete_play(self, play_id):
         try:
