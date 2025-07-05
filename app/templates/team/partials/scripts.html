@@ -138,29 +138,31 @@ patternThumbs.forEach(thumb => {
 });
 
 btnNext.addEventListener("click", () => {
-    if (currentStep < steps.length - 1) {
+    // If on step-icon or step-adjust-icon and no icon selected, block the step
+    if ((steps[currentStep] === "step-icon" || steps[currentStep] === "step-adjust-icon") && !iconChosen) {
+        return; // silently do nothing
+    }
 
-        // FIX: Do not block transition even if iconChosen is false
+    if (currentStep < steps.length - 1) {
         document.getElementById(steps[currentStep]).style.display = "none";
         currentStep++;
         document.getElementById(steps[currentStep]).style.display = "block";
 
         btnBack.style.display = currentStep === 0 ? "none" : "inline-block";
 
-        // Only disable Next if shape or pattern is missing on relevant steps
         if (steps[currentStep] === "step-shape" && !selectedShape) {
             btnNext.disabled = true;
         } else if (steps[currentStep] === "step-pattern" && !selectedPattern) {
+            btnNext.disabled = true;
+        } else if ((steps[currentStep] === "step-icon" || steps[currentStep] === "step-adjust-icon") && !iconChosen) {
             btnNext.disabled = true;
         } else {
             btnNext.disabled = false;
         }
 
-        // Refresh icon list if needed
         if (steps[currentStep] === "step-icon") loadIcons();
     }
 });
-
 
 
 
@@ -304,9 +306,12 @@ resetBtn.addEventListener("click", () => {
     iconChosen = false;
     btnNext.disabled = true;
 
-    // Reset selected icon styling (remove border)
+    // Reset selected icon styling (remove red borders)
     document.querySelectorAll(".icon-thumb").forEach(img => {
         img.classList.remove("border-primary");
+    });
+    document.querySelectorAll(".icon-wrapper").forEach(wrapper => {
+        wrapper.classList.remove("selected");
     });
 
     // Remove inline SVG icon if exists
@@ -330,7 +335,6 @@ resetBtn.addEventListener("click", () => {
     iconPrev.disabled = currentIconPage === 0;
     iconNext.disabled = (currentIconPage + 1) * iconsPerPage >= iconList.length;
 });
-
 
 
 
@@ -442,6 +446,7 @@ iconPrev.addEventListener("click", () => {
     }
 });
 
+
 iconUploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -455,9 +460,11 @@ iconUploadInput.addEventListener("change", function (e) {
 
     disableIconCatalog();
 
-    // ✅ Disable pagination buttons
     iconPrev.disabled = true;
     iconNext.disabled = true;
+
+    iconChosen = true;
+    btnNext.disabled = false;
 
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -515,9 +522,6 @@ iconUploadInput.addEventListener("change", function (e) {
         document.getElementById("form_secondary_color").value = secondaryColor;
         document.getElementById("save-form").style.display = "block";
         document.getElementById("save-form").scrollIntoView({ behavior: "smooth" });
-
-        iconChosen = true;
-        btnNext.disabled = false;
     };
 
     reader.readAsDataURL(file);
@@ -786,6 +790,60 @@ document.getElementById("secondary-hex").addEventListener("input", function () {
     } else {
         this.value = secondaryColor;
     }
+});
+
+// Shape selection
+document.querySelectorAll('.shape-thumb').forEach(img => {
+  img.addEventListener('click', () => {
+    document.querySelectorAll('.shape-wrapper').forEach(wrapper => wrapper.classList.remove('selected'));
+    img.closest('.shape-wrapper').classList.add('selected');
+    document.getElementById('btn-next').disabled = false;
+  });
+});
+
+// Pattern selection
+document.querySelectorAll('.pattern-thumb').forEach(pat => {
+  pat.addEventListener('click', () => {
+    document.querySelectorAll('.pattern-wrapper').forEach(wrapper => wrapper.classList.remove('selected'));
+    pat.closest('.pattern-wrapper').classList.add('selected');
+    document.getElementById('btn-next').disabled = false;
+  });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('#icon-container').forEach(container => {
+    container.addEventListener('click', function (e) {
+      const clicked = e.target;
+      if (clicked.classList.contains('icon-thumb')) {
+        container.querySelectorAll('.icon-wrapper').forEach(wrapper => {
+          wrapper.classList.remove('selected');
+        });
+
+        const wrapper = clicked.closest('.icon-wrapper');
+        if (wrapper) {
+          wrapper.classList.add('selected');
+        }
+
+        iconChosen = true; // ✅ track that icon was selected
+        document.getElementById('btn-next').disabled = false;
+
+        const selectedIcon = clicked.getAttribute('data-icon');
+      }
+    });
+  });
+});
+
+
+document.getElementById('reset-icon-choice').addEventListener('click', function () {
+  // Remove red border from all icon-wrapper elements
+  document.querySelectorAll('.icon-wrapper').forEach(wrapper => {
+    wrapper.classList.remove('selected');
+  });
+
+  // Optionally disable "Next" again
+  document.getElementById('btn-next').disabled = true;
+
 });
 
 </script>
