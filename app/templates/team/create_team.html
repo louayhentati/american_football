@@ -103,7 +103,7 @@
     display: flex;
     justify-content: center;
     margin-bottom: 4px;
-    margin-top: -16px; /* moves upload upward */
+    margin-top: -16px;
   }
 
   .upload-wrapper input[type="file"] {
@@ -124,7 +124,20 @@
     font-size: 0.8rem;
     padding: 4px 10px;
   }
+
+  .top-back-btn {
+    position: absolute;
+    top: 70px; /* below navbar */
+    left: 20px;
+    z-index: 1050;
+  }
 </style>
+
+<div class="top-back-btn">
+  <a href="{{ url_for('team.choose_creation_method') }}" class="btn btn-secondary rounded px-4 py-2">
+    Back
+  </a>
+</div>
 
 <div class="container mt-5">
   <h2 class="text-center mb-4">Create Your Team Shield</h2>

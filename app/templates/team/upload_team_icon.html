@@ -2,9 +2,24 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
+<style>
+  .top-back-btn {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    z-index: 1050;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
+<div class="text-start ps-4 mt-4">
+  <a href="{{ url_for('team.choose_creation_method') }}" class="btn btn-secondary rounded px-4 py-2">
+    Back
+  </a>
+</div>
+
+
 <div class="container mt-5 text-center">
   <h2 class="mb-4">Upload Your Team Icon</h2>
 
@@ -15,7 +30,6 @@
     <div class="my-3">
       <svg id="icon-preview" width="300" height="300" viewBox="0 0 300 300"
            class="border rounded" xmlns="http://www.w3.org/2000/svg">
-        
       </svg>
     </div>
 
@@ -59,6 +73,7 @@
     </div>
   </div>
 </div>
+
 
 <script>
   const uploadInput = document.getElementById("icon-upload");
