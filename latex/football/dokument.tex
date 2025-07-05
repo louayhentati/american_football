@@ -1,0 +1,56 @@
+\documentclass[12pt]{article}
+
+\usepackage[ngerman]{babel}
+\usepackage{graphicx}
+\usepackage[]{minted}
+\usemintedstyle{default}
+\setminted{
+	tabsize=2
+}
+\usepackage{tcolorbox}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{minted}{\begin{tcolorbox}}%
+\AfterEndEnvironment{minted}{\end{tcolorbox}}%
+
+\author{
+	Can, Dechert, 1360493\\
+	\and
+	Daniel, Remel, 1346666\\
+	\and
+	Doha, Chamia, 1460542\\
+	\and
+	Jakob, Hermanowski, 1322237\\
+	\and
+	Learmond, Xhako, 1458619\\
+	\and
+	Louay Hentati, 1461017\\
+	\and
+	Michael, Filatoff, 1363351\\
+	\and
+	Sascha, Gavrilov, 1298701\\
+	\and
+	Yassine, Asghar, 1386024\\
+	\and
+	Zaineb, Matouali, 1458402\\
+	\and
+}
+\title{Football}
+\date{\vspace{0.5cm}
+	\textbf{Merkl}
+	\vspace{0.5cm} \\
+	Informatikprojekt
+	\vspace{0.5cm}\\
+	Fachbereich 2.
+	\vspace{0.5cm}\\
+	Fankfurt University of Applied Sciences
+	\vspace{0.5cm} \\
+	Sommersemester 2025}
+\begin{document}
+\maketitle
+\pagebreak
+\tableofcontents
+\pagebreak
+\section{Jakob Hermanowski}
+\input{kapitel/hermanowski.tex}
+
+\end{document}
