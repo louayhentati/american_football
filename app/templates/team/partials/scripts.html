@@ -302,7 +302,11 @@ resetBtn.addEventListener("click", () => {
     enableAllIconOptions();
     iconChosen = false;
     btnNext.disabled = true;
+
+    iconPrev.disabled = currentIconPage === 0;
+    iconNext.disabled = (currentIconPage + 1) * iconsPerPage >= iconList.length;
 });
+
 
 
 const iconContainer = document.getElementById("icon-container");
@@ -405,6 +409,13 @@ iconNext.addEventListener("click", () => {
     }
 });
 
+iconPrev.addEventListener("click", () => {
+    if (currentIconPage > 0) {
+        currentIconPage--;
+        loadIcons();
+    }
+});
+
 iconUploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -417,6 +428,10 @@ iconUploadInput.addEventListener("change", function (e) {
     }
 
     disableIconCatalog();
+
+    // ✅ Disable pagination buttons
+    iconPrev.disabled = true;
+    iconNext.disabled = true;
 
     const reader = new FileReader();
     reader.onload = function (event) {
@@ -481,7 +496,6 @@ iconUploadInput.addEventListener("change", function (e) {
 
     reader.readAsDataURL(file);
 });
-
 
 
 
