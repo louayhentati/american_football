@@ -4,18 +4,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
 
 <style>
-  .shape-wrapper.selected,
-  .pattern-wrapper.selected,
-  .icon-wrapper.selected {
-  border: 2px solid red !important;
-  }
-  .icon-wrapper.selected {
-  border: 2px solid red !important;
-  }
-
-
+  /* Base thumbnail styles */
   .shape-thumb,
-  .pattern-thumb {
+  .pattern-thumb,
+  .icon-thumb {
     border: none !important;
     border-radius: 10px;
     cursor: pointer;
@@ -26,48 +18,55 @@
     justify-content: center;
   }
 
+  /* Common wrapper styles */
   .shape-wrapper,
-  .pattern-wrapper {
-    border: 2px solid #000000;
+  .pattern-wrapper,
+  .icon-wrapper {
+    border: 2px solid black;
     border-radius: 8px;
-    transition: border-color 0.2s;
+    transition: border 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .shape-wrapper,
+  .pattern-wrapper {
     width: 90px;
     height: 90px;
   }
 
-  .shape-wrapper.selected,
-  .pattern-wrapper.selected {
-    border: 2px solid red !important;
-  }
-
-  .pattern-thumb svg {
-    display: block;
-    margin: auto;
-  }
-
   .icon-wrapper {
-    border: 2px solid #000000;
-    border-radius: 8px;
-    transition: border-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 80px;
     height: 80px;
     margin: 4px;
   }
 
+  .shape-wrapper.selected,
+  .pattern-wrapper.selected,
   .icon-wrapper.selected {
     border: 2px solid red !important;
+  }
+
+  /* Pattern thumb container */
+  .pattern-thumb {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pattern-thumb svg {
+    width: 60px;
+    height: 60px;
+    display: block;
   }
 
   .icon-thumb {
     max-height: 50px;
     max-width: 50px;
-    cursor: pointer;
   }
 
   *:focus {
@@ -137,7 +136,7 @@
 
   .top-back-btn {
     position: absolute;
-    top: 70px; /* below navbar */
+    top: 70px;
     left: 20px;
     z-index: 1050;
   }
