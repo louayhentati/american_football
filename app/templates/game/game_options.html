@@ -22,7 +22,9 @@
                 <select id="awayTeamFilter" class="form-select" style="min-width: 250px;">
                     <option value="">All Away Teams</option>
                     {% for team in teams %}
-                        <option value="{{ team.name }}">{{ team.name }}</option>
+                        {% if team.id != current_user.team.id %}
+                            <option value="{{ team.name }}">{{ team.name }}</option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>

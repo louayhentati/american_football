@@ -17,43 +17,29 @@ class GameController:
         self.register_routes()
 
     def register_routes(self) -> None:
-        self.app.add_url_rule(rule='/game-options', view_func=self.game_options)
-        self.app.add_url_rule(rule='/game/<int:game_id>', view_func=self.game_detail)
-        self.app.add_url_rule(rule='/add-game', view_func=self.add_game, methods=['GET', 'POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/delete', view_func=self.delete_game, methods=['POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/drive-chart', view_func=self.drive_chart)
-        self.app.add_url_rule(rule='/game/<int:game_id>/export', view_func=self.export_game)
-        self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',
+        self.app.add_url_rule(rule='/games', view_func=self.game_options)
+        self.app.add_url_rule(rule='/games/<int:game_id>', view_func=self.game_detail)
+        self.app.add_url_rule(rule='/games/add', view_func=self.add_game, methods=['GET', 'POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/delete', view_func=self.delete_game, methods=['POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/drive-chart', view_func=self.drive_chart)
+        self.app.add_url_rule(rule='/games/<int:game_id>/export', view_func=self.export_game)
+        self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
 
     @login_required
     def game_options(self) -> str:
-        # filter away team
         teams = TeamModel.query.all()
         games = GameModel.query.all()
-        selected_team = request.args.get('Team')
-        filtered_games = []
-        if selected_team and selected_team != '':
-
-            for game in games:
-                print(game.away_team.name)
-                print(selected_team)
-                if game.away_team.name == selected_team:
-                    filtered_games.append(game)
-        else:
-            filtered_games = games
-        return render_template(template_name_or_list='game/game_options.html',
-                               games=filtered_games,
-                               teams=teams,
-                               selected_team=selected_team)
+        return render_template(
+            template_name_or_list='game/game_options.html',
+            games=games,
+            teams=teams
+        )
 
     @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
-        for drive in game.drives:
-            if len(drive.plays) > 0:
-                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
