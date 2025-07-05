@@ -549,7 +549,6 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
     const clone = svg.cloneNode(true);
     const vb = svg.getAttribute("viewBox");
 
-    // Remove white background rects
     clone.querySelectorAll("rect").forEach(rect => {
         const fill = rect.getAttribute("fill");
         if (fill && (fill === "#fff" || fill === "#ffffff" || fill.toLowerCase() === "white")) {
@@ -557,7 +556,6 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
         }
     });
 
-    // Replace image href if user uploaded a PNG or SVG icon
     const iconFilename = document.getElementById("form_icon_filename").value;
     const iconImage = clone.querySelector("image");
     if (iconImage && iconFilename && (iconFilename.endsWith(".png") || iconFilename.endsWith(".svg"))) {
@@ -565,7 +563,6 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
         iconImage.setAttribute("href", `/static/user_created_icons/${safeTeamName}/${iconFilename}`);
     }
 
-    // Create a shape-based mask
     const shapePath = document.getElementById("clip-path-shape").getAttribute("d");
     const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
 
@@ -586,7 +583,6 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
     defs.appendChild(mask);
     clone.insertBefore(defs, clone.firstChild);
 
-    // Wrap all non-defs content in a <g> using the mask
     const contentGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     contentGroup.setAttribute("mask", "url(#shield-mask)");
 
@@ -597,7 +593,6 @@ document.getElementById("save-form").addEventListener("submit", function (e) {
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("viewBox", vb);
 
-    // Fill hidden inputs before serialization
     document.getElementById("form_primary_color").value = primaryColor;
     document.getElementById("form_secondary_color").value = secondaryColor;
     document.getElementById("form_icon_filename").value =
@@ -649,7 +644,6 @@ pad.addEventListener("mouseleave", () => {
     pad.style.cursor = "grab";
 });
 
-// --- Zoom Slider and Number Input ---
 const zoomSlider = document.getElementById("zoom-range");
 const zoomInput = document.getElementById("zoom-value");
 
@@ -701,7 +695,6 @@ function setIconSize(w, h) {
     }
 }
 
-// slider ⇄ input
 iconZoomSlider.addEventListener("input", () => {
   const w = parseInt(iconZoomSlider.value, 10);
   iconZoomInput.value = w;
@@ -713,7 +706,6 @@ iconZoomInput.addEventListener("input", () => {
   setIconSize(w, w);
 });
 
-// wheel‐zoom (only when an icon is visible)
 livePreview.addEventListener("wheel", function(e) {
   if (steps[currentStep] !== "step-adjust-icon") return;
 
@@ -744,7 +736,6 @@ iconPad.addEventListener("mousemove", e => {
 
   moveIcon(dx*1.5, dy*1.5);
 
-  // move indicator dot
   let left = (parseFloat(iconIndicator.style.left)||70) + dx;
   let top  = (parseFloat(iconIndicator.style.top )||70) + dy;
   iconIndicator.style.left = `${Math.max(0, Math.min(140, left))}px`;
@@ -759,24 +750,32 @@ iconPad.addEventListener("mouseleave", () => {
   iconPad.style.cursor = "grab";
 });
 
-// Sync default color values to input fields
-document.getElementById("primary-hex").value = primaryColor;
-document.getElementById("secondary-hex").value = secondaryColor;
+document.getElementById("primary-hex").value = primaryColor.toUpperCase();
+document.getElementById("secondary-hex").value = secondaryColor.toUpperCase();
 
-// Validate and handle manual hex input for primary color
+
 document.getElementById("primary-hex").addEventListener("input", function () {
-    const val = this.value.trim().replace("#", "");
-    if (/^[0-9a-fA-F]{0,6}$/.test(val)) {
-        this.value = "#" + val;
-        if (val.length === 6) {
-            primaryPicker.color.hexString = "#" + val;
-        }
-    } else {
-        this.value = primaryColor;
+    let val = this.value.trim().replace("#", "").toUpperCase();
+    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
+    if (val.length > 6) val = val.slice(0, 6);
+    this.value = "#" + val;
+    if (val.length === 6) {
+        primaryPicker.color.hexString = "#" + val;
     }
 });
 
-// Validate and handle manual hex input for secondary color
+document.getElementById("secondary-hex").addEventListener("input", function () {
+    let val = this.value.trim().replace("#", "").toUpperCase();
+    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
+    if (val.length > 6) val = val.slice(0, 6);
+    this.value = "#" + val;
+    if (val.length === 6) {
+        secondaryPicker.color.hexString = "#" + val;
+    }
+});
+
+
+
 document.getElementById("secondary-hex").addEventListener("input", function () {
     const val = this.value.trim().replace("#", "");
     if (/^[0-9a-fA-F]{0,6}$/.test(val)) {

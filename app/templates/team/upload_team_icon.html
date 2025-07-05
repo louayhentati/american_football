@@ -31,12 +31,12 @@
       <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Primary</p>
         <div id="primary-picker" class="mb-2"></div>
-        <input type="text" id="primary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+        <input type="text" id="primary-hex" class="form-control text-center" maxlength="7" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
       </div>
       <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Secondary</p>
         <div id="secondary-picker" class="mb-2"></div>
-        <input type="text" id="secondary-hex" class="form-control text-center" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+        <input type="text" id="secondary-hex" class="form-control text-center" maxlength="7" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
       </div>
     </div>
     <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
@@ -101,47 +101,59 @@
     initializePickers(primary, secondary);
     callback(primary, secondary);
   }
+function initializePickers(primary, secondary) {
+  const primaryPickerEl = document.getElementById("primary-picker");
+  const secondaryPickerEl = document.getElementById("secondary-picker");
 
-  function initializePickers(primary, secondary) {
-    const primaryPickerEl = document.getElementById("primary-picker");
-    const secondaryPickerEl = document.getElementById("secondary-picker");
+  primaryPickerEl.innerHTML = "";
+  secondaryPickerEl.innerHTML = "";
 
-    primaryPickerEl.innerHTML = "";
-    secondaryPickerEl.innerHTML = "";
+  primaryPicker = new iro.ColorPicker(primaryPickerEl, {
+    width: 120,
+    color: primary
+  });
+  secondaryPicker = new iro.ColorPicker(secondaryPickerEl, {
+    width: 120,
+    color: secondary
+  });
 
-    primaryPicker = new iro.ColorPicker(primaryPickerEl, {
-      width: 120,
-      color: primary
-    });
-    secondaryPicker = new iro.ColorPicker(secondaryPickerEl, {
-      width: 120,
-      color: secondary
-    });
+  const primaryHexInput = document.getElementById("primary-hex");
+  const secondaryHexInput = document.getElementById("secondary-hex");
 
-    const primaryHexInput = document.getElementById("primary-hex");
-    const secondaryHexInput = document.getElementById("secondary-hex");
+  // Set default values
+  primaryHexInput.value = primary.toUpperCase();
+  secondaryHexInput.value = secondary.toUpperCase();
 
-    primaryHexInput.value = primary;
-    secondaryHexInput.value = secondary;
+  // Picker → Input sync
+  primaryPicker.on("color:change", color => {
+    primaryHexInput.value = color.hexString.toUpperCase();
+  });
+  secondaryPicker.on("color:change", color => {
+    secondaryHexInput.value = color.hexString.toUpperCase();
+  });
 
-    primaryPicker.on("color:change", color => {
-      primaryHexInput.value = color.hexString;
-    });
-    secondaryPicker.on("color:change", color => {
-      secondaryHexInput.value = color.hexString;
-    });
+  // Input → Picker sync with validation
+  primaryHexInput.addEventListener("input", function () {
+    let val = this.value.trim().replace("#", "").toUpperCase();
+    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
+    if (val.length > 6) val = val.slice(0, 6);
+    this.value = "#" + val;
+    if (val.length === 6) {
+      primaryPicker.color.hexString = "#" + val;
+    }
+  });
 
-    primaryHexInput.addEventListener("change", function () {
-      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
-        primaryPicker.color.hexString = this.value;
-      }
-    });
-    secondaryHexInput.addEventListener("change", function () {
-      if (/^#([0-9A-F]{3}){1,2}$/i.test(this.value)) {
-        secondaryPicker.color.hexString = this.value;
-      }
-    });
-  }
+  secondaryHexInput.addEventListener("input", function () {
+    let val = this.value.trim().replace("#", "").toUpperCase();
+    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
+    if (val.length > 6) val = val.slice(0, 6);
+    this.value = "#" + val;
+    if (val.length === 6) {
+      secondaryPicker.color.hexString = "#" + val;
+    }
+  });
+}
+
 
   function cropAndCenterImage(img, callback) {
     const tempCanvas = document.createElement("canvas");
