@@ -163,12 +163,7 @@ class SettingsController:
             if user and user.role == 'admin':
                 UserModel.query.update({UserModel.team_id: team_id})
                 db.session.commit()
-
-                if current_user.id == user.id:
-                    assigned_team = TeamModel.query.get(team_id) if team_id else None
-                    session['team_color'] = assigned_team.primary_color if assigned_team else None
-                    session['team_id'] = team_id
-                    session['team_icon'] = assigned_team.icon if assigned_team else None
+                db.session.refresh(current_user)
 
                 flash('Team assigned successfully!', 'success')
             else:
