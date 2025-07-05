@@ -4,7 +4,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
 
 <style>
-  .shape-thumb {
+  .shape-thumb,
+  .pattern-thumb {
     border: none !important;
     border-radius: 6px;
     cursor: pointer;
@@ -13,42 +14,37 @@
   }
 
   .shape-thumb:focus,
-  .shape-thumb:focus-visible,
-  .shape-thumb:active {
+  .shape-thumb:active,
+  .pattern-thumb:focus,
+  .pattern-thumb:active {
     outline: none !important;
     box-shadow: none !important;
     border: none !important;
   }
 
-  .shape-wrapper {
+  .shape-wrapper,
+  .pattern-wrapper {
     border: 2px solid #444;
     border-radius: 6px;
     transition: border-color 0.2s;
   }
 
-  .shape-wrapper.selected {
+  .shape-wrapper.selected,
+  .pattern-wrapper.selected {
     border: 3px solid red !important;
   }
 
-  .shape-wrapper:focus-within {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Hide blue focus ring globally on all elements unless needed for accessibility */
   *:focus {
     outline: none !important;
   }
 
-  /* FIX: Keep step container height fixed to prevent vertical shifting */
   .step-container {
-    min-height: 540px; /* adjust as needed */
+    min-height: 540px;
     position: relative;
   }
 
-  /* FIX: Fix card height and allow scroll inside */
   .step-container > .card {
-    height: 540px; /* same as above */
+    height: 540px;
     overflow-y: auto;
   }
 </style>
@@ -57,10 +53,7 @@
   <h2 class="text-center mb-4">Create Your Team Shield</h2>
 
   <div class="row justify-content-center align-items-start">
-    <!-- Steps on the left -->
     {% include "team/partials/steps.html" %}
-
-    <!-- Live Preview on the right -->
     {% include "team/partials/preview.html" %}
   </div>
 </div>
@@ -70,14 +63,15 @@
 <script>
   document.querySelectorAll('.shape-thumb').forEach(img => {
     img.addEventListener('click', () => {
-      // Remove selection from all
-      document.querySelectorAll('.shape-wrapper').forEach(wrapper => {
-        wrapper.classList.remove('selected');
-      });
+      document.querySelectorAll('.shape-wrapper').forEach(wrapper => wrapper.classList.remove('selected'));
+      img.closest('.shape-wrapper').classList.add('selected');
+    });
+  });
 
-      // Add selection to clicked one
-      const wrapper = img.closest('.shape-wrapper');
-      wrapper.classList.add('selected');
+  document.querySelectorAll('.pattern-thumb').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.pattern-wrapper').forEach(w => w.classList.remove('selected'));
+      el.closest('.pattern-wrapper').classList.add('selected');
     });
   });
 </script>
