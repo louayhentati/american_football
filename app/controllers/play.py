@@ -31,7 +31,7 @@ class PlayController:
 
         options = self._get_add_play_form_options()
         play = PlayModel.query.get_or_404(play_id)
-
+        drive = DriveModel.query.get_or_404(play.drive_id)
         if request.method == 'POST':
             try:
                 result_form = request.form.get('result')
@@ -67,6 +67,7 @@ class PlayController:
 
         return render_template('play/add_play.html',
                                play=play,
+                               drive=drive,
                                options=options,
                                drive_id=play.drive_id)
 
