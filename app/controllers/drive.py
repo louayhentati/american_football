@@ -26,9 +26,8 @@ class DriveController:
     def add_play(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
 
-        # Check if drive has ended
-        if self._has_drive_ended(drive_id):
-            flash("This drive has ended. Cannot add more plays.", "danger")
+        if drive.ended:
+            flash("This drive has ended. Cannot add more plays!")
             return redirect(url_for('drive_detail', drive_id=drive_id))
 
         if request.method == 'POST':
@@ -70,19 +69,12 @@ class DriveController:
         play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
         play_type = play_option.play_call.name if play_option and play_option.play_call else None
 
-        # safely converts numeric fields with defaults
-        def to_int(val, default):
-            try:
-                return int(val)
-            except (ValueError, TypeError):
-                return default
-
         return PlayModel(
             drive_id=drive_id,
-            odk=form.get('odk', 'O'),
-            down=to_int(form.get('down'), 1),
-            distance=to_int(form.get('distance'), 10),
-            yard_line=to_int(form.get('yard_line'), 25),
+            odk=form['odk'],
+            down=int(form.get('down') or 1),
+            distance=int(form.get('distance') or 10),
+            yard_line=int(form.get('yard_line') or 25),
             hash=form.get('hash', 'M'),
             personnel=form.get('personnel'),
             off_form=form.get('off_form'),
@@ -98,8 +90,36 @@ class DriveController:
             gain_loss=to_int(form.get('gain_loss'), 0)
         )
 
-    def _handle_add_play_get_request(self, drive_id, drive):
-        # Get default values based on previous play or NFL defaults
+    def _update_play_fields(self, play, drive_id, drive):
+        previous_play = self._get_previous_play(drive_id, play.id)
+        if not previous_play:
+            return
+
+        next_fields = self.__calculate_next_play_fields(last_play=previous_play)
+        play.down = next_fields.get('down', play.down)
+        play.distance = next_fields.get('distance', play.distance)
+        play.yard_line = next_fields.get('yard_line', play.yard_line)
+
+        if next_fields.get('possession_change', False):
+            drive.ended = True
+        elif play.result in ['Touchdown', 'Rush, TD', 'Complete, TD', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt']:
+            drive.ended = True
+
+    @staticmethod
+    def _get_previous_play(drive_id, current_play_id):
+        return (PlayModel.query
+                .filter(PlayModel.drive_id == drive_id,
+                        PlayModel.id != current_play_id)
+                .order_by(PlayModel.id.desc())
+                .first())
+
+    def _handle_add_play_get_request(self, drive_id):
+        drive = DriveModel.query.get_or_404(drive_id)
+        if drive.ended:
+            flash("This drive has ended. Cannot add more plays!")
+            return redirect(url_for('drive_detail',drive_id=drive_id))
+
+        play_call_details = self._get_play_call_details()
         down, distance, yard_line = self._get_default_play_fields(drive_id)
         options = self._get_add_play_form_options()
 
@@ -146,7 +166,10 @@ class DriveController:
 
                 options[param] = enriched
             else:
-                options[param] = [{'id': e.id, 'value': e.value, 'label': e.value} for e in entries]
+                options[param] = [
+                    {'id': entry.id, 'value': entry.value, 'label': entry.value}
+                    for entry in entries
+                ]
 
         return options
 
@@ -190,7 +213,7 @@ class DriveController:
             # Handle missing attribute quarter gracefully
             quarter = getattr(play, 'quarter', '-')
             writer.writerow([
-                index_, play.odk, quarter, play.down, play.distance, play.yard_line,
+                index_, play.odk, play.quarter, play.down, play.distance, play.yard_line,
                 play.play_type, play.result, play.gain_loss, play.personnel, play.off_form,
                 play.form_str, play.form_adj, play.motion, play.protection, play.off_play,
                 play.dir_call, play.tag, play.hash
@@ -250,7 +273,8 @@ class DriveController:
         turnover_results = [
             'Interception', 'Interception, Def TD',
             'Fumble', 'Fumble, Def TD',
-            'Punt', 'Touchdown', 'Rush, TD', 'Complete, TD'
+            'Punt', 'Sack',
+            'Touchdown', 'Rush, TD', 'Complete, TD'
         ]
 
         # Turnover results always end drive

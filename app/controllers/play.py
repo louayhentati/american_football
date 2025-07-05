@@ -59,6 +59,9 @@ class PlayController:
                 drive.result = result_form if result_form else "In Progress"
 
                 db.session.commit()
+
+                drive = DriveModel.query.get_or_404(play.drive_id)
+                self._recalculate_drive_ended(drive)
                 flash('Play updated successfully!', 'success')
                 return redirect(url_for('drive_detail', drive_id=play.drive_id))
             except Exception as e:
@@ -72,6 +75,31 @@ class PlayController:
                                drive_id=play.drive_id)
 
     @login_required
+    def _recalculate_drive_ended(self, drive):
+        last_play = (
+        PlayModel.query
+        .filter_by(drive_id=drive.id)
+        .order_by(PlayModel.id.desc())
+        .first()
+    )
+        if not last_play:
+            drive.ended = False
+        else:
+            turnover_results = [
+            'Interception', 'Interception, Def TD',
+            'Fumble', 'Fumble, Def TD',
+            'Punt', 'Sack',
+            'Touchdown', 'Rush, TD', 'Complete, TD'
+            ]
+
+            if (last_play.result in turnover_results or 
+                (last_play.down == 4 and last_play.gain_loss < last_play.distance)):
+                drive.ended = True
+            else:
+                drive.ended = False
+        db.session.commit()
+    
+    @login_required
     def delete_play(self, play_id):
         try:
             play = PlayModel.query.get_or_404(play_id)
@@ -81,9 +109,15 @@ class PlayController:
             flash('Play deleted successfully', 'success')
 
             drive = DriveModel.query.get_or_404(drive_id)
-            new_result = PlayModel.query.filter_by(drive_id=drive_id).order_by(PlayModel.id).all()[-1].result
-            drive.result = new_result if new_result else "In Progress"
-            db.session.commit()
+
+            last_play = (
+                PlayModel.query
+                .filter_by(drive_id=drive_id)
+                .order_by(PlayModel.id.desc())
+                .first()
+            )
+            drive.result = last_play.result if last_play and last_play.result else "In Progress"
+            self._recalculate_drive_ended(drive)
 
         except Exception as e:
             db.session.rollback()

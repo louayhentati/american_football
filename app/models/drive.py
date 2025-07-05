@@ -5,4 +5,5 @@ class DriveModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
     result = db.Column(db.String(50))
+    ended = db.Column(db.Boolean, default=False)
     plays = db.relationship('PlayModel', backref='drive', lazy=True, cascade='all, delete-orphan')

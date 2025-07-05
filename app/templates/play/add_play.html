@@ -49,9 +49,8 @@
                                 </div>
                             </div>
                             <div class="col">
-                                <label for="distance" class="form-label">Distance (yards to go)</label>
-                                <input type="number" name="distance" id="distance" class="form-control"
-                                       min="1" max="10" step="1" required
+                                <label class="form-label">Distance</label>
+                                <input type="number" class="form-control" name="distance"
                                        value="{{ play.distance if play else default_distance }}">
                             </div>
                         </div>
@@ -66,22 +65,17 @@
                                     <label class="btn btn-outline-primary" for="hash-{{ h }}">{{ h }}</label>
                                 {% endfor %}
                             </div>
-                        </div>
 
-                        <!-- Yard Line -->
-                        <div class="mb-3">
-                            <label class="form-label">Yard Line</label>
-                            <div class="input-group">
-                                <input type="number" name="yard_line" id="yard_line" class="form-control"
-                                       min="-49" max="49" step="1" required
-                                       value="{{ default_yard_line }}">
-                                <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()"
-                                        title="Switch between own/opponent territory">
-                                    Own / Opp
-                                </button>
-                            </div>
-                            <div class="form-text">
-                                Negative = opponent territory, Positive = own territory
+                            <!-- Yard Line -->
+                            <div class="mb-3">
+                                <label class="form-label">Yard Line</label>
+                                <div class="input-group">
+                                    <input type="number" min="-49" max="50"class="form-control" name="yard_line"
+                                           value="{{ play.yard_line if play else default_yard_line }}">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()">
+                                        Own / Opp
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -235,6 +229,9 @@
                                        placeholder="Positive for gain, negative for loss">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()"
                                         title="Toggle between positive and negative">
+                                <input type="number" min="-100" max="100" class="form-control" name="gain_loss"
+                                       value="{{ play.gain_loss if play else '' }}">
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()">
                                     Toggle +/-
                                 </button>
                             </div>
