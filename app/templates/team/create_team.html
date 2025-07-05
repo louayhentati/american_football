@@ -16,35 +16,48 @@
     justify-content: center;
   }
 
-  .shape-thumb:focus,
-  .shape-thumb:active,
-  .pattern-thumb:focus,
-  .pattern-thumb:active {
-    outline: none !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
   .shape-wrapper,
   .pattern-wrapper {
-    border: 3px solid #000000;
-    border-radius: 10px;
+    border: 2px solid #000000;
+    border-radius: 8px;
     transition: border-color 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 110px;
-    height: 110px;
+    width: 90px;
+    height: 90px;
   }
 
   .shape-wrapper.selected,
   .pattern-wrapper.selected {
-    border: 3px solid red !important;
+    border: 2px solid red !important;
   }
 
   .pattern-thumb svg {
     display: block;
     margin: auto;
+  }
+
+  .icon-wrapper {
+    border: 2px solid #000000;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin: 4px;
+  }
+
+  .icon-wrapper.selected {
+    border: 2px solid red !important;
+  }
+
+  .icon-thumb {
+    max-height: 50px;
+    max-width: 50px;
+    cursor: pointer;
   }
 
   *:focus {
@@ -58,7 +71,58 @@
 
   .step-container > .card {
     height: 540px;
-    overflow-y: auto;
+    overflow-y: hidden;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .icon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .reset-button {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+
+  .upload-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4px;
+    margin-top: -16px; /* moves upload upward */
+  }
+
+  .upload-wrapper input[type="file"] {
+    max-width: 280px;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+
+  .bottom-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .bottom-buttons .btn {
+    min-width: 60px;
+    font-size: 0.8rem;
+    padding: 4px 10px;
   }
 </style>
 
@@ -72,20 +136,4 @@
 </div>
 
 {% include "team/partials/scripts.html" %}
-
-<script>
-  document.querySelectorAll('.shape-thumb').forEach(img => {
-    img.addEventListener('click', () => {
-      document.querySelectorAll('.shape-wrapper').forEach(wrapper => wrapper.classList.remove('selected'));
-      img.closest('.shape-wrapper').classList.add('selected');
-    });
-  });
-
-  document.querySelectorAll('.pattern-thumb').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.pattern-wrapper').forEach(w => w.classList.remove('selected'));
-      el.closest('.pattern-wrapper').classList.add('selected');
-    });
-  });
-</script>
 {% endblock %}

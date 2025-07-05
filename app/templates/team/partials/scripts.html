@@ -299,13 +299,38 @@ function enableAllIconOptions() {
 }
 
 resetBtn.addEventListener("click", () => {
+    // Enable all icon options
     enableAllIconOptions();
     iconChosen = false;
     btnNext.disabled = true;
 
+    // Reset selected icon styling (remove border)
+    document.querySelectorAll(".icon-thumb").forEach(img => {
+        img.classList.remove("border-primary");
+    });
+
+    // Remove inline SVG icon if exists
+    const oldInline = document.getElementById("inline-shield-icon");
+    if (oldInline) oldInline.remove();
+
+    // Reset shield-icon <image>
+    shieldIcon.setAttribute("href", "");
+    shieldIcon.setAttribute("visibility", "hidden");
+
+    // Clear uploaded icon filename
+    document.getElementById("form_icon_filename").value = "";
+
+    // Reset icon position and zoom
+    iconX = 120;
+    iconY = 120;
+    iconZoomSlider.value = 60;
+    iconZoomInput.value = 60;
+
+    // Reset pagination buttons
     iconPrev.disabled = currentIconPage === 0;
     iconNext.disabled = (currentIconPage + 1) * iconsPerPage >= iconList.length;
 });
+
 
 
 
@@ -315,7 +340,7 @@ const iconNext = document.getElementById("icon-next");
 
 let iconList = {{ icon_filenames|tojson }};
 let currentIconPage = 0;
-const iconsPerPage = 8;
+const iconsPerPage = 6;
 
 
 function loadIcons() {
@@ -325,13 +350,14 @@ function loadIcons() {
 
     pageIcons.forEach(filename => {
         const col = document.createElement("div");
-        col.className = "col-3";
+        col.className = "col-4 d-flex justify-content-center mb-3";
         col.innerHTML = `
-            <img src="/static/team_creation_assets/icons/${filename}"
-                 data-icon="${filename}"
-                 class="img-thumbnail icon-thumb"
-                 style="cursor: pointer; max-height: 70px;" />
-        `;
+            <div class="icon-wrapper">
+                <img src="/static/team_creation_assets/icons/${filename}"
+                    data-icon="${filename}"
+                    class="icon-thumb" />
+            </div>
+            `;
         const img = col.querySelector("img");
 
         img.addEventListener("click", () => {
