@@ -66,6 +66,9 @@ class GameController:
     @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
+        for drive in game.drives:
+            if len(drive.plays) > 0:
+                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
@@ -84,7 +87,7 @@ class GameController:
                     return redirect(request.url)
 
                 if any([not game_name, not game_date, not game_time, not home_team_id, not away_team_id]):
-                    flash(message="Something weired happened. Please try again later.", category='danger')
+                    flash(message="Something weird happened. Please try again later.", category='danger')
                     return redirect(request.url)
 
                 if home_team_id == away_team_id:
