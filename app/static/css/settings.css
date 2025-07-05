@@ -13,6 +13,7 @@
     --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --transition-speed: 0.2s;
 }
+
 /* [END] ROOT VARIABLES */
 
 /* ===== MAIN CONTAINERS ===== */
@@ -25,6 +26,7 @@
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
+
 /* [END] SETTINGS CONTAINER */
 
 /* ===== SIDEBAR SECTION ===== */
@@ -35,6 +37,7 @@
     border-right: 1px solid var(--sidebar-border);
     padding: 1.5rem 0;
 }
+
 /* [END] SETTINGS SIDEBAR */
 
 /* [START] SIDEBAR HEADER */
@@ -49,6 +52,7 @@
     color: #212529;
     margin: 0;
 }
+
 /* [END] SIDEBAR HEADER */
 
 /* [START] NAV MENU */
@@ -57,12 +61,14 @@
     padding: 0;
     margin: 0;
 }
+
 /* [END] NAV MENU */
 
 /* [START] NAV ITEM */
 .nav-item {
     position: relative;
 }
+
 /* [END] NAV ITEM */
 
 /* [START] NAV LINK */
@@ -95,6 +101,7 @@
     text-align: center;
     font-size: 0.9em;
 }
+
 /* [END] NAV LINK */
 
 /* [START] SUBMENU */
@@ -139,6 +146,7 @@
     overflow-y: auto;
     max-height: 80vh;
 }
+
 /* [END] SETTINGS CONTENT */
 
 /* [START] CONTENT HEADER */
@@ -156,6 +164,7 @@
     font-weight: 600;
     color: #212529;
 }
+
 /* [END] CONTENT HEADER */
 
 /* [START] ACCORDION */
@@ -189,6 +198,7 @@
     border-radius: 6px;
     overflow: hidden;
 }
+
 /* [END] ACCORDION */
 
 /* [START] OPTION LIST */
@@ -197,6 +207,7 @@
     flex-wrap: wrap;
     gap: 0.5rem;
 }
+
 /* [END] OPTION LIST */
 
 /* [START] OPTION ITEM */
@@ -224,6 +235,7 @@
     background-color: #e8f4ff;
     color: #0d6efd;
 }
+
 /* [END] OPTION ITEM */
 
 /* [START] OPTION TEXT */
@@ -233,6 +245,7 @@
     width: 100%;
     text-align: center;
 }
+
 /* [END] OPTION TEXT */
 
 /* [START] OPTION ACTIONS */
@@ -262,6 +275,7 @@
 .option-item.editing .option-text {
     opacity: 0;
 }
+
 /* [END] OPTION ACTIONS */
 
 /* [START] ACTION BUTTON */
@@ -308,6 +322,7 @@
     color: #6c757d;
     background-color: #f8f9fa;
 }
+
 /* [END] ACTION BUTTON */
 
 /* [START] ACTION LABEL */
@@ -324,6 +339,7 @@
 .action-btn:hover .action-label {
     opacity: 1;
 }
+
 /* [END] ACTION LABEL */
 
 /* [START] SETTINGS FORM */
@@ -332,6 +348,7 @@
     color: #495057;
     margin-bottom: 0.5rem;
 }
+
 /* [END] SETTINGS FORM */
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -386,4 +403,50 @@
         gap: 0.5rem;
     }
 }
+
 /* [END] MEDIA QUERIES */
+
+/* [START] ACCOUNT MANAGEMENT*/
+.card-collapsed {
+    max-height: 200px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.pref-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.pref-display-container {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.team-display {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.playcall-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.pref-form {
+    display: none;
+}
+
+.btn-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* [END] ACCOUNT MANAGEMENT*/

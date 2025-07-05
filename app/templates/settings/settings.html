@@ -12,10 +12,10 @@
         <div class="tab-content">
             {% include "settings/partials/play/options_list.html" %}
             {% include "settings/partials/play/calls_list.html" %}
-            {% include "settings/partials/play/default_prefs.html" %}
+            {% include "settings/partials/account_management.html" %}
         </div>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings/general.js') }}"></script>
 {% endblock %}
