@@ -6,11 +6,19 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Saved Games</h2>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex flex-wrap gap-2 mb-3 align-items-end">
                 <a href="{{ url_for('add_game') }}" class="btn btn-primary">Add New Game</a>
                 <a href="{{ url_for('settings') }}" class="btn btn-secondary">Play Options Settings</a>
-                <a href="{{ url_for('callsheet') }}" class="btn btn-info">Callsheet</a>
+				<a href="{{ url_for('callsheet') }}{% if selected_team %}?Team={{ selected_team }}{% endif %}" class="btn btn-info" id="callsheet-link">Callsheet</a>
             </div>
+			<form method="get" class="d-flex flex-column">
+				<label for="Team">Away Team:</label>
+					<select name="Team" id = "Team" class="form-select mb-2">
+					<option value="" selected >All Teams</option>
+					{% for team in teams %}
+					<option value="{{ team.name }}">{{ team.name }}</option>
+					{% endfor %}
+					</select>
         </div>
     </div>
 
@@ -32,39 +40,8 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for game in games %}
-                                <tr>
-                                    <td>{{ game.id }}</td>
-                                    <td>{{ game.name }}</td>
-                                    <td>{{ game.date.strftime('%Y-%m-%d') }} {{ game.time }}</td>
-                                    <td>{{ game.home_team_name }}</td>
-                                    <td>{{ game.away_team_name }}</td>
-                                    <td>{{ game.total_drives }}</td>
-                                    <td>{{ game.total_plays }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <a href="{{ url_for('game_detail', game_id=game.id) }}"
-                                               class="btn btn-sm btn-outline-primary"
-                                               title="Go to Game">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            {% if current_user.role == 'admin' %}
-                                                <form action="{{ url_for('delete_game', game_id=game.id) }}" method="POST"
-                                                      onsubmit="return confirm('Delete this game?');" class="m-0 p-0">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Game">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                </form>
-                                            {% else %}
-                                                <button class="btn btn-sm btn-outline-secondary" disabled title="Insufficient permissions">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                        <tbody id="game-table-body">
+							{%include 'game/partials/_game_rows.html' %}
                         </tbody>
                     </table>
                 </div>
@@ -96,5 +73,30 @@
         .d-flex.gap-1 .btn i {
             pointer-events: none;
         }
-    </style>
+	</style>
+	<script>
+	 	document.addEventListener('DOMContentLoaded', () => {
+
+		 	const select = document.getElementById('Team');
+			select.value = "";
+			const callsheetLink = document.getElementById('callsheet-link');
+		 	select.addEventListener('change', (e) => {
+				const selectedTeam = e.target.value;
+
+				if (callsheetLink) {
+					if (selectedTeam) {
+						callsheetLink.href = `/callsheet?Team=${encodeURIComponent(selectedTeam)}`;
+					} else {
+						callsheetLink.href = `/callsheet`;
+					}
+				}
+			 fetch(`/filter_games?Team=${encodeURIComponent(selectedTeam)}`)
+				   .then(response => response.text())
+				   .then(html => {
+					   document.getElementById('game-table-body').innerHTML = html;
+						 });
+				   });
+			});
+	</script>
+
 {% endblock %}

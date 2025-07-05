@@ -1,7 +1,8 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_login import login_required
 from app.models.drive import DriveModel
 from app.models.play import PlayModel
+from app.models.game import GameModel
 
 
 class CallSheetController:
@@ -15,9 +16,23 @@ class CallSheetController:
 
     @login_required
     def callsheet(self) -> str:
-        plays = PlayModel.query.filter(PlayModel.odk == 'O').all()
+        #filter away team
+        selected_team = request.args.get("Team")
+        plays = []
+        if selected_team:
+            print(selected_team)
+            games = GameModel.query.filter(GameModel.away_team.has(name=selected_team)) 
+            for game in games:
+                for drive in game.drives:
+                    for play in drive.plays:
+                        plays.append(play)
+                    
+        else:
+            plays = PlayModel.query.filter(PlayModel.odk == 'O').all()
+
         callsheet_entries = self._process_plays(plays)
-        return render_template(template_name_or_list='play/callsheet.html', callsheet_entries=callsheet_entries)
+        return render_template(template_name_or_list='play/callsheet.html',
+                               callsheet_entries=callsheet_entries)
 
     @login_required
     def game_callsheet(self, game_id: int) -> str:
