@@ -5,7 +5,8 @@ from app.models.drive import DriveModel
 from app.models.play import PlayModel
 from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
-
+from app.penalty_catalogue import PENALTY_RULES
+from app.penalty_catalogue import SPOT_FOULS
 
 class PlayController:
     def __init__(self, app: Flask, play_parameters: dict) -> None:
@@ -29,6 +30,10 @@ class PlayController:
         print(f'play_type: {play_type}')
 
         options = self._get_add_play_form_options()
+        options['penalty_type'] = [
+            {'value': r['type'], 'label': r['type']}
+            for r in PENALTY_RULES
+        ]
         play = PlayModel.query.get_or_404(play_id)
 
         if request.method == 'POST':
@@ -53,7 +58,41 @@ class PlayController:
                 play.dir_call = request.form.get('dir_call')
                 play.tag = request.form.get('tag')
                 play.hash = request.form.get('hash')
+                print(SPOT_FOULS)
+                if play.result == "Penalty":
+                    play.penalty_type  = request.form.get('penalty_type') or None
+                    play.foul_team = request.form.get('foul_team') or None  
+                    if play.penalty_type in SPOT_FOULS:
+                        play.penalty_spot_yard = int(request.form.get('penalty_spot_yard') or 0 )
+                    else:
+                        play.penalty_spot_yard = None   
+                else:
+                    play.foul_team = None
+                    play.penalty_type = None
+                    play.penalty_spot_yard = None
 
+                rule = None
+                if play.result == "Penalty" and play.penalty_type:
+                    rule = next((r for r in PENALTY_RULES if r["type"] == play.penalty_type), None)
+                    if rule:  
+                        if play.penalty_spot_yard not in [None, 0]:
+                            yard_line = convert(play.yard_line) 
+                            raw_penalty_spot = convert(play.penalty_spot_yard)
+                            if rule.get('spot_foul') and raw_penalty_spot is not None:
+                                play.gain_loss = raw_penalty_spot -yard_line
+                                
+                        elif rule.get("yards") and play.foul_team == "H":
+                            play.gain_loss = -abs(rule["yards"])
+                            play.penalty_spot_yard = None
+                            
+                        else: 
+                            play.gain_loss = abs(rule["yards"])
+                            play.penalty_spot_yard = None
+                            
+                else: # Wenn kein Penalty, nimm Wert aus dem Formular
+                    play.gain_loss = request.form.get('gain_loss') or 0
+                    
+                
                 drive = DriveModel.query.get_or_404(play.drive_id)
                 drive.result = result_form if result_form else "In Progress"
 
@@ -148,3 +187,9 @@ class PlayController:
                 ]
 
         return options
+    
+    
+def convert(yl: int) -> int:
+    if yl <  0: return -yl
+    if yl == 50: return 50
+    return 100 - yl 

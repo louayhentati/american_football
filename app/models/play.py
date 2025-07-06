@@ -16,7 +16,10 @@ class PlayModel(db.Model):
     result = db.Column(db.String(50))
     gain_loss = db.Column(db.Integer)
     touchdown = db.Column(db.Boolean, default=False)
-
+    penalty_type = db.Column(db.String(50))
+    penalty_spot_yard = db.Column(db.Integer)
+    foul_team = db.Column(db.String(1))# "H" (Home) oder "O" (Opponent)
+    
     # Formation and personnel
     personnel = db.Column(db.String(20))
     off_form = db.Column(db.String(50))  # Offensive Formation

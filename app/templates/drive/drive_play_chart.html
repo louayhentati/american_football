@@ -1,6 +1,6 @@
 {# templates/drive/drive_play_chart.html #}
 {% extends "system/base.html" %}
-{% block title %}Play Chart – {{ game.game_name }} (Drive {{ drive.id }}){% endblock %}
+{% block title %}Play Chart – {{ game.name }} (Drive {{ drive.id }}){% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -94,7 +94,7 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">{{ game.game_name }} – Play Chart (Drive {{ drive.id }})</h1>
+    <h1 class="mb-4">{{ game.name }} – Play Chart (Drive {{ drive.id }})</h1>
     <p> Hometeam plays from Left to Right!</p>
     {% if plays|length == 0 %}
     <div class="alert alert-info">Für diesen Drive sind keine Plays vorhanden.</div>
@@ -119,7 +119,7 @@
                             {{ play.result|lower|replace(' ', '-') }}" style="left: 
                             {{((play.start / 100) * 100) / 1.2 + 8.33}}%;
                             {% if play.result|lower == 'touchdown' %}
-                            width: {{ 96 - (((play.start / 100) * 100) / 1.2 + 8.33) }}%;
+                            width: {{ 92 - (((play.start / 100) * 100) / 1.2 + 8.33) }}%;
                             {% else %}
                             width: {{ (((play.end - play.start) / 100) * 100) / 1.2 }}%;
                             {% endif %}">
@@ -128,10 +128,17 @@
                         <!--Play label centered-->
                         <div class="drive-label" style="
                             left: {{((play.start / 100) * 100) / 1.2 + 8.33}}%;
-                            {% if play.result|lower == 'touchdown' %} width: {{ 96 - (((play.start / 100) * 100) / 1.2 + 8.33) }}%;
+                            {% if play.result|lower == 'touchdown' %} width: {{ 92 - (((play.start / 100) * 100) / 1.2 + 8.33) }}%;
                             {% else %} width: {{ (((play.end - play.start) / 100) * 100) / 1.2 }}%;
                             {% endif %}">
                             {{ play.play_type or play.result or 'Unknown' }}
+                            {% if play.result|lower == 'penalty' %}
+                                {% if play.foul_team == "H" %}
+                                    Home 
+                                {% else %}
+                                    Opponent 
+                                {% endif %}
+                            {% endif %}    
                             ({{ play.yards }} yds)
                         </div>
                     </div>
