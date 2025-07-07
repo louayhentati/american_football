@@ -2,52 +2,79 @@
 {% block title %}Add New Game{% endblock %}
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
+
+            {% if not current_user.team %}
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{{ url_for('game_options') }}" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-arrow-left-circle"></i> Go Back
+                        </a>
+                        <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-gear-fill"></i> Settings
+                        </a>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>Team Required:</strong> You currently do not have a team assigned. Please go to your
+                        settings and assign a team before creating a game.
+                    </div>
+                </div>
+            {% endif %}
+
             <div class="card">
                 <div class="card-header">Add New Game</div>
                 <div class="card-body">
                     <form method="POST">
-                        <div class="mb-3">
-                            <label for="game_name" class="form-label">Game Name</label>
-                            <input type="text" class="form-control" id="game_name" name="game_name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="date" name="date" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="time" class="form-label">Time</label>
-                            <input type="time" class="form-control" id="time" name="time" required>
-                        </div>
+                        <fieldset {% if not current_user.team %}disabled{% endif %}>
+                            <div class="mb-3">
+                                <label for="game_name" class="form-label">Game Name</label>
+                                <input type="text" class="form-control" id="game_name" name="game_name" required>
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="homeTeamSelect" class="form-label">Home Team</label>
-                            <select id="homeTeamSelect" name="home_team_id" class="form-select" required>
-                                <option value="" disabled selected>-- Select Home Team --</option>
-                                {% for team in teams %}
-                                    <option value="{{ team.id }}">{{ team.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
 
-                        <div class="mb-3">
-                            <label for="awayTeamSelect" class="form-label">Away Team</label>
-                            <select id="awayTeamSelect" name="away_team_id" class="form-select" required>
-                                <option value="" disabled selected>-- Select Away Team --</option>
-                                {% for team in teams %}
-                                    <option value="{{ team.id }}">{{ team.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                            <div class="mb-3">
+                                <label for="time" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="time" name="time" required>
+                            </div>
 
+                            {% if current_user.team %}
+                                <div class="mb-3">
+                                    <label class="form-label">Home Team</label>
+                                    <input type="text" class="form-control" value="{{ current_user.team.name }}"
+                                           disabled>
+                                    <input type="hidden" name="home_team_id" value="{{ current_user.team_id }}">
+                                </div>
+                            {% endif %}
 
-                        <button type="submit" class="btn btn-primary">Add Game</button>
-                        <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Cancel</a>
+                            <div class="mb-3">
+                                <label for="awayTeamSelect" class="form-label">Away Team</label>
+                                <select id="awayTeamSelect" name="away_team_id" class="form-select" required>
+                                    <option value="" disabled selected>-- Select Away Team --</option>
+                                    {% for team in teams %}
+                                        {% if current_user.team and team.id != current_user.team_id %}
+                                            <option value="{{ team.id }}">{{ team.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Add Game</button>
+                            <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Cancel</a>
+                        </fieldset>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
     <script>
         const homeSelect = document.getElementById('homeTeamSelect');
         const awaySelect = document.getElementById('awayTeamSelect');
@@ -57,31 +84,31 @@
 
             for (const option of targetSelect.options) {
                 if (option.value === "") continue;
-                option.disabled = false; // First re-enable all options
+                option.disabled = false;
             }
 
             if (selectedValue) {
                 for (const option of targetSelect.options) {
                     if (option.value === selectedValue) {
-                        option.disabled = true; // Then disable the selected one
+                        option.disabled = true;
                     }
                 }
             }
         }
 
-        homeSelect.addEventListener('change', () => {
-            syncTeamOptions(homeSelect, awaySelect);
-        });
+        if (homeSelect && awaySelect) {
+            homeSelect.addEventListener('change', () => {
+                syncTeamOptions(homeSelect, awaySelect);
+            });
 
-        awaySelect.addEventListener('change', () => {
-            syncTeamOptions(awaySelect, homeSelect);
-        });
+            awaySelect.addEventListener('change', () => {
+                syncTeamOptions(awaySelect, homeSelect);
+            });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            syncTeamOptions(homeSelect, awaySelect);
-            syncTeamOptions(awaySelect, homeSelect);
-        });
+            window.addEventListener('DOMContentLoaded', () => {
+                syncTeamOptions(homeSelect, awaySelect);
+                syncTeamOptions(awaySelect, homeSelect);
+            });
+        }
     </script>
-
-
 {% endblock %}

@@ -3,7 +3,7 @@ from datetime import datetime
 import io
 
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.drive import DriveModel
 from app.models.game import GameModel
