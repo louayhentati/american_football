@@ -27,13 +27,13 @@ class GameController:
         self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
         self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
+        self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives, methods=['GET'])
 
 
     @login_required
     def filter_games(self):
 
         selected_team = request.args.get('Team')
-        print(selected_team)
         games = GameModel.query
         if selected_team:
             games = games.join(GameModel.away_team).filter(TeamModel.name == selected_team)
@@ -51,12 +51,9 @@ class GameController:
         if selected_team and selected_team != '':
 
             for game in games:
-                print(game.away_team.name)
-                print(selected_team)
                 if game.away_team.name == selected_team:
                     filtered_games.append(game)
         else:
-            print('nothing selected')
             filtered_games = games
         return render_template(template_name_or_list='game/game_options.html',
                                games=filtered_games,
@@ -64,11 +61,22 @@ class GameController:
                                selected_team = selected_team)
 
     @login_required
+    def filter_drives(self):
+        selected_odk = request.args.get('Odk') 
+        game_id = request.args.get('Id')
+        game = GameModel.get_by_id(game_id)
+        if selected_odk:
+            game.drives = [drive for drive in game.drives 
+                            if drive.plays and drive.plays[0].odk == selected_odk]
+            return render_template("game/partials/_drive_rows.html", game=game)
+        else:
+            return render_template("game/partials/_drive_rows.html", game=game)
+
+
+
+    @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
-        for drive in game.drives:
-            if len(drive.plays) > 0:
-                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
