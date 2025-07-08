@@ -27,7 +27,7 @@
             <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Back to Games</a>
             <button type="submit" class="btn btn-primary">Add Drive</button>
             <a href="{{ url_for('export_game', game_id=game.id) }}" class="btn btn-info">Export Game as CSV</a>
-            <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Game Callsheet</a>
+            <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Offence Game Callsheet</a>
         </form>
     </div>
 </div>
@@ -48,7 +48,6 @@
         <h3>Drives</h3>
 		<div id=drive-wrapper>
 			{%include 'game/partials/_drive_rows.html' %}
-			//todo add no result
 		</div>
     </div>
 </div>
