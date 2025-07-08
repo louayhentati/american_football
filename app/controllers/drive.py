@@ -10,6 +10,7 @@ from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
 from app.penalty_catalogue import PENALTY_RULES
 
+
 class DriveController:
     def __init__(self, app: Flask, play_parameters: dict) -> None:
         self.app = app
@@ -40,29 +41,28 @@ class DriveController:
         flash('Play added successfully!', 'success')
         return redirect(url_for('drive_detail', drive_id=drive_id))
 
-    @staticmethod
-    def _create_play_from_form(drive_id):
+    def _create_play_from_form(self, drive_id):
         form = request.form
         off_play_value = form.get('off_play')
         play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
         play_type = play_option.play_call.name if play_option and play_option.play_call else None
 
         rule = next((r for r in PENALTY_RULES if r["type"] == form.get("penalty_type")), None)
-        yard_line = convert(int(form.get('yard_line'))) 
-        raw_penalty_spot = convert(int(form.get("penalty_spot_yard")or 0))
+        yard_line = self.convert(int(form.get('yard_line')))
+        raw_penalty_spot = self.convert(int(form.get("penalty_spot_yard") or 0))
         foul_team = form.get("foul_team") or None
-        
+
         if rule:
             if rule.get('spot_foul') and raw_penalty_spot is not None:
-                gain_loss = raw_penalty_spot -yard_line
+                gain_loss = raw_penalty_spot - yard_line
             elif rule.get("yards"):
-                if foul_team == "H": 
+                if foul_team == "H":
                     gain_loss = -abs(rule["yards"])
-                elif foul_team == "O": 
+                elif foul_team == "O":
                     gain_loss = abs(rule["yards"])
-        else:   
-            gain_loss= int(form.get('gain_loss') or 0)
-            
+        else:
+            gain_loss = int(form.get('gain_loss') or 0)
+
         return PlayModel(
             drive_id=drive_id,
             odk=form['odk'],
@@ -81,10 +81,10 @@ class DriveController:
             dir_call=form.get('dir_call'),
             tag=form.get('tag'),
             result=form.get('result'),
-            gain_loss= gain_loss,
-            penalty_type=form.get("penalty_type") or None,
-            penalty_spot_yard = form.get("penalty_spot_yard") or None,
-            foul_team = foul_team
+            gain_loss=gain_loss,
+            penalty_type=form.get("penalty_type", None),
+            penalty_spot_yard=form.get("penalty_spot_yard", None),
+            foul_team=foul_team
         )
 
     def _update_play_fields(self, play, drive_id, drive):
@@ -167,8 +167,8 @@ class DriveController:
                     for entry in entries
                 ]
         options['penalty_type'] = [{'value': r['type'], 'label': r['type']}
-            for r in PENALTY_RULES
-        ]
+                                   for r in PENALTY_RULES
+                                   ]
         return options
 
     def _get_default_play_fields(self, drive_id):
@@ -240,7 +240,23 @@ class DriveController:
 
         return response
 
+    # Function for converting yard-field values to format 0-100
+    @staticmethod
+    def convert(yard_line: int) -> int:
+        if yard_line < 0:
+            return -yard_line
+        if yard_line == 50:
+            return 50
+        return 100 - yard_line
 
+    # Function for converting back to yard-field values
+    @staticmethod
+    def convert_back(yard_line: int) -> int:
+        if yard_line < 50:
+            return -yard_line
+        if yard_line == 50:
+            return 50
+        return 100 - yard_line
 
     def __calculate_next_play_fields(self, last_play):
         gained = last_play.gain_loss if hasattr(last_play, 'gain_loss') else last_play['gain_loss']
@@ -258,15 +274,14 @@ class DriveController:
         possession_change = False
         next_down = 1
         next_distance = 10
-        
-        raw_yard_line = convert(yard_line) + gained
-        new_yard_line = convertBack(raw_yard_line)
-        rule = None
-        
+
+        raw_yard_line = self.convert(yard_line) + gained
+        new_yard_line = self.convert_back(raw_yard_line)
+
         if result in turnover_results:
             possession_change = True
             next_down = 1
-            next_distance= 10
+            next_distance = 10
 
         elif gained >= distance:
             next_down = 1
@@ -276,37 +291,24 @@ class DriveController:
             possession_change = True
             next_down = 1
             next_distance = 10
-            
+
         elif result == "Penalty" and penalty_type:
             rule = next((r for r in PENALTY_RULES if r["type"] == penalty_type), None)
             if rule:
-                if rule.get("automatic_first_down") == True: # Wenn die Regel automatic first down beinhaltet
+                if rule.get("automatic_first_down"):  # Wenn die Regel automatic first down beinhaltet
                     next_down = 1
-                    next_distance= 10
-            
-                elif rule.get("loss_of_down") == True: # Wenn die Regel loss of down beinhaltet
+                    next_distance = 10
+
+                elif rule.get("loss_of_down"):  # Wenn die Regel loss of down beinhaltet
                     next_down = down + 1
                     next_distance = 10
-        else:    
+        else:
             next_down = down + 1
             next_distance = distance - gained
-                 
-        return{
+
+        return {
             "possession_change": possession_change,
             "down": next_down,
             "distance": next_distance,
             "yard_line": new_yard_line
         }
-        
-        
-#Function for converting yard-field values to format 0-100
-def convert(yl: int) -> int:
-    if yl <  0: return -yl
-    if yl == 50: return 50
-    return 100 - yl 
-    
-#Function for converting back to yard-field values
-def convertBack(yl: int) -> int:
-    if yl <  50: return -yl
-    if yl == 50: return 50
-    return 100 - yl         
