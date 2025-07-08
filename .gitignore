@@ -35,3 +35,6 @@ site-packages/
 
 # cpython
 *cpython*
+
+venv/
+.venv/
