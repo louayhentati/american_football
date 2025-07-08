@@ -9,13 +9,18 @@
 
     <title>Analyse Tool - {% block title %}{% endblock %}</title>
 
+    <!-- CSS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
           rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+          rel="stylesheet"/>
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet"/>
 
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon_96.png') }}"/>
 
@@ -26,26 +31,18 @@
 
 {% if current_user.is_authenticated %}
     {% set ns = namespace(navbar_color='background: linear-gradient(135deg, #4b6cb7, #182848);', team_found=False) %}
-
-    {% if session.team_id %}
-        {% for team in teams %}
-            {% if team.id == session.team_id %}
-                {% set ns.navbar_color = 'background: linear-gradient(135deg, ' ~ team.secondary_color ~ ', #343a40);' %}
-                {% set ns.team_found = True %}
-            {% endif %}
-        {% endfor %}
+    {% if current_user.team %}
+        {% set ns.navbar_color = 'background: linear-gradient(135deg, ' ~ current_user.team.secondary_color ~ ', #343a40);' %}
+        {% set ns.team_found = True %}
     {% endif %}
+
 
     <nav class="navbar navbar-expand-lg navbar-dark" style="{{ ns.navbar_color }}">
         <div class="container-fluid position-relative">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
-                {% if session.team_id and ns.team_found %}
-                    {% for team in teams %}
-                        {% if team.id == session.team_id %}
-                            <img class="team-logo" src="{{ team.icon }}" alt="{{ team.name }} logo"
-                                 style="height:30px; margin-right:8px;"/>
-                        {% endif %}
-                    {% endfor %}
+                {% if current_user.team and ns.team_found %}
+                    <img class="team-logo" src="{{ current_user.team.icon }}" alt="{{ current_user.team.name }} logo"
+                         style="height:30px; margin-right:8px;"/>
                 {% else %}
                     <a href="{{ url_for('game_options') }}" class="btn btn-outline-light me-2" title="Home">
                         <i class="fas fa-home"></i>
@@ -79,7 +76,9 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li class="dropdown-item disabled"><b>Role: {{ current_user.role }}</b></li>
-                        <li class="dropdown-item disabled"><b>Team: {{ session.team_name }}</b></li>
+                        <li class="dropdown-item disabled">
+                            <b>Team: {{ current_user.team.name if current_user.team else 'None' }}</b></li>
+
                     </ul>
                 </div>
             </div>
@@ -128,10 +127,13 @@
 </footer>
 
 <!-- JavaScript Libraries -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JS Libraries (NOTE: jQuery FIRST, then others, with defer) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js" defer></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js" defer></script>
 
 <!-- Flash Toast Auto Display -->
 <script>

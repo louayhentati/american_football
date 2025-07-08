@@ -3,7 +3,7 @@ from datetime import datetime
 import io
 
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response
-from flask_login import login_required, current_user
+from flask_login import login_required
 from app.extensions import db
 from app.models.drive import DriveModel
 from app.models.game import GameModel
@@ -17,57 +17,29 @@ class GameController:
         self.register_routes()
 
     def register_routes(self) -> None:
-        self.app.add_url_rule(rule='/game-options', view_func=self.game_options)
-        self.app.add_url_rule(rule='/game/<int:game_id>', view_func=self.game_detail)
-        self.app.add_url_rule(rule='/add-game', view_func=self.add_game, methods=['GET', 'POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/delete', view_func=self.delete_game, methods=['POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
-        self.app.add_url_rule(rule='/game/<int:game_id>/drive-chart', view_func=self.drive_chart)
-        self.app.add_url_rule(rule='/game/<int:game_id>/export', view_func=self.export_game)
-        self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',view_func=self.drive_play_chart)
-        self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
-
-
-    @login_required
-    def filter_games(self):
-
-        selected_team = request.args.get('Team')
-        print(selected_team)
-        games = GameModel.query
-        if selected_team:
-            games = games.join(GameModel.away_team).filter(TeamModel.name == selected_team)
-
-        return render_template("game/partials/_game_rows.html", games=games.all())
-
+        self.app.add_url_rule(rule='/games', view_func=self.game_options)
+        self.app.add_url_rule(rule='/games/<int:game_id>', view_func=self.game_detail)
+        self.app.add_url_rule(rule='/games/add', view_func=self.add_game, methods=['GET', 'POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/delete', view_func=self.delete_game, methods=['POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
+        self.app.add_url_rule(rule='/games/<int:game_id>/drive-chart', view_func=self.drive_chart)
+        self.app.add_url_rule(rule='/games/<int:game_id>/export', view_func=self.export_game)
+        self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
+                              view_func=self.drive_play_chart)
 
     @login_required
     def game_options(self) -> str:
-        # filter away team
         teams = TeamModel.query.all()
         games = GameModel.query.all()
-        selected_team = request.args.get('Team')
-        filtered_games = []
-        if selected_team and selected_team != '':
-
-            for game in games:
-                print(game.away_team.name)
-                print(selected_team)
-                if game.away_team.name == selected_team:
-                    filtered_games.append(game)
-        else:
-            print('nothing selected')
-            filtered_games = games
-        return render_template(template_name_or_list='game/game_options.html',
-                               games=filtered_games,
-                               teams=teams,
-                               selected_team = selected_team)
+        return render_template(
+            template_name_or_list='game/game_options.html',
+            games=games,
+            teams=teams
+        )
 
     @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
-        for drive in game.drives:
-            if len(drive.plays) > 0:
-                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
@@ -186,8 +158,7 @@ class GameController:
                 'yards': play.gain_loss or 0,
                 'result': play.result or 'Unknown',
                 'play_count': len(plays),
-                'loss': loss_detected,
-                "foul_team": play.foul_team
+                'loss': loss_detected
             })
 
         return render_template(
@@ -236,8 +207,6 @@ class GameController:
                 'play_count': len(plays),
                 'loss': loss_detected
             })
-            print("GAME:", game.away_team_name)
-            
         return render_template(
             template_name_or_list='drive/drive_chart.html',
             game=game,

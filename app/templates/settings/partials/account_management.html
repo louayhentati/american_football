@@ -1,0 +1,78 @@
+<div class="tab-pane fade" id="play-defaults" role="tabpanel">
+    <div class="content-header mb-4">
+        <h4><i class="bi bi-sliders me-2"></i>User Preferences</h4>
+    </div>
+
+    <div class="row g-4">
+        <!-- Default Team Card -->
+        <div class="col-12 col-md-6">
+            <div class="card shadow-sm h-100 card-collapsed">
+                <div class="card-body position-relative">
+
+                    {% if current_user.role == 'admin' and teams|length > 0 %}
+                        <button id="btnEditTeam" type="button"
+                                class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Edit default team">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    {% else %}
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-3"
+                                style="width: 38px; height: 38px;" title="Edit default team" disabled>
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    {% endif %}
+                    <span class="badge border border-success text-success mb-3 fs-5 px-3 py-2 position-relative">Default Team</span>
+
+                    <div id="teamDisplay" class="pref-display-container">
+                        <div class="team-display">
+                            {% set selected_team = current_user.team %}
+                            {% if selected_team %}
+                                <img src="{{ selected_team.icon }}" alt="{{ selected_team.name }} logo"
+                                     style="height:40px; width:auto;"/>
+                                <h4 class="mb-0">{{ selected_team.name }}</h4>
+                            {% else %}
+                                <h5 class="text-muted fst-italic mb-0">No team selected</h5>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    {% if current_user.role == 'admin' %}
+                        <form id="teamForm" method="POST" action="{{ url_for('set_team') }}" class="pref-form">
+                            <label for="teamSelect" class="form-label">Change Default Team</label>
+                            <select id="teamSelect" name="team_id" class="form-select mb-2" required>
+                                <option value="" disabled {% if not current_user.team_id %}selected{% endif %}>-- Select
+                                    Team --
+                                </option>
+                                <option value="" {% if current_user.team_id is none %}selected{% endif %}>(!) No Team
+                                </option>
+
+
+                                {% for team in teams %}
+                                    <option value="{{ team.id }}"
+                                            {% if current_user.team_id == team.id %}selected{% endif %}>{{ team.name }}</option>
+
+                                {% endfor %}
+                            </select>
+
+                            <div class="btn-container">
+                                <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
+                                <button type="button" id="btnCancelTeam" class="btn btn-outline-secondary btn-sm px-4">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="form-text text-muted fst-italic">Only admins can change the default team.</div>
+                        <select id="teamSelectDisabled" class="form-select" disabled>
+                            <option>{{ current_user.team.name if current_user.team else 'No team selected' }}</option>
+
+                        </select>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/settings/account_management.js') }}"></script>
+</div>

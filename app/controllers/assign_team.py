@@ -34,11 +34,8 @@ def assign_team():
             user.team_id = team_id
             db.session.commit()
 
-            # If current user is the one updated, update session too
             if current_user.id == user.id:
-                assigned_team = TeamModel.query.get(team_id)
-                session['team_color'] = assigned_team.primary_color if assigned_team else None
-                session['team_id'] = int(team_id) if assigned_team else None
+                db.session.refresh(current_user)
 
             flash('Team assigned successfully!', 'success')
         else:
