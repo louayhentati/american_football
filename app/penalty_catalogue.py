@@ -1,10 +1,7 @@
-
-
 SPOT_FOULS = [
-    'Holding (Defense)',  'Illegal Contact','Pass Interference (Defense)','Targeting',
-    'Horse-Collar Tackle','Illegal Block in the Back','Chop Block','Facemask', 'Illegal Forward Pass'
-    ];
-
+    'Holding (Defense)', 'Illegal Contact', 'Pass Interference (Defense)', 'Targeting',
+    'Horse-Collar Tackle', 'Illegal Block in the Back', 'Chop Block', 'Facemask', 'Illegal Forward Pass'
+];
 
 PENALTY_RULES = [
     # ---- PRE-SNAP OFFENSE ----
