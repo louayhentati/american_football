@@ -2,37 +2,51 @@
 {% block title %}Game Options{% endblock %}
 
 {% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h2>Saved Games</h2>
+        <div class="d-flex flex-wrap gap-2 mb-2 align-items-end">
+            <a href="{{ url_for('add_game') }}" class="btn btn-primary">Add New Game</a>
+            <a href="{{ url_for('settings') }}" class="btn btn-secondary">Play Options Settings</a>
+            <a href="{{ url_for('callsheet') }}" class="btn btn-info" id="callsheet-link">Callsheet</a>
+        </div>
+    </div>
+</div>
 
-    <div class="row mb-3">
-        <div class="col">
-            <h2>Saved Games</h2>
-            <div class="d-flex flex-wrap gap-2 mb-2 align-items-end">
-                <a href="{{ url_for('add_game') }}" class="btn btn-primary">Add New Game</a>
-                <a href="{{ url_for('settings') }}" class="btn btn-secondary">Play Options Settings</a>
-                <a href="{{ url_for('callsheet') }}" class="btn btn-info" id="callsheet-link">Callsheet</a>
-            </div>
+<!-- Filter and Show dropdowns -->
+<div class="my-table-wrapper">
+    <div class="d-flex justify-content-between mb-2">
+        <!-- Show dropdown (left) -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="showEntries" class="form-label mb-0">Show:</label>
+            <select id="showEntries" class="form-select" style="min-width: 100px;">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            <span class="mb-0">entries</span>
+        </div>
+
+        <!-- Filter by Away Team (right) -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="awayTeamFilter" class="form-label mb-0">Filter by Away Team:</label>
+            <select id="awayTeamFilter" class="form-select" style="min-width: 250px;">
+                <option value="">All Away Teams</option>
+                {% for team in teams %}
+                    {% if team.id != current_user.team.id %}
+                        <option value="{{ team.name }}">{{ team.name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
         </div>
     </div>
 
-    <!-- Table and Right-Aligned Filter -->
-    <div class="my-table-wrapper">
-        <div class="d-flex mb-2">
-            <div class="ms-auto d-flex align-items-center gap-2">
-                <label for="awayTeamFilter" class="form-label mb-0">Filter by Away Team:</label>
-                <select id="awayTeamFilter" class="form-select" style="min-width: 250px;">
-                    <option value="">All Away Teams</option>
-                    {% for team in teams %}
-                        {% if team.id != current_user.team.id %}
-                            <option value="{{ team.name }}">{{ team.name }}</option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table id="gamesTable" class="table table-striped align-middle mb-0">
-                <thead>
+    <!-- Table -->
+    <div class="table-responsive" style="overflow-x: auto;">
+        <table id="gamesTable" class="table table-striped align-middle nowrap w-100">
+            <thead>
                 <tr>
                     <th>ID</th>
                     <th>Game Name</th>
@@ -41,14 +55,50 @@
                     <th>Away Team</th>
                     <th>Total Drives</th>
                     <th>Total Plays</th>
-                    <th>Actions</th>
+                    <th class="text-nowrap">Actions</th>
                 </tr>
-                </thead>
-                <tbody>
+            </thead>
+            <tbody>
                 {% include 'game/partials/games_table_rows.html' %}
-                </tbody>
-            </table>
-        </div>
+            </tbody>
+        </table>
     </div>
-    <script src="{{ url_for('static', filename='js/game/games_table_filter.js') }}"></script>
+</div>
+
+<!-- Scripts -->
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fix for DataTables reinitialization warning
+        if ($.fn.DataTable.isDataTable('#gamesTable')) {
+            $('#gamesTable').DataTable().destroy();
+        }
+
+        // Initialize DataTable
+        var table = $('#gamesTable').DataTable({
+            scrollX: true,
+            fixedColumns: {
+                rightColumns: 1
+            },
+
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            language: {
+                lengthMenu: "Show _MENU_ entries"
+            },
+            dom: 'tip' // Remove default length menu
+        });
+
+        // Custom show entries dropdown
+        $('#showEntries').on('change', function() {
+            table.page.len(this.value).draw();
+        });
+
+        // Away Team Filter
+        $('#awayTeamFilter').on('change', function() {
+            table.column(4).search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

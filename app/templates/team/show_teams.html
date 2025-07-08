@@ -15,7 +15,7 @@
             <i class="bi bi-arrow-left-circle"></i> Back to Settings
         </a>
         {% if current_user.role == 'admin' %}
-            <a href="{{ url_for('team.create_team') }}" class="btn btn-sm btn-primary">
+            <a href="{{ url_for('team.choose_creation_method') }}" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-circle"></i> Create Team
             </a>
         {% endif %}
