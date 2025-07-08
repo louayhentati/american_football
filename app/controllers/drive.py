@@ -8,7 +8,7 @@ from app.models.drive import DriveModel
 from app.models.play import PlayModel
 from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
-
+from app.penalty_catalogue import PENALTY_RULES
 
 class DriveController:
     def __init__(self, app: Flask, play_parameters: dict) -> None:
@@ -47,6 +47,22 @@ class DriveController:
         play_option = PlayOptionModel.query.filter_by(value=off_play_value).first()
         play_type = play_option.play_call.name if play_option and play_option.play_call else None
 
+        rule = next((r for r in PENALTY_RULES if r["type"] == form.get("penalty_type")), None)
+        yard_line = convert(int(form.get('yard_line'))) 
+        raw_penalty_spot = convert(int(form.get("penalty_spot_yard")or 0))
+        foul_team = form.get("foul_team") or None
+        
+        if rule:
+            if rule.get('spot_foul') and raw_penalty_spot is not None:
+                gain_loss = raw_penalty_spot -yard_line
+            elif rule.get("yards"):
+                if foul_team == "H": 
+                    gain_loss = -abs(rule["yards"])
+                elif foul_team == "O": 
+                    gain_loss = abs(rule["yards"])
+        else:   
+            gain_loss= int(form.get('gain_loss') or 0)
+            
         return PlayModel(
             drive_id=drive_id,
             odk=form['odk'],
@@ -65,7 +81,10 @@ class DriveController:
             dir_call=form.get('dir_call'),
             tag=form.get('tag'),
             result=form.get('result'),
-            gain_loss=int(form.get('gain_loss') or 0)
+            gain_loss= gain_loss,
+            penalty_type=form.get("penalty_type") or None,
+            penalty_spot_yard = form.get("penalty_spot_yard") or None,
+            foul_team = foul_team
         )
 
     def _update_play_fields(self, play, drive_id, drive):
@@ -147,7 +166,9 @@ class DriveController:
                     {'id': entry.id, 'value': entry.value, 'label': entry.value}
                     for entry in entries
                 ]
-
+        options['penalty_type'] = [{'value': r['type'], 'label': r['type']}
+            for r in PENALTY_RULES
+        ]
         return options
 
     def _get_default_play_fields(self, drive_id):
@@ -219,69 +240,73 @@ class DriveController:
 
         return response
 
-    # Function for converting yard-field values to format 0-100
-    @staticmethod
-    def convert(yard_line: int) -> int:
-        if yard_line < 0:
-            return -yard_line
-        if yard_line == 50:
-            return 50
-        # yl>0
-        return 100 - yard_line
 
-    # Function for converting back to yard-field values
-    @staticmethod
-    def convert_back(yard_line: int) -> int:
-        if yard_line < 50:
-            return -yard_line
-        if yard_line == 50:
-            return 50
-        # yl>50
-        return 100 - yard_line
 
     def __calculate_next_play_fields(self, last_play):
         gained = last_play.gain_loss if hasattr(last_play, 'gain_loss') else last_play['gain_loss']
         down = last_play.down if hasattr(last_play, 'down') else last_play['down']
         distance = last_play.distance if hasattr(last_play, 'distance') else last_play['distance']
         yard_line = last_play.yard_line if hasattr(last_play, 'yard_line') else last_play['yard_line']
-
+        result = last_play.result if hasattr(last_play, 'result') else last_play['result']
+        penalty_type = last_play.penalty_type if hasattr(last_play, 'penalty_type') else last_play["penalty_type"]
         turnover_results = [
             'Interception', 'Interception, Def TD',
             'Fumble', 'Fumble, Def TD',
             'Punt', 'Sack',
             'Touchdown', 'Rush, TD', 'Complete, TD'
         ]
-
-        result = last_play.result if hasattr(last_play, 'result') else last_play.get('result')
-
+        possession_change = False
+        next_down = 1
+        next_distance = 10
+        
+        raw_yard_line = convert(yard_line) + gained
+        new_yard_line = convertBack(raw_yard_line)
+        rule = None
+        
         if result in turnover_results:
-            return {
-                'possession_change': True,
-                'down': 1,
-                'distance': 10,
-                'yard_line': 100 - (yard_line + gained)
-            }
+            possession_change = True
+            next_down = 1
+            next_distance= 10
 
-        raw_yard_line = self.convert(yard_line) + gained
-        new_yard_line = self.convert_back(raw_yard_line)
+        elif gained >= distance:
+            next_down = 1
+            next_distance = 10
 
-        if gained >= distance:
-            return {
-                'down': 1,
-                'distance': 10,
-                'yard_line': new_yard_line
-            }
-
-        if down == 4:
-            return {
-                'possession_change': True,
-                'down': 1,
-                'distance': 10,
-                'yard_line': 100 - new_yard_line
-            }
-
-        return {
-            'down': down + 1,
-            'distance': distance - gained,
-            'yard_line': new_yard_line
+        elif down == 4:
+            possession_change = True
+            next_down = 1
+            next_distance = 10
+            
+        elif result == "Penalty" and penalty_type:
+            rule = next((r for r in PENALTY_RULES if r["type"] == penalty_type), None)
+            if rule:
+                if rule.get("automatic_first_down") == True: # Wenn die Regel automatic first down beinhaltet
+                    next_down = 1
+                    next_distance= 10
+            
+                elif rule.get("loss_of_down") == True: # Wenn die Regel loss of down beinhaltet
+                    next_down = down + 1
+                    next_distance = 10
+        else:    
+            next_down = down + 1
+            next_distance = distance - gained
+                 
+        return{
+            "possession_change": possession_change,
+            "down": next_down,
+            "distance": next_distance,
+            "yard_line": new_yard_line
         }
+        
+        
+#Function for converting yard-field values to format 0-100
+def convert(yl: int) -> int:
+    if yl <  0: return -yl
+    if yl == 50: return 50
+    return 100 - yl 
+    
+#Function for converting back to yard-field values
+def convertBack(yl: int) -> int:
+    if yl <  50: return -yl
+    if yl == 50: return 50
+    return 100 - yl         

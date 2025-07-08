@@ -24,8 +24,7 @@ class GameController:
         self.app.add_url_rule(rule='/game/<int:game_id>/add-drive', view_func=self.add_drive, methods=['POST'])
         self.app.add_url_rule(rule='/game/<int:game_id>/drive-chart', view_func=self.drive_chart)
         self.app.add_url_rule(rule='/game/<int:game_id>/export', view_func=self.export_game)
-        self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',
-                              view_func=self.drive_play_chart)
+        self.app.add_url_rule(rule='/game/<int:game_id>/drive/<int:drive_id>/play-chart',view_func=self.drive_play_chart)
         self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
 
 
@@ -187,7 +186,8 @@ class GameController:
                 'yards': play.gain_loss or 0,
                 'result': play.result or 'Unknown',
                 'play_count': len(plays),
-                'loss': loss_detected
+                'loss': loss_detected,
+                "foul_team": play.foul_team
             })
 
         return render_template(
@@ -236,6 +236,8 @@ class GameController:
                 'play_count': len(plays),
                 'loss': loss_detected
             })
+            print("GAME:", game.away_team_name)
+            
         return render_template(
             template_name_or_list='drive/drive_chart.html',
             game=game,

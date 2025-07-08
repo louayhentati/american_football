@@ -92,3 +92,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, {once: true});
 });
+
+// Penalty-Toggle: shows penalty fields only if in result-Radio "Penalty" is selected
+document.addEventListener('DOMContentLoaded', function(){
+  const penaltyType = document.getElementById('penalty_type');
+  const spotFieldContainer = document.getElementById('spot-field-container');
+  const penaltySection = document.getElementById('penalty-fields');
+  const gainLossInput = document.querySelector('input[name="gain_loss"]');
+  if (!penaltySection) return;
+
+  const resultRadios = document.querySelectorAll("input[name='result']");
+  //Function that shows the penalty fields block and activates or deactivates the gain_loss field
+  function togglePenaltyFields() {
+    const sel = document.querySelector("input[name='result']:checked");
+    penaltySection.style.display = (sel && sel.value === 'Penalty')
+      ? 'block'
+      : 'none';
+    const isPenalty = (sel && sel.value === 'Penalty');
+
+    if (isPenalty) {//Gain_loss field is deactivated, if Penalty is selected 
+      gainLossInput.readOnly = true;
+      gainLossInput.style.backgroundColor = '#e9ecef';
+      gainLossInput.placeholder = "Auto-calculated for penalty";
+    } else {
+      gainLossInput.readOnly = false;
+      gainLossInput.style.backgroundColor = '';
+      gainLossInput.placeholder = "";
+    }
+  }
+  penaltyType.addEventListener('change', function() {
+   const SHOW_FOR =[
+    'Holding (Defense)',  'Illegal Contact','Pass Interference (Defense)','Targeting',
+    'Horse-Collar Tackle','Illegal Block in the Back','Chop Block','Facemask', 'Illegal Forward Pass'
+    ];
+
+    if (SHOW_FOR.includes(penaltyType.value)) {
+        spotFieldContainer.style.display = "block";
+    } else {
+        spotFieldContainer.style.display = "none";
+    }
+  });
+
+  //check at every change 
+  togglePenaltyFields();
+  resultRadios.forEach(radio =>radio.addEventListener('change', togglePenaltyFields));
+  penaltyType.dispatchEvent(new Event('change'));
+});

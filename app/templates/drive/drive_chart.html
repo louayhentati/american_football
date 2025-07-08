@@ -1,8 +1,15 @@
 {% extends "system/base.html" %}
-{% block title %}Drive Chart - {{ game.game_name }}{% endblock %}
+{% block title %}Drive Chart - {{ game.name }}{% endblock %}
 
 {% block head %}
 {{ super() }}
+
+<!--
+        background: linear-gradient(to right,
+            #5C1D28 0%,   #5C1D28 8.5%,
+            #2e7d32 8.5%,  #2e7d32 91.75%,
+            #FFD200 91.75%,  #FFD200 100%) !important;
+-->
 <style>
     .drive-chart {
         position: relative;
@@ -14,6 +21,7 @@
         padding-bottom: 60px;
         margin: 20px 0;
     }
+
     .field-container {
         position: absolute;
         top: 0;
@@ -22,13 +30,13 @@
         right: 0;
         width: 100%;
         left: 0;
-        background: linear-gradient(
-            to right,
-            #5C1D28 0%,   #5C1D28 8.5%,
+        background: linear-gradient(to right,
+            #010748 0%,   #010748 8.5%,
             #2e7d32 8.5%,  #2e7d32 91.75%,
-            #FFD200 91.75%,  #FFD200 100%
-        ) !important;
+            #010748 91.75%,  #010748 100%) !important;
+
     }
+
     .yard-line {
         position: absolute;
         top: 0;
@@ -37,6 +45,7 @@
         background: #fff !important;
         opacity: 0.7;
     }
+
     .yard-line-number {
         position: absolute;
         bottom: -20px;
@@ -45,11 +54,13 @@
         color: #fff;
         text-shadow: 1px 1px 2px #000;
     }
+
     .drive-line {
         position: absolute;
         height: 50px;
         width: 100%;
     }
+
     .drive-bar {
         height: 100%;
         position: absolute;
@@ -57,98 +68,181 @@
         box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5) !important;
         z-index: 1;
     }
+
     .drive-bar.loss {
-        background-color: #ff0000 !important; /* Red for loss */
+        background-color: #ff0000 !important;
+        /* Red for loss */
     }
+
     .drive-bar.gain {
-        background-color: #007bff !important; /* Blue for gain */
+        background-color: #0177f5 !important;
+        /* Blue for gain */
     }
+
     .drive-bar.touchdown {
         background-color: #28a745 !important;
     }
+
     .drive-bar.punt {
         background-color: #ffc107 !important;
     }
+
     .drive-bar.field-goal {
         background-color: #17a2b8 !important;
     }
+
     .drive-label {
         position: absolute;
-        top: 50%; /* Start at the middle of the drive bar */
-        transform: translateY(-50%); /* Adjust up by half the label's height to center it */
+        top: 50%;
+        /* Start at the middle of the drive bar */
+        transform: translateY(-50%);
+        /* Adjust up by half the label's height to center it */
         font-size: 14px;
         color: #fff;
         text-shadow: 1px 1px 2px #000;
         white-space: nowrap;
-        text-align: center; /* Center the text horizontally */
-        z-index: 2; /* Ensure it stays above the bar */
+        text-align: center;
+        /* Center the text horizontally */
+        z-index: 2;
+        /* Ensure it stays above the bar */
+    }
+
+
+    .team-name-vertical {
+        writing-mode: vertical-rl;
+        text-align: center;
+        font-size: 2em;
+        font-weight: bold;
+        color: white;
+        background: #19529a;
+        /* Dunkles Blau, kannst du anpassen */
+        padding: 10px 0;
+        letter-spacing: 3px;
+        height: 100%;
+        user-select: none;
+    }
+
+    .team-left {
+        border-right: 2px solid #fff;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .team-right {
+        border-left: 2px solid #fff;
+        border-radius: 0 8px 8px 0;
+        transform: rotate(180deg);
+        /* Für rechts "von oben nach unten" */
+    }
+
+    .chart-row-flex {
+        display: flex;
+        width: 100%;
+        min-height: 400px;
+        align-items: stretch;
+    }
+
+    .team-name-left {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 8.5%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 2em;
+        z-index: 10;
+        writing-mode: vertical-rl;
+        text-shadow: 1px 1px 3px #000;
+        transform: rotate(180deg);
+        text-transform: uppercase;
+    }
+
+    .team-name-right {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 8.25%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 2em;
+        z-index: 10;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-transform: uppercase;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">{{ game.game_name }} - Drive Chart</h1>
+    <h1 class="mb-4">{{ game.name }} - Gamechart  - {{game.home_team.name if game.home_team else 'HOME'}} vs {{ game.away_team.name if game.away_team else 'OPPONENT' }}</h1>
 
     <div class="row">
         <div class="col">
             <p> Hometeam plays from Left to Right!</p>
             {% if drives|length == 0 %}
-                <p>No drives available for this game.</p>
+            <p>No drives available for this game.</p>
             {% elif drives|length == 1 %}
-                <p>This game has only one drive. Add more drives to see a full chart.</p>
+            <p>This game has only one drive. Add more drives to see a full chart.</p>
             {% endif %}
+
             <div class="drive-chart" style="height: {{ drives|length * 60 + 100 }}px;">
                 <div class="field-container">
+
+                    <!-- Left Side: Home Team -->
+                    <div class="team-name-left">
+                        {{ game.home_team.name if game.home_team else 'HOME' }}
+                    </div>
+
+                    <!-- Right Side: Away Team -->
+                    <div class="team-name-right">
+                        {{ game.away_team.name if game.away_team else 'OPPONENT' }}
+                    </div>
+
                     <!-- Yard Lines -->
                     {% for i in range(1, 20) %} <!-- Start from 1 (5 yards) to 19 (95 yards) -->
-                        {% set yard = i * 5 %}
-                        <div class="yard-line" style="left: {{ (i * 5) / 1.2 + 8.33 }}%;"></div>
-                        <div class="yard-line-number" style="left: {{ (i * 5) / 1.2 + 8.33 - 0.5 }}%;">
-                            {% if i == 10 %}
-                                50
-                            {% elif i < 10 %}
-                                {{ yard*(-1) }}
-                            {% else %}
-                                {{ 100 - yard }}
-                            {% endif %}
-                        </div>
-                    {% endfor %}
+                    {% set yard = i * 5 %}
+                    <div class="yard-line" style="left: {{ (i * 5) / 1.2 + 8.33 }}%;"></div>
+                    <div class="yard-line-number" style="left: {{ (i * 5) / 1.2 + 8.33 - 0.5 }}%;">
+                        {% if i == 10 %}
+                        50
+                        {% elif i < 10 %} {{ yard*(-1) }} {% else %} {{ 100 - yard }} {% endif %} </div>
+                            {% endfor %}
 
-                    <!-- Drives -->
-                    {% for drive in drives %}
-                        <div class="drive-line" style="top: {{ 50 - 10 + (loop.index0 * 60) }}px;">
+                            <!-- Drives -->
+                            {% for drive in drives %}
+                            <div class="drive-line" style="top: {{ 50 - 10 + (loop.index0 * 60) }}px;">
 
-                            <!-- Drive result bar -->
-                            <div class="drive-bar {{ 'loss' if drive.loss else 'gain' }} {{ drive.result|lower|replace(' ', '-') }}"
-                                 style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
+                                <!-- Drive result bar -->
+                                <div class="drive-bar {{ 'loss' if drive.loss else 'gain' }} {{ drive.result|lower|replace(' ', '-') }}"
+                                    style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
                                         {% if drive.result|lower == 'touchdown' %}
-                                            width: {{ 96 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
+                                            width: {{ 92 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
                                         {% else %}
                                             width: {{ (((drive.end - drive.start) / 100) * 100|abs) / 1.2 }}%;
                                         {% endif %}">
-                            </div>
-                            <!-- Drive label centered inside the bar -->
-                            <div class="drive-label"
-                                 style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
+                                </div>
+                                <!-- Drive label centered inside the bar -->
+                                <div class="drive-label" style="left: {{ ((drive.start / 100) * 100) / 1.2 + 8.33 }}%;
                                         {% if drive.result|lower == 'touchdown' %}
-                                            width: {{ 96 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
+                                            width: {{ 92 - (((drive.start / 100) * 100) / 1.2 + 8.33) }}%;
                                         {% else %}
                                             width: {{ (((drive.end - drive.start) / 100) * 100|abs) / 1.2 }}%;
                                         {% endif %}">
-                                {{ drive.result or 'In Progress' }} ({{ drive.play_count if drive.play_count is defined else 'N/A' }} plays)
+                                    {{ drive.result or 'In Progress' }} ({{ drive.play_count if drive.play_count is
+                                    defined else 'N/A' }} plays)
+                                </div>
                             </div>
-
-                            <!-- JavaScript to log drive.start and drive.end to console -->
-                            <script>
-                                console.log("Drive Start: " + {{ drive.start }} + ", Drive End: " + {{ drive.end }});
-                                console.log("Loss: " + {{ "true" if drive.loss else "false" }});
-                            </script>
-                        </div>
-                    {% endfor %}
+                            {% endfor %}
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}
