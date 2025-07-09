@@ -26,6 +26,7 @@ class GameController:
         self.app.add_url_rule(rule='/games/<int:game_id>/export', view_func=self.export_game)
         self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
+        self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives)
 
     @login_required
     def game_options(self) -> str:
