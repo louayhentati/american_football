@@ -27,55 +27,42 @@
             <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Back to Games</a>
             <button type="submit" class="btn btn-primary">Add Drive</button>
             <a href="{{ url_for('export_game', game_id=game.id) }}" class="btn btn-info">Export Game as CSV</a>
-            <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Game Callsheet</a>
+            <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Offence Game Callsheet</a>
         </form>
     </div>
 </div>
+			<div class="d-flex mb-3">
+				<div class="me-3">
+				<label for="Odk" >ODK:</label>
+				<select name="Odk" id="Odk" class="form-select mb-2">
+					<option value="" selected >All</option>
+					<option value="O">Offence</option>
+					<option value="D">Defence</option>
+					<option value="K">Special Team</option>
+				</select>
+        </div>
+    </div>
 
 <div class="row">
     <div class="col">
         <h3>Drives</h3>
-    {% for drive in game.drives|sort(attribute='id', reverse=True) %}
-
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                <h5 class="card-title">Drive {{ loop.revindex }}</h5>
-                {% if drive.plays | length > 0 %}
-                    {% if drive.plays[0].odk == "O" %}
-                        <h5 class="card-title">Offence</h5>
-                    {% elif drive.plays[0].odk == "D" %}
-                        <h5 class="card-title">Defence</h5>
-                    {% elif drive.plays[0].odk == "K" %}
-                        <h5 class="card-title">Special</h5>
-                    {% else %}
-                        <h5 class="card-title">Unknown play type: {{ drive.plays[0].odk }}</h5>
-                    {% endif %}
-
-                {% endif %}
-
-                    <div>
-                        <a href="{{ url_for('drive_play_chart', game_id=game.id, drive_id=drive.id) }}" class="btn btn-sm btn-primary">Chart</a>
-                        
-                        <a href="{{ url_for('drive_detail', drive_id=drive.id) }}" class="btn btn-sm btn-primary">Show Drive</a>
-
-                        {% if current_user.role == 'admin' %}
-                        <form action="{{ url_for('delete_drive', drive_id=drive.id) }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-danger"
-                                    onclick="return confirm('Are you sure you want to delete this drive?')">Delete Drive</button>
-                        </form>
-                        {% else %}
-                        <button class="btn btn-sm btn-secondary" disabled>Delete Drive</button>
-                        {% endif %}
-                    </div>
-                </div>
-                <p class="card-text">
-                    Result: {{ drive.result or 'In Progress' }}<br>
-                    Plays: {{ drive.plays|length }}
-                </p>
-            </div>
-        </div>
-        {% endfor %}
+		<div id=drive-wrapper>
+			{%include 'game/partials/_drive_rows.html' %}
+		</div>
     </div>
 </div>
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		const odk = document.getElementById('Odk');
+		odk.value = "";
+		odk.addEventListener('change', (e) => {
+			const selectedOdk = e.target.value;
+			fetch(`/filter_drives?Odk=${encodeURIComponent(selectedOdk)}&Id={{ game.id }}`)
+				   .then(response => response.text())
+				   .then(html => {
+					   document.getElementById('drive-wrapper').innerHTML = html;
+			});
+		});
+	});
+</script>
 {% endblock %}
