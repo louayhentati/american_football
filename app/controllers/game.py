@@ -154,6 +154,14 @@ class GameController:
         plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
 
         plays_data = []
+        
+        home_team = game.home_team
+        away_team = game.away_team
+        home_team_color = home_team.primary_color if home_team else "#010748"
+        away_team_color = away_team.primary_color if home_team else "#010748"
+        home_team_text_color = get_readable_text_color(home_team_color) if home_team else "#FFFFFF"
+        away_team_text_color = get_readable_text_color(away_team_color) if home_team else "#FFFFFF"
+        
         for play in plays:
 
             raw_start = play.yard_line
@@ -185,7 +193,11 @@ class GameController:
             game=game,
             drive=drive,
             plays=plays_data,
-            max=max
+            max=max,
+            home = home_team_color,
+            away = away_team_color,
+            home_text = home_team_text_color,
+            away_text = away_team_text_color
         )
 
     @login_required
@@ -194,6 +206,14 @@ class GameController:
         drives = DriveModel.query.filter_by(game_id=game_id).all()
 
         drives_data = []
+        
+        home_team = game.home_team
+        away_team = game.away_team
+        home_team_color = home_team.primary_color if home_team else "#010748"
+        away_team_color = away_team.primary_color if home_team else "#010748"
+        home_team_text_color = get_readable_text_color(home_team_color) if home_team else "#FFFFFF"
+        away_team_text_color = get_readable_text_color(away_team_color) if home_team else "#FFFFFF"
+            
         for drive in drives:
             plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
             number_plays = len(plays)
@@ -216,7 +236,7 @@ class GameController:
                 temp = start_yard
                 start_yard = end_yard
                 end_yard = temp
-
+                
             drives_data.append({
                 'id': drive.id,
                 'team': game.name.split(' vs ')[0],
@@ -230,7 +250,11 @@ class GameController:
             template_name_or_list='drive/drive_chart.html',
             game=game,
             drives=drives_data,
-            max=max
+            max=max,
+            home = home_team_color,
+            away = away_team_color,
+            home_text = home_team_text_color,
+            away_text = away_team_text_color
         )
 
     @login_required
@@ -261,3 +285,9 @@ class GameController:
         response.headers['Content-type'] = 'text/csv'
 
         return response
+
+def get_readable_text_color(hex_color):
+    hex_color = hex_color.lstrip('#')
+    r, g, b = [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+    brightness = 0.299 * r + 0.587 * g + 0.114 * b
+    return "#000000" if brightness > 186 else "#ffffff"

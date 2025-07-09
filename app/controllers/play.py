@@ -79,7 +79,10 @@ class PlayController:
                             yard_line = convert(play.yard_line) 
                             raw_penalty_spot = convert(play.penalty_spot_yard)
                             if rule.get('spot_foul') and raw_penalty_spot is not None:
-                                play.gain_loss = raw_penalty_spot -yard_line
+                                if play.foul_team == "H":
+                                    play.gain_loss = raw_penalty_spot - abs(rule["yards"]) - yard_line
+                                elif play.foul_team == "O":
+                                    play.gain_loss = raw_penalty_spot + abs(rule["yards"]) - yard_line
                                 
                         elif rule.get("yards") and play.foul_team == "H":
                             play.gain_loss = -abs(rule["yards"])
