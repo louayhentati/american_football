@@ -22,7 +22,6 @@ class DriveController:
         self.app.add_url_rule(rule='/drive/<int:drive_id>', view_func=self.drive_detail)
         self.app.add_url_rule(rule='/drive/<int:drive_id>/delete', view_func=self.delete_drive, methods=['POST'])
         self.app.add_url_rule(rule='/drive/<int:drive_id>/export', view_func=self.export_drive, methods=['GET'])
-        self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives, methods=['GET'])
 
     @login_required
     def add_play(self, drive_id):
