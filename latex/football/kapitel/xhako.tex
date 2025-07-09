@@ -1,0 +1,292 @@
+\documentclass[12pt]{article}
+
+% Language & Encoding
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% Page Layout
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{tabularx}
+
+% Code Listings with Minted
+\usepackage{minted}
+\usemintedstyle{default}
+\setminted{
+    fontsize=\small,
+    tabsize=2,
+    breaklines=true
+}
+
+% Colored boxes around code
+\usepackage{tcolorbox}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{minted}{\begin{tcolorbox}[colback=gray!5, colframe=gray!30, boxrule=0.5pt, arc=2pt]}
+\AfterEndEnvironment{minted}{\end{tcolorbox}}
+
+% Better Typography
+\usepackage{microtype}
+
+% Hyperlinks
+\usepackage{hyperref}
+
+\title{Documentation: User Management Module}
+\author{X, Y, 999999999\\ \and X, Z, 222222222}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section*{User Management}
+\addcontentsline{toc}{section}{User Management}
+
+The User Management module handles authentication, authorization, role management, and team assignments. The following sections describe the module's components in detail.
+
+\section{Overview}
+
+The User Management module is a foundational part of the application, responsible for user authentication, authorization, role-based access control, and team assignments. It is implemented using Flask as the web framework, Flask-Login for session management, SQLAlchemy for object-relational mapping (ORM), and Jinja2 for dynamic template rendering.
+
+The system defines two distinct user roles:
+\begin{itemize}
+  \item \textbf{Admin/Coach:} Full access to user-related operations. Admins can create, edit, and delete user accounts, as well as assign users to specific teams.
+  \item \textbf{User/Player:} Limited access. Regular users can log in and interact with the application but are restricted to resetting their own passwords.
+\end{itemize}
+\noindent Role-based access is enforced using decorators. All protected routes require login via the \texttt{@login\_required} decorator, and administrative routes are further restricted using a custom \texttt{@admin\_required} decorator. The module uses secure password handling with modern hashing algorithms (such as \texttt{scrypt}), ensuring that user credentials are not stored in plain text.
+
+\noindent The implementation follows a modular structure that separates routing logic, business logic, and templates for maintainability and clarity. This design allows for easy expansion in the future, including features like two-factor authentication, user activity tracking, or email-based account verification.
+
+
+\section{Authentication and Session Management}
+
+The \texttt{UserController} class handles the setup of user-related routes and session integration. In the constructor, it links Flask-Login to a user-loading function and registers the relevant URLs for login, logout, and the homepage.\\
+
+The \texttt{register\_routes} method adds Flask route definitions for:
+\begin{itemize}
+  \item \texttt{'/'}: the index view (landing page after login),
+  \item \texttt{'/login'}: accepts both GET and POST requests to render and process the login form,
+  \item \texttt{'/logout'}: logs the user out and clears the session.
+\end{itemize}
+
+\noindent By structuring route registration inside a controller class, the logic stays modular and easier to maintain.
+\newpage
+
+\noindent \textbf{Controller setup and route registration:} \\
+\begin{minted}{python}
+class UserController:
+    def __init__(self, app, login_mgr):
+        self.app = app
+        login_mgr.user_loader(self.load_user)
+        self.register_routes()
+
+    def register_routes(self):
+        self.app.add_url_rule('/', view_func=self.index)
+        self.app.add_url_rule('/login', view_func=self.login, methods=['GET', 'POST'])
+        self.app.add_url_rule('/logout', view_func=self.logout)
+\end{minted} 
+\vspace{1em}
+\noindent \textbf{Login view logic:} \\
+
+\noindent The \texttt{login()} method manages the user login process. First, it clears any active session. If the user is already authenticated, they are redirected to the main page. Otherwise, it checks whether the request method is \texttt{POST} and retrieves the submitted credentials. It searches for a matching user in the database and verifies the password using \texttt{check\_password\_hash}. If authentication is successful, the user is logged in and redirected. Otherwise, a flash message indicates invalid credentials. For a \texttt{GET} request, the login form is rendered. 
+
+\begin{minted}{python}
+@staticmethod
+def login():
+    session.clear()
+    if current_user.is_authenticated:
+        return redirect(url_for('game_options'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = UserModel.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            flash('Login successful!', 'success')
+            return redirect(url_for('game_options'))
+        flash('Invalid credentials', 'danger')
+
+    return render_template('auth/login.html')
+\end{minted}
+
+\section{User Management}
+
+This section covers the administrative features for managing users, including adding, editing, deleting, resetting passwords, and assigning users to teams. These actions are strictly restricted to users with the \texttt{admin} role, while regular users can only reset their own password.
+
+\subsection*{Role-Based Capabilities}
+
+The following table summarizes the actions available to each role:
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|X|c|c|}
+\hline
+\textbf{Capability} & \textbf{Admin} & \textbf{User} \\
+\hline
+View all users            & Yes & No \\
+Add new users             & Yes & No \\
+Edit user data            & Yes & No \\
+Delete users              & Yes & No \\
+Reset any user's password & Yes & No \\
+Reset own password        & Yes & Yes \\
+\hline
+\end{tabularx}
+\caption{Permission matrix comparing Admin and User roles}
+\end{table}
+
+\noindent These capabilities are enforced using Flask-Login's \texttt{@login\_required} decorator for authentication and a custom \texttt{@admin\_required} decorator for admin-only access.
+
+\subsection*{Routes for User Operations}
+
+All user-related routes are registered within the \texttt{UserManagementController} class to keep the code modular and organized. Each route corresponds to a specific function such as listing users, creating a user, editing details, deleting entries, or assigning teams.
+
+\begin{minted}{python}
+class UserManagementController:
+    def register_routes(self):
+        self.app.add_url_rule('/users', view_func=self.user_list)
+        self.app.add_url_rule('/users/add', view_func=self.add_user, methods=['GET', 'POST'])
+        self.app.add_url_rule('/users/<int:id>/edit', view_func=self.edit_user, methods=['GET', 'POST'])
+        self.app.add_url_rule('/users/<int:id>/delete', view_func=self.delete_user, methods=['POST'])
+        self.app.add_url_rule('/users/<int:id>/reset-password', view_func=self.reset_password, methods=['GET', 'POST'])
+        self.app.add_url_rule('/assign-team', view_func=self.assign_team, methods=['GET', 'POST'])
+\end{minted}
+
+\subsection*{Adding a User}
+
+Admins can add new users through a form rendered by the route \texttt{/users/add}. On a GET request, the route renders the form. On a POST request, it:
+\newpage
+\begin{itemize}
+  \item Retrieves username, password, and optional role from the form.
+  \item Checks whether the username already exists.
+  \item Hashes the password using the \texttt{scrypt} algorithm.
+  \item Creates and saves a new user to the database.
+  \item Redirects back to the user list on success.
+\end{itemize}
+
+\noindent This route is protected by the \texttt{@admin\_required} decorator to ensure only admins can access it.
+
+\begin{minted}{python}
+@admin_required
+def add_user(self):
+    if request.method == 'POST':
+        uname = request.form['username']
+        pwd = request.form['password']
+        role = request.form.get('role', 'user')
+
+        if UserModel.query.filter_by(username=uname).first():
+            flash('Username exists', 'danger')
+            return redirect(url_for('add_user'))
+
+        hashed = generate_password_hash(pwd, method='scrypt')
+        user = UserModel(username=uname, password=hashed, role=role)
+        db.session.add(user)
+        db.session.commit()
+        flash('User added', 'success')
+        return redirect(url_for('user_list'))
+
+    return render_template('user/user_add.html')
+\end{minted}
+
+\subsection*{Editing a User}
+
+The \texttt{/users/<id>/edit} route lets an admin update a user’s username or role. It displays a form on GET and updates the database on POST. A check is performed to ensure that the last remaining admin cannot demote themselves to a regular user, preserving admin access in the system.
+
+\subsection*{Deleting a User}
+
+The \texttt{/users/<id>/delete} route allows admins to remove a user. It requires a POST request to prevent accidental deletions through simple link clicks.
+
+\subsection*{Resetting Passwords}
+
+The \texttt{/users/<id>/reset-password} route allows admins to change any user's password securely. A form is shown on GET, and the new password is saved after hashing on POST.
+
+\subsection*{Admin Protection Check}
+
+To prevent removing all administrative access, a special condition is enforced during editing: if the user being modified is the only remaining admin, their role cannot be changed to \texttt{user}.
+
+\begin{minted}{python}
+if user.role == 'admin' and admin_count == 1 and new_role != 'admin':
+    flash('You are the only admin.', 'danger')
+    return redirect(url_for('edit_user', user_id=user.id))
+\end{minted}
+
+
+\section{Model Structure}
+
+The \texttt{UserModel} class defines the schema for the application's users. It extends both SQLAlchemy’s \texttt{db.Model} and Flask-Login’s \texttt{UserMixin} to integrate seamlessly with session management and database ORM functionality.
+
+Each user has a unique username, a securely hashed password, a role (either \texttt{admin} or \texttt{user}), and an optional assignment to a team.
+
+\textbf{Explanation of fields:}
+\begin{itemize}
+  \item \texttt{id}: Primary key. A unique integer identifier for each user.
+  \item \texttt{username}: A unique string identifier used for login. Cannot be null.
+  \item \texttt{password}: Stores the hashed password string. Always required.
+  \item \texttt{role}: Specifies the user's role in the system. Defaults to \texttt{'user'}.
+  \item \texttt{team\_id}: A foreign key that references the associated team’s ID.
+  \item \texttt{team}: A relationship object linking the user to a \texttt{TeamModel}.
+\end{itemize}
+
+\noindent Using SQLAlchemy’s relationship and foreign key system allows each user to optionally belong to a team, enabling role-based and group-based functionality later in the application.
+
+\begin{minted}{python}
+class UserModel(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True) 
+    username = db.Column(db.String(80), unique=True, nullable=False) 
+    password = db.Column(db.String(120), nullable=False)  
+    role = db.Column(db.String(10), default='user') 
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.id')) 
+    team = db.relationship('TeamModel', backref='users') 
+\end{minted}
+
+\noindent This model provides the core structure for user identity, authentication, and permission control. The role field is used to differentiate between standard users and administrators, while the team association enables team-specific logic such as filtering users or grouping data.
+
+
+\section{Password Security}
+
+To ensure the security and privacy of user credentials, passwords are never stored in plain text. Instead, they are securely hashed using the \texttt{scrypt} algorithm, which is a modern and memory-intensive hashing function designed to resist brute-force and dictionary attacks.
+
+\noindent The application uses the \texttt{generate\_password\_hash} and \texttt{check\_password\_hash} functions from the \texttt{werkzeug.security} module to handle password hashing and verification.
+
+\subsection*{How password hashing works}
+
+When a user account is created or a password is updated, the plaintext password is passed to \texttt{generate\_password\_hash()}, which:
+\begin{itemize}
+  \item Applies the \texttt{scrypt} hashing algorithm.
+  \item Generates a secure hash that includes a salt (random data added to the input).
+  \item Returns a string containing the algorithm name, salt, and hashed output—all embedded together.
+\end{itemize}
+
+\noindent This hash is stored in the database in the \texttt{password} column of the \texttt{UserModel}. Importantly, the original password is discarded and never saved or accessible. \\
+
+\noindent \textbf{Password hashing during registration:}
+\begin{minted}{python}
+from werkzeug.security import generate_password_hash
+hashed = generate_password_hash(password, method='scrypt')
+\end{minted}
+
+\subsection*{How password verification works}
+
+When a user attempts to log in, the application:
+\begin{itemize}
+  \item Retrieves the hash stored in the database for the submitted username.
+  \item Uses \texttt{check\_password\_hash()} to compare the stored hash with the entered password.
+  \item The function internally re-hashes the entered password using the salt stored in the original hash.
+  \item If the resulting hash matches the stored one, the password is correct and the user is authenticated.
+\end{itemize}
+
+\noindent \textbf{Password verification during login:}
+\begin{minted}{python}
+from werkzeug.security import check_password_hash
+if check_password_hash(user.password, password):
+    login_user(user)
+\end{minted}
+
+This system ensures that even if the database were compromised, the passwords would not be exposed in a usable form. The use of \texttt{scrypt} makes brute-force attacks significantly more difficult compared to older algorithms like MD5 or SHA1.
+
+
+
+\end{document}
