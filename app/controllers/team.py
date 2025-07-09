@@ -63,7 +63,7 @@ def create_team():
         db.session.commit()
 
         flash(f'Team "{name}" created successfully!', 'success')
-        return redirect(url_for('team.create_team'))
+        return redirect('/settings#play-defaults')
 
     return render_template(
         'team/create_team.html',
@@ -193,6 +193,6 @@ def upload_team_icon_page():
         db.session.commit()
 
         flash(f'Team "{name}" uploaded and saved successfully!', 'success')
-        return redirect(url_for('team.list_all_teams'))
+        return redirect('/settings#play-defaults')
 
     return render_template('team/upload_team_icon.html')

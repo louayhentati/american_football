@@ -1,5 +1,4 @@
 <script>
-    ///stable version?!
 const steps = [
     "step-shape",
     "step-pattern",
@@ -59,7 +58,7 @@ function movePattern(dx, dy) {
 }
 
 function zoomPattern(delta) {
-    patternScale = Math.max(10, patternScale + delta); // prevent zero or negative scale
+    patternScale = Math.max(10, patternScale + delta); 
     updatePatternTransform();
 }
 
@@ -72,13 +71,13 @@ function updatePatternTransform() {
     const patternElement = document.getElementById(patternId);
     if (!patternElement) return;
 
-    // Set patternUnits to userSpaceOnUse (already done in your HTML)
+   
     patternElement.setAttribute("patternTransform", `translate(${patternOffsetX}, ${patternOffsetY}) scale(${patternScale / 60})`);
 
-    // Also update the <image> inside the pattern if it exists
+    s
     const image = patternElement.querySelector("image");
     if (image) {
-        image.setAttribute("width", 60);  // stay at base size
+        image.setAttribute("width", 60);  
         image.setAttribute("height", 60);
     }
 }
@@ -104,14 +103,14 @@ function moveIcon(dx, dy) {
 
 
 primaryPicker.on(["color:change", "input:change"], color => {
-  primaryColor = color.hexString; // This includes the "#" prefix
-  document.getElementById("primary-hex").value = primaryColor; // Set full hex string including #
+  primaryColor = color.hexString; 
+  document.getElementById("primary-hex").value = primaryColor;
   updatePatternColors();
 });
 
 secondaryPicker.on(["color:change", "input:change"], color => {
   secondaryColor = color.hexString;
-  document.getElementById("secondary-hex").value = secondaryColor; // Set full hex string including #
+  document.getElementById("secondary-hex").value = secondaryColor; 
   updatePatternColors();
 });
 
@@ -365,7 +364,7 @@ function loadIcons() {
         const img = col.querySelector("img");
 
         img.addEventListener("click", () => {
-            disableIconUpload(); // disable upload once catalog icon is chosen
+            disableIconUpload(); 
 
             document.querySelectorAll(".icon-thumb").forEach(img => img.classList.remove("border-primary"));
             img.classList.add("border-primary");
@@ -836,12 +835,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 document.getElementById('reset-icon-choice').addEventListener('click', function () {
-  // Remove red border from all icon-wrapper elements
   document.querySelectorAll('.icon-wrapper').forEach(wrapper => {
     wrapper.classList.remove('selected');
   });
 
-  // Optionally disable "Next" again
   document.getElementById('btn-next').disabled = true;
 
 });
