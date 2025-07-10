@@ -41,18 +41,18 @@
 \tableofcontents
 \newpage
 
-\section*{User Management}
-\addcontentsline{toc}{section}{User Management}
+\section{User Management}
+
 
 The User Management module handles authentication, authorization, role management, and team assignments. The following sections describe the module's components in detail.
 
-\section{Overview}
+\subsection{Overview}
 
 The User Management module is a foundational part of the application, responsible for user authentication, authorization, role-based access control, and team assignments. It is implemented using Flask as the web framework, Flask-Login for session management, SQLAlchemy for object-relational mapping (ORM), and Jinja2 for dynamic template rendering.
 
 The system defines two distinct user roles:
 \begin{itemize}
-  \item \textbf{Admin/Coach:} Full access to user-related operations. Admins can create, edit, and delete user accounts, as well as assign users to specific teams.
+  \item \textbf{Admin/Coach:} Full access to user-related operations. Admins can create, edit, and delete user accounts. Each admin can select one default team, which is automatically assigned to new users they create.
   \item \textbf{User/Player:} Limited access. Regular users can log in and interact with the application but are restricted to resetting their own passwords.
 \end{itemize}
 \noindent Role-based access is enforced using decorators. All protected routes require login via the \texttt{@login\_required} decorator, and administrative routes are further restricted using a custom \texttt{@admin\_required} decorator. The module uses secure password handling with modern hashing algorithms (such as \texttt{scrypt}), ensuring that user credentials are not stored in plain text.
@@ -60,7 +60,7 @@ The system defines two distinct user roles:
 \noindent The implementation follows a modular structure that separates routing logic, business logic, and templates for maintainability and clarity. This design allows for easy expansion in the future, including features like two-factor authentication, user activity tracking, or email-based account verification.
 
 
-\section{Authentication and Session Management}
+\subsection{Authentication and Session Management}
 
 The \texttt{UserController} class handles the setup of user-related routes and session integration. In the constructor, it links Flask-Login to a user-loading function and registers the relevant URLs for login, logout, and the homepage.\\
 
@@ -112,11 +112,12 @@ def login():
     return render_template('auth/login.html')
 \end{minted}
 
-\section{User Management}
+\subsection{User Management}
 
-This section covers the administrative features for managing users, including adding, editing, deleting, resetting passwords, and assigning users to teams. These actions are strictly restricted to users with the \texttt{admin} role, while regular users can only reset their own password.
+This section covers the administrative features for managing users, ... including adding, editing, deleting, and resetting passwords. New users are automatically assigned to the admin’s selected team.
+These actions are strictly restricted to users with the \texttt{admin} role, while regular users can only reset their own password.
 
-\subsection*{Role-Based Capabilities}
+\subsection{Role-Based Capabilities}
 
 The following table summarizes the actions available to each role:
 
@@ -128,9 +129,8 @@ The following table summarizes the actions available to each role:
 \textbf{Capability} & \textbf{Admin} & \textbf{User} \\
 \hline
 View all users            & Yes & No \\
-Add new users             & Yes & No \\
+Add/Delete users             & Yes & No \\
 Edit user data            & Yes & No \\
-Delete users              & Yes & No \\
 Reset any user's password & Yes & No \\
 Reset own password        & Yes & Yes \\
 \hline
@@ -152,13 +152,11 @@ class UserManagementController:
         self.app.add_url_rule('/users/<int:id>/edit', view_func=self.edit_user, methods=['GET', 'POST'])
         self.app.add_url_rule('/users/<int:id>/delete', view_func=self.delete_user, methods=['POST'])
         self.app.add_url_rule('/users/<int:id>/reset-password', view_func=self.reset_password, methods=['GET', 'POST'])
-        self.app.add_url_rule('/assign-team', view_func=self.assign_team, methods=['GET', 'POST'])
 \end{minted}
 
 \subsection*{Adding a User}
 
 Admins can add new users through a form rendered by the route \texttt{/users/add}. On a GET request, the route renders the form. On a POST request, it:
-\newpage
 \begin{itemize}
   \item Retrieves username, password, and optional role from the form.
   \item Checks whether the username already exists.
@@ -214,7 +212,7 @@ if user.role == 'admin' and admin_count == 1 and new_role != 'admin':
 \end{minted}
 
 
-\section{Model Structure}
+\subsection{Model Structure}
 
 The \texttt{UserModel} class defines the schema for the application's users. It extends both SQLAlchemy’s \texttt{db.Model} and Flask-Login’s \texttt{UserMixin} to integrate seamlessly with session management and database ORM functionality.
 
@@ -245,7 +243,7 @@ class UserModel(db.Model, UserMixin):
 \noindent This model provides the core structure for user identity, authentication, and permission control. The role field is used to differentiate between standard users and administrators, while the team association enables team-specific logic such as filtering users or grouping data.
 
 
-\section{Password Security}
+\subsection{Password Security}
 
 To ensure the security and privacy of user credentials, passwords are never stored in plain text. Instead, they are securely hashed using the \texttt{scrypt} algorithm, which is a modern and memory-intensive hashing function designed to resist brute-force and dictionary attacks.
 
@@ -286,6 +284,176 @@ if check_password_hash(user.password, password):
 \end{minted}
 
 This system ensures that even if the database were compromised, the passwords would not be exposed in a usable form. The use of \texttt{scrypt} makes brute-force attacks significantly more difficult compared to older algorithms like MD5 or SHA1.
+
+\section{Team Creation}
+
+The Team Creation module provides two flexible methods for generating a new team and shield icon: a step-by-step visual builder, and a direct upload interface. Both flows are fully integrated with the backend and database, ensuring a consistent team model across the application.
+
+\subsection{Overview}
+
+Users can create teams by either:
+\begin{itemize}
+    \item Using the \textbf{Custom Shield Builder}, a multi-step interface allowing shape, pattern, color, and icon configuration.
+    \item Using the \textbf{Upload Flow}, where a user provides a transparent PNG or SVG icon and the system auto-detects colors.
+\end{itemize}
+
+The final output of either flow is a generated SVG saved on disk, along with a new entry in the database containing team metadata.
+
+\subsection{Creation Flows}
+
+\subsubsection*{Flow 1: Custom Shield Builder}
+
+This method guides users through 7 steps:
+
+\begin{enumerate}
+    \item \textbf{Select Shape:} Choose a shield outline (SVG path).
+    \item \textbf{Choose Pattern:} Apply a decorative fill from six preset pattern types.
+    \item \textbf{Set Colors:} Pick primary and secondary colors using color pickers.
+    \item \textbf{Adjust Pattern:} Drag and scale the pattern fill within the shape.
+    \item \textbf{Icon Selection:} Choose or upload a shield icon (SVG or transparent PNG).
+    \item \textbf{Icon Adjustment:} Position and zoom the icon within the shield.
+    \item \textbf{Naming and Submission:} Provide a team name and submit.
+\end{enumerate}
+
+\noindent At the end of this process, a complete SVG is serialized, and the form sends all configuration data to the \texttt{/team/create} POST route.
+\begin{minted}{python}
+@team_bp.route('/create', methods=['GET', 'POST'])
+def create_team():
+    ...
+    if request.method == 'POST':
+        name = request.form.get('name')
+        primary_color = request.form.get('primary_color')
+        secondary_color = request.form.get('secondary_color')
+        icon_file = request.form.get('icon_filename')
+        final_svg = request.form.get('final_svg')
+        ...
+        # Save final SVG file
+        with open(svg_path, "w", encoding="utf-8") as f:
+            f.write(final_svg)
+
+        icon_path = url_for('static', filename=f'user_created_icons/{safe_name}/team_icon.svg')
+        new_team = TeamModel(
+            name=name,
+            icon=icon_path,
+            primary_color=primary_color,
+            secondary_color=secondary_color
+        )
+        db.session.add(new_team)
+        db.session.commit()
+\end{minted}
+
+\subsubsection*{Flow 2: Upload Team Icon (with Color Detection)}
+
+This alternative creation method allows users to directly upload a transparent PNG or SVG icon instead of customizing a shield step-by-step. It is accessed via the route \texttt{/upload\_icon} and presents a guided 3-step form:
+
+\begin{enumerate}
+    \item \textbf{Upload Image:} The user provides an SVG or transparent PNG file.
+    \item \textbf{Auto Color Detection:} The system automatically analyzes the image and extracts two dominant colors.
+    \item \textbf{Adjust Colors and Name:} The detected colors are pre-filled in color pickers, which the user can override before submitting.
+\end{enumerate}
+
+\paragraph{Color Detection Logic:}
+Color extraction is performed server-side using the \texttt{Pillow (PIL)} library. After image upload:
+
+\begin{itemize}
+    \item The image is converted to RGBA and resized to 64x64 pixels.
+    \item Only pixels with alpha (transparency) above a threshold are considered.
+    \item RGB tuples are counted using \texttt{collections.Counter}.
+    \item The two most frequent RGB values are selected and converted to hex format.
+\end{itemize}
+
+\begin{minted}{python}
+def extract_dominant_colors(file_storage):
+    img = Image.open(file_storage.stream).convert("RGBA")
+    img = img.resize((64, 64))
+    pixels = [pixel for pixel in img.getdata() if pixel[3] > 0]
+    rgb_pixels = [(r, g, b) for r, g, b, _ in pixels]
+    most_common = Counter(rgb_pixels).most_common(2)
+    hex_colors = [f"#{r:02x}{g:02x}{b:02x}" for r, g, b in [c[0] for c in most_common]]
+    ...
+    return hex_colors[0], hex_colors[1]
+\end{minted}
+
+\paragraph{Fallback Handling:}
+If the uploaded image is:
+\begin{itemize}
+    \item \textbf{Completely transparent}: fallback colors \texttt{\#000000} and \texttt{\#ffffff} are used.
+    \item \textbf{Monochromatic}: the second color defaults to \texttt{\#ffffff}.
+\end{itemize}
+
+\paragraph{Frontend Integration:}
+On the frontend, a live preview is rendered inside an SVG element. Users can review the shape, manually adjust the detected colors using embedded color pickers (via \texttt{iro.js}), and then name the team. The final design, including the auto-colored background and icon, is serialized into a full SVG and submitted as part of the POST request.
+
+\paragraph{Final Submission:}
+On submission, the following fields are sent to the server:
+
+\begin{itemize}
+    \item \texttt{name} : team name (validated for uniqueness)
+    \item \texttt{final\_svg} : generated icon and background design
+    \item \texttt{primary\_color}, \texttt{secondary\_color} : from color picker or detection
+    \item \texttt{icon} : the uploaded file
+\end{itemize}
+
+
+\noindent This data is saved to disk and registered in the \texttt{TeamModel}, identical to the builder flow. The UI flow provides a fast and user-friendly method to integrate custom designs without requiring step-by-step customization.
+
+
+
+\subsection{Team Model}
+
+The \texttt{TeamModel} schema stores each team’s icon path, name, and colors. This structure supports user assignment and future team-specific logic.
+
+\begin{minted}{python}
+class TeamModel(db.Model):
+    __tablename__ = 'teams'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    icon = db.Column(db.String(300), nullable=False)
+    primary_color = db.Column(db.String(20), nullable=False)
+    secondary_color = db.Column(db.String(20), nullable=False)
+\end{minted}
+
+\subsection{Team Listing and Deletion}
+
+Admins can view all created teams and their members at \texttt{/team/list}. Each team entry shows:
+
+\begin{itemize}
+    \item Team name
+    \item Primary and secondary color badges
+    \item Members assigned to the team
+    \item A delete button (admin-only, modal-confirmed)
+\end{itemize}
+
+\noindent If a team has users assigned, deletion is blocked with a flash message.
+
+\begin{minted}{python}
+@team_bp.route('/delete/<int:team_id>', methods=['POST'])
+def delete_team(team_id):
+    team = TeamModel.query.get_or_404(team_id)
+    users_assigned = UserModel.query.filter_by(team_id=team_id).all()
+    if users_assigned:
+        flash('Cannot delete team while users are assigned.', 'danger')
+        return redirect(url_for('team.list_all_teams'))
+    ...
+    db.session.delete(team)
+    db.session.commit()
+\end{minted}
+
+\subsection{Security and Validation}
+
+\begin{itemize}
+    \item Team names must be unique and the duplicates are rejected with a flash message.
+    \item Uploads are sanitized using \texttt{secure\_filename()} to avoid filesystem vulnerabilities.
+    \item Only SVG and PNG files are accepted for icons.
+    \item Required fields (name, colors, final SVG) are enforced before saving.
+    \item Teams cannot be deleted if any users are still assigned.
+\end{itemize}
+
+\noindent These checks ensure data integrity and prevent unintended loss of access or file errors.
+
+\subsection{Conclusion}
+
+The Team Creation module offers a robust interface for creating visually customized teams. Its flexible builder, SVG serialization, color handling, and integration with SQLAlchemy ensure a professional experience for both users and admins. The modularity of the backend logic makes it easy to extend (e.g., adding team categories, preview exports, or in-app editing).
 
 
 
