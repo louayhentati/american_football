@@ -26,9 +26,11 @@ class GameController:
         self.app.add_url_rule(rule='/games/<int:game_id>/export', view_func=self.export_game)
         self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
+        self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives)
 
     @login_required
     def game_options(self) -> str:
+        # filter away team
         teams = TeamModel.query.all()
         games = GameModel.query.all()
         return render_template(
@@ -38,8 +40,25 @@ class GameController:
         )
 
     @login_required
+    def filter_drives(self):
+        selected_odk = request.args.get('Odk')
+        game_id = request.args.get('Id')
+        game = GameModel.get_by_id(game_id)
+        if selected_odk:
+            game.drives = [drive for drive in game.drives
+                            if drive.plays and drive.plays[0].odk == selected_odk]
+            return render_template("game/partials/_drive_rows.html", game=game)
+        else:
+            return render_template("game/partials/_drive_rows.html", game=game)
+
+
+
+    @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
+        for drive in game.drives:
+            if len(drive.plays) > 0:
+                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
