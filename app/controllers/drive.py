@@ -84,7 +84,20 @@ class DriveController:
             gain_loss=gain_loss,
             penalty_type=form.get("penalty_type", None),
             penalty_spot_yard=form.get("penalty_spot_yard", None),
-            foul_team=foul_team
+            foul_team=foul_team,
+            play_type1=request.form.get('play_type1'),
+            defense_front=request.form.get('defense_front'),
+            defense_strongside=request.form.get('defense_strongside'),
+            blitz=request.form.get('blitz'),
+            slants=request.form.get('slants'),
+            coverage=request.form.get('coverage'),
+            tackler1=request.form.get('tackler1'),
+            tackler2=request.form.get('tackler2'),
+            interceptor=request.form.get('interceptor'),
+            returner=request.form.get('returner'),
+            returner_yard=request.form.get('returner_yard'),
+            kicker=request.form.get('kicker'),
+            kicker_yard=request.form.get('kicker_yard')
         )
 
     def _update_play_fields(self, play, drive_id, drive):
@@ -144,7 +157,10 @@ class DriveController:
 
     def _get_add_play_form_options(self):
         options = {}
-
+        defense_parameters = [
+            'play_type1','defense_front', 'defense_strongside',
+            'blitz', 'slants', 'coverage'
+        ]
         for param in self.play_parameters:
             entries = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
 
@@ -169,6 +185,13 @@ class DriveController:
         options['penalty_type'] = [{'value': r['type'], 'label': r['type']}
                                    for r in PENALTY_RULES
                                    ]
+        # Add defense parameters
+        for param in defense_parameters:
+            entries = PlayOptionModel.query.filter_by(parameter_name=param, enabled=True).all()
+            options[param] = [
+                {'id': entry.id, 'value': entry.value, 'label': entry.value}
+                for entry in entries
+            ]
         return options
 
     def _get_default_play_fields(self, drive_id):
