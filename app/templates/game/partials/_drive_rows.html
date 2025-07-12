@@ -19,10 +19,16 @@
                 {% endif %}
 
                     <div>
-                        <a href="{{ url_for('drive_play_chart', game_id=game.id, drive_id=drive.id) }}" class="btn btn-sm btn-primary">Chart</a>
-                        
                         <a href="{{ url_for('drive_detail', drive_id=drive.id) }}" class="btn btn-sm btn-primary">Show Drive</a>
+                        
+                        <a href="{{ url_for('drive_play_chart', game_id=game.id, drive_id=drive.id) }}" class="btn btn-sm btn-primary", style="margin-right: 0.5rem;">Chart</a>
+                        
+                        
 
+                        <!--
+                        <a href="{{ url_for('add_play', drive_id=drive.id) }}" class="btn btn-sm btn-success">Add Play</a>
+                        --->
+                        
                         {% if current_user.role == 'admin' %}
                         <form action="{{ url_for('delete_drive', drive_id=drive.id) }}" method="POST" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-danger"
@@ -31,12 +37,16 @@
                         {% else %}
                         <button class="btn btn-sm btn-secondary" disabled>Delete Drive</button>
                         {% endif %}
+                        
                     </div>
                 </div>
-                <p class="card-text">
-                    Result: {{ drive.result or 'In Progress' }}<br>
-                    Plays: {{ drive.plays|length }}
-                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="card-text mb-0">
+                        Result: {{ drive.result or 'In Progress' }}<br>
+                        Plays: {{ drive.plays|length }}
+                    </div>
+                    <a href="{{ url_for('add_play', drive_id=drive.id) }}" class="btn btn-sm btn-success ms-auto" style="margin-right: 12.1rem;">Add Play</a>
+                </div>
             </div>
         </div>
 		{% else %}

@@ -9,7 +9,7 @@
                 <h2>Drive {{ drive.id }}</h2>
                 <a href="{{ url_for('game_detail', game_id=drive.game_id) }}" class="btn btn-secondary">Back to
                     Drives</a>
-                <a href="{{ url_for('add_play', drive_id=drive.id) }}" class="btn btn-primary">Add Play</a>
+                <a href="{{ url_for('add_play', drive_id=drive.id) }}" class="btn btn-success">Add Play</a>
                 <a href="{{ url_for('export_drive', drive_id=drive.id) }}" class="btn btn-info">Export CSV</a>
             </div>
         </div>
