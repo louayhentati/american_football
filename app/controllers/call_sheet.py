@@ -55,10 +55,12 @@ class CallSheetController:
             key = (play.off_play, play.off_form, play.form_adj)
 
             if key not in callsheet_data:
-                callsheet_data[key] = {'count': 0, 'total_gain_loss': 0}
+                callsheet_data[key] = {'count': 0, 'total_gain_loss': 0, 'gains':[]}
 
             callsheet_data[key]['count'] += 1
             callsheet_data[key]['total_gain_loss'] += play.gain_loss
+            callsheet_data[key]['gains'].append(play.gain_loss)
+
 
         total_plays = sum(data['count'] for data in callsheet_data.values())
         entries = []
@@ -69,6 +71,9 @@ class CallSheetController:
             total = data['total_gain_loss']
             percent = (count / total_plays) * 100 if total_plays > 0 else 0
             average = total / count if count > 0 else 0
+            gains = data['gains']
+            std_dev = stdev(gains) if len(gains) > 1 else 0
+            med = median(gains) if gains else 0
 
             entries.append({
                 'off_play': off_play if off_play is not None else '-',
@@ -78,6 +83,8 @@ class CallSheetController:
                 'percent': percent,
                 'total': total,
                 'average': average,
+                'std_dev':std_dev,
+                'median':med,
             })
 
         return sorted(entries, key=lambda x: x['count'], reverse=True)

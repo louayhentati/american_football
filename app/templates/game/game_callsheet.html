@@ -5,7 +5,45 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Game Callsheet</h2>
-            <a href="{{ url_for('game_detail', game_id=game_id) }}" class="btn btn-secondary">Back to Drives</a>
+            <!-- Filter Area -->
+            <div class="row mb-3">
+                <!-- Dropdown: Offense Play -->
+                <div class="col-md-2">
+                    <label for="filter-off_play">Offense Play</label>
+                    <select id="filter-off_play" class="form-control filter-dropdown">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <!-- Dropdown: Offense Formation -->
+                <div class="col-md-2">
+                    <label for="filter-off_form">Offense Formation</label>
+                    <select id="filter-off_form" class="form-control filter-dropdown">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <!-- Dropdown: Formation Adjustment -->
+                <div class="col-md-2">
+                    <label for="filter-form_adj">Formation Adjustment</label>
+                    <select id="filter-form_adj" class="form-control filter-dropdown">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <!-- Input: Min Average -->
+                <div class="col-md-2">
+                    <label for="filter-min-avg">Min Avg</label>
+                    <input type="number" step="0.1" id="filter-min-avg" class="form-control filter-input">
+                </div>
+                <!-- Input: Max Average -->
+                <div class="col-md-2">
+                    <label for="filter-max-avg">Max Avg</label>
+                    <input type="number" step="0.1" id="filter-max-avg" class="form-control filter-input">
+                </div>
+                <!-- Button: Clear all filters -->
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="clear-filters" class="btn btn-secondary w-100">Clear</button>
+                </div>
+            </div>
+            <a href="{{ url_for('dashboard', game_id=game_id) }}" class="btn btn-secondary">Back to Dashboard</a>
             <button id="export-pdf" class="btn btn-info">Export as PDF</button>
         </div>
     </div>
@@ -27,6 +65,8 @@
                                 <th><!-- Bar column; no sorting --></th>
                                 <th class="sortable">Total</th>
                                 <th class="sortable">Average</th>
+                                <th class="sortable">Standard Deviation</th>
+                                <th class="sortable">Median</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,6 +85,8 @@
                                 </td>
                                 <td>{{ entry.total }}</td>
                                 <td>{{ "%.2f"|format(entry.average) }}</td>
+                                <td>{{ entry.std_dev| round(2) }}</td>
+                                <td>{{ entry.median }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -72,9 +114,77 @@
 
 <!-- Sorting functionality with toggle ascending/descending and arrow icons -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const table = document.getElementById('callsheet-table');
-    const sortableHeaders = table.querySelectorAll('th.sortable');
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('callsheet-table');
+        // Grab all rows from the table body
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+    
+        /**
+         * Fills a dropdown with values from a specific column in the table.
+         * @param {string} id - ID of the dropdown element
+         * @param {number} index - Index of the table column to extract values from
+         */
+        const fillDropdown = (id, index) => {
+            const select = document.getElementById(id);
+            // Use a Set to collect values
+            const values = new Set(rows.map(row => row.children[index].textContent.trim()));
+            // Sort the values and add them as <option> elements
+            Array.from(values).sort().forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+            });
+        };
+        // Fill each dropdown with values from the corresponding table column
+        fillDropdown('filter-off_play', 0);
+        fillDropdown('filter-off_form', 1);
+        fillDropdown('filter-form_adj', 2);
+    
+        // Applies all filters to show/hide rows based on dropdown and input values.
+        const applyFilters = () => {
+            const playFilter = document.getElementById('filter-off_play').value;
+            const formFilter = document.getElementById('filter-off_form').value;
+            const adjFilter = document.getElementById('filter-form_adj').value;
+            const minAvg = parseFloat(document.getElementById('filter-min-avg').value);
+            const maxAvg = parseFloat(document.getElementById('filter-max-avg').value);
+    
+            rows.forEach(row => {
+                const offPlay = row.children[0].textContent.trim();
+                const offForm = row.children[1].textContent.trim();
+                const formAdj = row.children[2].textContent.trim();
+                const avg = parseFloat(row.children[7].textContent.trim());
+    
+                let visible = true;
+    
+                // Dropdown filters (skip empty values = "All")
+                if (playFilter && playFilter !== offPlay) visible = false;
+                if (formFilter && formFilter !== offForm) visible = false;
+                if (adjFilter && adjFilter !== formAdj) visible = false;
+    
+                // Min/Max average filters
+                if (!isNaN(minAvg) && avg < minAvg) visible = false;
+                if (!isNaN(maxAvg) && avg > maxAvg) visible = false;
+    
+                // Show or hide row
+                row.style.display = visible ? '' : 'none';
+            });
+        };
+    
+        // Attach event listeners to all filters
+        document.querySelectorAll('.filter-dropdown, .filter-input').forEach(elem => {
+            elem.addEventListener('input', applyFilters);
+        });
+    
+        // Clear button to reset all filter fields
+        document.getElementById('clear-filters').addEventListener('click', () => {
+            document.querySelectorAll('.filter-dropdown, .filter-input').forEach(elem => {
+                if (elem.tagName === 'SELECT') elem.value = '';
+                else elem.value = '';
+            });
+            applyFilters();
+        });
 
     // Store the original text for each header so we can reapply it later.
     sortableHeaders.forEach(header => {

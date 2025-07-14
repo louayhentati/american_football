@@ -1,0 +1,204 @@
+{% extends "system/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Game Title + Date -->
+  <h2 class="fw-bold">Dashboard: {{ game.name }}</h2>
+  <p>{{ game.date.strftime('%d.%m.%Y %H:%M') }}</p>
+
+  <!-- Action Buttons -->
+  <div class="mb-4 d-flex flex-wrap gap-2">
+    <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-secondary">Back to Drives</a>
+    <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Offense Game Callsheet</a>
+    <form method="GET" action="{{ url_for('dashboard', game_id=game.id) }}" class="d-flex align-items-end ms-auto gap-2">
+      <div>
+        <select name="odk" id="teamFilter" class="form-select form-select-md" style="min-width: 180px;">
+          <option value="">All</option>
+          <option value="O" {% if request.args.get('odk') == 'O' %}selected{% endif %}>Offense</option>
+          <option value="D" {% if request.args.get('odk') == 'D' %}selected{% endif %}>Defense</option>
+          <option value="K" {% if request.args.get('odk') == 'K' %}selected{% endif %}>Special</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-outline-primary">Apply</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Overview Section -->
+  <div class="row mb-4">
+    {% for label, value in [
+      ('Total Drives', filtered_drives|length),
+      ('Offense Drives', offense_drives|length),
+      ('Defense Drives', defense_drives|length),
+      ('Total Plays', total_plays)
+    ] %}
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h5 class="card-title">{{ label }}</h5>
+          <p class="display-6">{{ value }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Charts Section -->
+  <div class="card p-4 shadow-sm">
+    <h4 class="mb-3">Game Analysis</h4>
+
+    <!-- Chart Tabs -->
+    <ul class="nav nav-tabs mb-3" id="analysisTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="playtypes-tab" data-bs-toggle="tab" data-bs-target="#playtypes" type="button" role="tab">
+          Play Types Called/Result
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="scoring-tab" data-bs-toggle="tab" data-bs-target="#scoring" type="button" role="tab">
+          Penalties
+        </button>
+      </li>
+    </ul>
+
+    <!-- Play Types Tab -->
+    <div class="tab-content" id="analysisTabContent">
+      <div class="tab-pane fade show active" id="playtypes" role="tabpanel">
+        {% if result_type_values and result_type_values|sum > 0 %}
+        <div class="row">
+          <div class="col-md-6 d-flex justify-content-center">
+            <canvas id="playTypeChart" style="max-width: 100%; max-height: 450px;"></canvas>
+          </div>
+          <div class="col-md-6 d-flex justify-content-center">
+            <canvas id="resultTypeChart" style="max-width: 100%; max-height: 450px;"></canvas>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <!-- Penalties Tab -->
+      <div class="tab-pane fade" id="scoring" role="tabpanel">
+      {% if penalty_values and penalty_values|sum > 0 %}
+        <div class="d-flex justify-content-center">
+          <canvas id="penaltyChart" style="max-width: 600px; max-height: 400px;"></canvas>
+        </div>
+        {% else %}
+          <p>No offensive penalties recorded.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<!-- Chart Rendering -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Play Type Chart
+  const ctx = document.getElementById('playTypeChart')?.getContext('2d');
+  if (ctx) {
+    const data = {
+      labels: {{ play_type_labels | tojson }},
+      datasets: [{
+        data: {{ play_type_values | tojson }},
+        backgroundColor: ['#28a745', '#5C1D28', '#FFD200', '#dc3545'],
+        borderWidth: 1
+      }]
+    };
+    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+    new Chart(ctx, {
+      type: 'pie',
+      data: data,
+      plugins: [ChartDataLabels],
+      options: {
+        responsive: true,
+        plugins: {
+          datalabels: {
+            color: '#fff',
+            font: { weight: 'bold', size: 12 },
+            formatter: value => ((value / total * 100).toFixed(1)) + '%'
+          },
+          legend: { 
+            position: 'bottom',
+
+         }
+        }
+      }
+    });
+  }
+
+  // Result Type Chart
+  const resultCtx = document.getElementById('resultTypeChart')?.getContext('2d');
+  if (resultCtx) {
+    const resultData = {
+      labels: {{ result_type_labels | tojson }},
+      datasets: [{
+        data: {{ result_type_values | tojson }},
+        backgroundColor: ['#FFD200', '#5C1D28'],
+        borderWidth: 1
+      }]
+    };
+    const resultTotal = resultData.datasets[0].data.reduce((a, b) => a + b, 0);
+    new Chart(resultCtx, {
+      type: 'pie',
+      data: resultData,
+      plugins: [ChartDataLabels],
+      options: {
+        plugins: {
+          datalabels: {
+            color: '#fff',
+            font: { weight: 'bold', size: 12 },
+            formatter: value => ((value / resultTotal * 100).toFixed(1)) + '%'
+          },
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  }
+});
+// Penalty Chart
+const penaltyCtx = document.getElementById('penaltyChart')?.getContext('2d');
+if (penaltyCtx) {
+  const penaltyData = {
+    labels: {{ penalty_labels | tojson }},
+    datasets: [{
+      label: 'Offensive Penalties',
+      data: {{ penalty_values | tojson }},
+      backgroundColor: [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+      ],
+      borderWidth: 1
+    }]
+  };
+  new Chart(penaltyCtx, {
+    type: 'bar',
+    data: penaltyData,
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          stepSize: 1
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.label}: ${ctx.raw}`
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
