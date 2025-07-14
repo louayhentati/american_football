@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+from statistics import stdev,median
 from flask_login import login_required
 from app.models.drive import DriveModel
 from app.models.play import PlayModel
