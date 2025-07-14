@@ -1,7 +1,7 @@
 import csv
 import io
 
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from flask_login import login_required
 from app.extensions import db
 from app.models.drive import DriveModel
@@ -9,6 +9,7 @@ from app.models.play import PlayModel
 from app.models.play_call import PlayCallModel
 from app.models.play_option import PlayOptionModel
 from app.penalty_catalogue import PENALTY_RULES
+from app.config import ApplicationData
 
 
 class DriveController:
@@ -32,6 +33,7 @@ class DriveController:
 
     def _handle_add_play_post_request(self, drive_id, drive):
         play = self._create_play_from_form(drive_id)
+        drive.result = play.result
         db.session.add(play)
         db.session.flush()
 
@@ -97,10 +99,7 @@ class DriveController:
         play.distance = next_fields.get('distance', play.distance)
         play.yard_line = next_fields.get('yard_line', play.yard_line)
 
-        if next_fields.get('possession_change', False):
-            drive.ended = True
-        elif play.result in ['Touchdown', 'Rush, TD', 'Complete, TD', 'Interception', 'Interception, Def TD', 'Fumble',
-                             'Fumble, Def TD', 'Punt']:
+        if next_fields.get('possession_change', False) or play.result in ApplicationData.DRIVE_ENDING_RESULTS:
             drive.ended = True
 
     @staticmethod
@@ -113,7 +112,7 @@ class DriveController:
 
     def _handle_add_play_get_request(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
-        if drive.ended:
+        if drive.ended or drive.result:
             flash(message="This drive has ended. Cannot add more plays!", category="danger")
             return redirect(url_for('drive_detail', drive_id=drive_id))
 
@@ -265,12 +264,7 @@ class DriveController:
         yard_line = last_play.yard_line if hasattr(last_play, 'yard_line') else last_play['yard_line']
         result = last_play.result if hasattr(last_play, 'result') else last_play['result']
         penalty_type = last_play.penalty_type if hasattr(last_play, 'penalty_type') else last_play["penalty_type"]
-        turnover_results = [
-            'Interception', 'Interception, Def TD',
-            'Fumble', 'Fumble, Def TD',
-            'Punt', 'Sack',
-            'Touchdown', 'Rush, TD', 'Complete, TD'
-        ]
+
         possession_change = False
         next_down = 1
         next_distance = 10
@@ -278,7 +272,7 @@ class DriveController:
         raw_yard_line = self.convert(yard_line) + gained
         new_yard_line = self.convert_back(raw_yard_line)
 
-        if result in turnover_results:
+        if result in ApplicationData.DRIVE_ENDING_RESULTS:
             possession_change = True
             next_down = 1
             next_distance = 10
@@ -291,7 +285,6 @@ class DriveController:
             possession_change = True
             next_down = 1
             next_distance = 10
-
         elif result == "Penalty" and penalty_type:
             rule = next((r for r in PENALTY_RULES if r["type"] == penalty_type), None)
             if rule:

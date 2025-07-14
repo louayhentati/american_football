@@ -46,3 +46,9 @@ class ApplicationData:
         ("dir_call", "Blue"),
         ("tag", "Y-Pop")
     ]
+
+    DRIVE_ENDING_RESULTS = [
+        'Touchdown', 'Rush, TD', 'Complete, TD',
+        'Interception', 'Interception, Def TD', 'Fumble',
+        'Fumble, Def TD', 'Punt'
+    ]
