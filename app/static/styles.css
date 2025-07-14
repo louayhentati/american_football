@@ -290,3 +290,26 @@ body.login-page .form-group {
     color: #000;
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
+
+.watermark-wrapper {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.3;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: visible; 
+}
+
+.watermark-img {
+    width:25vw;      
+    height: auto;
+    object-fit: contain;
+}
