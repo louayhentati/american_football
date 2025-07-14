@@ -19,7 +19,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
           rel="stylesheet"/>
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.bootstrap5.min.css"/>
 
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
@@ -40,8 +40,7 @@
         <div class="container-fluid position-relative">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                 {% if current_user.team and ns.team_found %}
-                    <img class="team-logo" src="{{ current_user.team.icon }}" alt="{{ current_user.team.name }} logo"
-                         style="height:30px; margin-right:8px;"/>
+                    <img class="team-logo" src="{{ current_user.team.icon }}" alt="{{ current_user.team.name }} logo"/>
                 {% else %}
                     <a href="{{ url_for('game_options') }}" class="btn btn-outline-light me-2" title="Home">
                         <i class="fas fa-home"></i>
