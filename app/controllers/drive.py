@@ -71,9 +71,9 @@ class DriveController:
         return PlayModel(
             drive_id=drive_id,
             odk=form['odk'],
-            down=int(form.get('down') or 1),
-            distance=int(form.get('distance') or 10),
-            yard_line=int(form.get('yard_line') or 25),
+            down=int(form.get('down', 1)),
+            distance=int(form.get('distance', 10)),
+            yard_line=int(form.get('yard_line', 25)),
             hash=form.get('hash', 'M'),
             personnel=form.get('personnel'),
             off_form=form.get('off_form'),
@@ -197,7 +197,7 @@ class DriveController:
         for play in drive.plays:
             # Here we replace the 'None' with '-'
             for column in play.__table__.columns:
-                if getattr(play, column.name) is None:
+                if getattr(play, column.name) is None or getattr(play, column.name) == "":
                     setattr(play, column.name, '-')
         return render_template('drive/drive_detail.html', drive=drive)
 

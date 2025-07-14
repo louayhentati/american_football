@@ -56,7 +56,6 @@ class PlayController:
                 play.dir_call = request.form.get('dir_call')
                 play.tag = request.form.get('tag')
                 play.hash = request.form.get('hash')
-                print(SPOT_FOULS)
                 if play.result == "Penalty":
                     play.penalty_type  = request.form.get('penalty_type') or None
                     play.foul_team = request.form.get('foul_team') or None  
