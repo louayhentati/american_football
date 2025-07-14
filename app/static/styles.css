@@ -74,7 +74,7 @@ body {
 }
 
 .table-responsive {
-    margin-top: 0 !important;  /* override existing large top margin */
+    margin-top: 0 !important;  
     overflow-x: auto;
 }
 
@@ -163,8 +163,8 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    margin-top: 12rem;   /* keep this */
-    margin-bottom: 0;    /* reduce space before the table */
+    margin-top: 12rem;   
+    margin-bottom: 0;    
 }
 
 
@@ -268,7 +268,7 @@ body.login-page .form-group {
 }
 
 .my-table-wrapper {
-  margin-top: 80px; /* adjust as needed */
+  margin-top: 80px;
 }
 
 .icon-control-btn {
