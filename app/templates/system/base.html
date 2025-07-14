@@ -36,8 +36,6 @@
         {% set ns.navbar_color = 'background: linear-gradient(135deg, ' ~ current_user.team.secondary_color ~ ', #343a40);' %}
         {% set ns.team_found = True %}
     {% endif %}
-
-
     <nav class="navbar navbar-expand-lg navbar-dark" style="{{ ns.navbar_color }}">
         <div class="container-fluid position-relative">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
@@ -123,7 +121,7 @@
 <!-- Footer -->
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container text-center">
-        <span class="text-muted">Realtime Football Analyse Tool 2025 ©</span>
+        <span class="text-muted">Smart Number Analysis Platform (SNAP) 2025 ©</span>
     </div>
 </footer>
 
