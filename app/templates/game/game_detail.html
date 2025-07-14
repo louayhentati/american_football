@@ -25,7 +25,7 @@
     <div class="col">
         <form action="{{ url_for('add_drive', game_id=game.id) }}" method="POST">
             <a href="{{ url_for('game_options') }}" class="btn btn-secondary">Back to Games</a>
-            <button type="submit" class="btn btn-primary">Add Drive</button>
+            <button type="submit" class="btn btn-success">Add Drive</button>
             <a href="{{ url_for('export_game', game_id=game.id) }}" class="btn btn-info">Export Game as CSV</a>
             <a href="{{ url_for('game_callsheet', game_id=game.id) }}" class="btn btn-info">Offence Game Callsheet</a>
         </form>
