@@ -145,7 +145,6 @@ def extract_dominant_colors(file_storage):
         print("Color extraction failed:", e)
         return "#000000", "#ffffff"
 
-
 @team_bp.route('/upload_icon', methods=['GET', 'POST'])
 def upload_team_icon_page():
     user_created_folder = os.path.join(current_app.static_folder, "user_created_icons")
@@ -156,7 +155,11 @@ def upload_team_icon_page():
         final_svg = request.form.get('final_svg')
         uploaded_icon = request.files.get('icon')
 
-        if not name or not uploaded_icon or not final_svg:
+        # ✅ get the actual detected values from the form
+        primary_color = request.form.get('primary_color')
+        secondary_color = request.form.get('secondary_color')
+
+        if not name or not uploaded_icon or not final_svg or not primary_color or not secondary_color:
             flash('All fields are required.', 'danger')
             return redirect(request.url)
 
@@ -172,9 +175,6 @@ def upload_team_icon_page():
         uploaded_path = os.path.join(team_folder, uploaded_filename)
         uploaded_icon.stream.seek(0)
         uploaded_icon.save(uploaded_path)
-
-        uploaded_icon.stream.seek(0)
-        primary_color, secondary_color = extract_dominant_colors(uploaded_icon)
 
         svg_path = os.path.join(team_folder, "team_icon.svg")
         with open(svg_path, "w", encoding="utf-8") as f:
