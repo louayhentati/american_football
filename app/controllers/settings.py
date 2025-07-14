@@ -1,7 +1,7 @@
-from flask import Flask, render_template, abort, request, redirect, flash, url_for, session
+from flask import Flask, render_template, abort, request, redirect, flash, url_for
 from flask_login import login_required, current_user
 
-from app.controllers.assign_team import admin_required
+from app.controllers.user_management import admin_required
 from app.extensions import db
 from app.models.play_option import PlayOptionModel
 from app.models.play_call import PlayCallModel
@@ -55,7 +55,7 @@ class SettingsController:
         )
 
         self.app.add_url_rule(
-            rule='/settings/team/default/save',
+            rule='/settings/team/set-default',
             view_func=self.set_team,
             methods=['POST']
         )
@@ -151,9 +151,6 @@ class SettingsController:
     @login_required
     @admin_required
     def set_team(self):
-        users = UserModel.query.all()
-        teams = TeamModel.query.all()
-
         if request.method == 'POST':
             user_id = current_user.id
             team_id = request.form.get('team_id')
@@ -169,9 +166,7 @@ class SettingsController:
             else:
                 flash('User not found.', 'danger')
 
-            return redirect(url_for('settings'))
-
-        return render_template('user/user_assign_team.html', users=users, teams=teams)
+        return redirect(url_for('settings'))
 
     @staticmethod
     def __load_play_calls():
