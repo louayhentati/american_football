@@ -43,19 +43,13 @@
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                 {% if current_user.team and ns.team_found %}
                     <img class="team-logo" src="{{ current_user.team.icon }}" alt="{{ current_user.team.name }} logo"
-                         style="height:80px; margin-right:8px;"/>
+                         style="height:30px; margin-right:8px;"/>
                 {% else %}
                     <a href="{{ url_for('game_options') }}" class="btn btn-outline-light me-2" title="Home">
                         <i class="fas fa-home"></i>
                     </a>
                 {% endif %}
             </a>
-            
-            
-            <img class="navbar-center-logo position-absolute top-50 start-50 translate-middle"
-            src="{{ url_for('static', filename='assets/favicon_96.png') }}"
-            alt="SNAP Logo"
-            style="height: 80px;">
 
             <div class="ms-auto d-flex align-items-center">
                 <div class="dropdown me-2">
@@ -129,7 +123,7 @@
 <!-- Footer -->
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container text-center">
-        <span class="text-muted">Smart Number Analysis Platform (SNAP) 2025 ©</span>
+        <span class="text-muted">Realtime Football Analyse Tool 2025 ©</span>
     </div>
 </footer>
 
