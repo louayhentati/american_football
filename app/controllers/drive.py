@@ -56,7 +56,10 @@ class DriveController:
 
         if rule:
             if rule.get('spot_foul') and raw_penalty_spot is not None:
-                gain_loss = raw_penalty_spot - yard_line
+                if foul_team == "H":
+                    gain_loss = raw_penalty_spot - abs(rule["yards"]) - yard_line
+                elif foul_team == "O":
+                    gain_loss = raw_penalty_spot + abs(rule["yards"]) - yard_line
             elif rule.get("yards"):
                 if foul_team == "H":
                     gain_loss = -abs(rule["yards"])
