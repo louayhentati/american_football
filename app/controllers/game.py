@@ -9,7 +9,7 @@ from app.models.drive import DriveModel
 from app.models.game import GameModel
 from app.models.play import PlayModel
 from app.models.team import TeamModel
-
+from collections import Counter
 
 class GameController:
     def __init__(self, app: Flask) -> None:
@@ -27,6 +27,75 @@ class GameController:
         self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
         self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives)
+        self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
+        self.app.add_url_rule(rule='/game/<int:game_id>/dashboard', view_func=self.dashboard)
+
+    @login_required
+    def filter_games(self):
+        selected_team = request.args.get('Team')
+        print(selected_team)
+        games = GameModel.query
+        if selected_team:
+            games = games.join(GameModel.away_team).filter(TeamModel.name == selected_team)
+
+        return render_template("game/partials/_game_rows.html", games=games.all())
+
+    @login_required
+    def dashboard(self,game_id):
+        game = GameModel.get_by_id(game_id)
+        odk_filter = request.args.get("odk")
+
+        if odk_filter:
+            filtered_drives = [d for d in game.drives if d.plays and d.plays[0].odk == odk_filter]
+        else:
+            filtered_drives = game.drives
+
+        offense_drives = [d for d in filtered_drives if d.plays and d.plays[0].odk == 'O']
+        defense_drives = [d for d in filtered_drives if d.plays and d.plays[0].odk == 'D']
+        total_plays = sum(len(d.plays) for d in filtered_drives)
+
+        # Alle Plays aus den gefilterten Drives sammeln
+        filtered_plays = []
+        for drive in filtered_drives:filtered_plays.extend(drive.plays)
+
+        # Play Types zählen
+        play_type_counts = Counter(play.play_type for drive in filtered_drives for play in drive.plays if play.play_type)
+    
+        # Für die Übergabe ins Template aufspalten
+        play_type_labels = list(play_type_counts.keys())
+        play_type_values = list(play_type_counts.values())
+
+        pass_results = {'Complete', 'Complete, TD', 'Incomplete', 'Interception', 'Interception, Def TD'}
+        run_results = {'Rush', 'Rush, TD'}
+
+        pass_count = 0
+        run_count = 0
+
+        for play in filtered_plays:
+            if play.result in pass_results:
+                pass_count += 1
+            elif play.result in run_results:
+                run_count += 1
+
+        result_type_labels = ['Pass', 'Run']
+        result_type_values = [pass_count, run_count]
+
+        penalty_plays = [p for d in game.drives for p in d.plays if p.result == 'Penalty']
+        penalty_counter = Counter(p.penalty_type for p in penalty_plays if p.penalty_type)
+
+        penalty_labels = list(penalty_counter.keys())
+        penalty_values = list(penalty_counter.values())
+
+        return render_template("game/dashboard.html", game=game, filtered_drives=filtered_drives,
+            offense_drives=offense_drives,
+            defense_drives=defense_drives,
+            total_plays=total_plays,
+            play_type_labels=play_type_labels,
+            play_type_values=play_type_values,
+            result_type_labels=result_type_labels,
+            result_type_values=result_type_values,
+            penalty_labels=penalty_labels,
+            penalty_values=penalty_values)
 
     @login_required
     def game_options(self) -> str:
