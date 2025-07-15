@@ -313,7 +313,7 @@
                                     <!-- Rusher -->
                                     <div id="rusher-field" style="display: none;">
                                         <label class="form-label d-block" style="font-size: 0.9rem;">Rusher
-                                            </label>
+                                        </label>
                                         <input type="number"
                                                name="rusher_number"
                                                min="0"
@@ -328,7 +328,7 @@
                                     <!-- Passer -->
                                     <div id="passer-field" style="display: none;">
                                         <label class="form-label d-block" style="font-size: 0.9rem;">Passer
-                                            </label>
+                                        </label>
                                         <input type="number"
                                                name="passer"
                                                min="0"
@@ -343,7 +343,7 @@
                                     <!-- Receiver -->
                                     <div id="receiver-field" style="display: none;">
                                         <label class="form-label d-block" style="font-size: 0.9rem;">Receiver
-                                            </label>
+                                        </label>
                                         <input type="number"
                                                name="receiver"
                                                min="0"
@@ -641,8 +641,26 @@
             const sections = ['offense', 'defense', 'special'];
             sections.forEach(sec => {
                 const el = document.getElementById(`${sec}-section`);
-                if (el) el.style.display = (sec === section) ? 'block' : 'none';
+                if (el) {
+                    if (sec === section) {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'none';
+                        clearSectionInputs(el);
+                    }
+                }
             });
+        }
+
+        function clearSectionInputs(sectionElement) {
+            const radios = sectionElement.querySelectorAll('input[type="radio"]');
+            radios.forEach(radio => radio.checked = false);
+
+            const numberInputs = sectionElement.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(input => input.value = "");
+
+            const selects = sectionElement.querySelectorAll('select');
+            selects.forEach(select => select.selectedIndex = 0);
         }
 
         window.onload = () => {
@@ -719,7 +737,8 @@
                 alert("Please select an ODK choice (Offense, Defense, or Special Teams).");
             }
         }
-         window.addEventListener('DOMContentLoaded', function() {
+
+        window.addEventListener('DOMContentLoaded', function () {
             const selectedOffPlay = document.querySelector('input[name="off_play"]:checked');
             if (selectedOffPlay) {
                 togglePlayerFields(selectedOffPlay);
