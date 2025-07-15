@@ -44,7 +44,33 @@ class ApplicationData:
         ("off_play", "Power"),
         ("dir_call", "Green"),
         ("dir_call", "Blue"),
-        ("tag", "Y-Pop")
+        ("tag", "Y-Pop"),
+        ("tag", "Y-Pop"),
+
+        ("coverage", "Cover 2"),
+        ("coverage", "Cover 2 Man"),
+        ("coverage", "Cover 3"),
+        ("coverage", "Cover 3 Sky"),
+        ("coverage", "Cover 3 Buzz"),
+        ("coverage", "Cover 4"),
+        ("coverage", "Cover 6"),
+
+        ("defense_front", "3-4"),
+        ("defense_front", "4-3"),
+        ("defense_front", "3-3-5"),
+        ("defense_strongside", "Ringo"),
+        ("defense_strongside", "Louie"),
+        ("blitz", "Mike A"),
+        ("blitz", "Sam B"),
+        ("blitz", "Will C"),
+        ("slants", "Pinch"),
+        ("slants", "Slant"),
+        ("dir_call", "Green"),
+        ("dir_call", "Blue"),
+
+        ("play_type1", "Run"),
+        ("play_type1", "Pass"),
+        ("play_type1", "2-Point"),
     ]
 
     DRIVE_ENDING_RESULTS = [
