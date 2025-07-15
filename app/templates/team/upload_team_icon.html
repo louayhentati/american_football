@@ -19,7 +19,6 @@
   </a>
 </div>
 
-
 <div class="container mt-5 text-center">
   <h2 class="mb-4">Upload Your Team Icon</h2>
 
@@ -45,12 +44,12 @@
       <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Primary</p>
         <div id="primary-picker" class="mb-2"></div>
-        <input type="text" id="primary-hex" class="form-control text-center" maxlength="7" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+        <input type="text" id="primary-hex" class="form-control text-center" readonly style="border: 2px solid black; max-width: 120px;">
       </div>
       <div class="d-flex flex-column align-items-center justify-content-center p-3" style="border: 3px solid black; border-radius: 8px; min-width: 220px; min-height: 330px;">
         <p class="fw-bold mb-2">Secondary</p>
         <div id="secondary-picker" class="mb-2"></div>
-        <input type="text" id="secondary-hex" class="form-control text-center" maxlength="7" style="border: 2px solid black; max-width: 120px;" placeholder="#000000">
+        <input type="text" id="secondary-hex" class="form-control text-center" readonly style="border: 2px solid black; max-width: 120px;">
       </div>
     </div>
     <button class="btn btn-primary mt-4" id="btn-to-name">Next</button>
@@ -74,7 +73,6 @@
   </div>
 </div>
 
-
 <script>
   const uploadInput = document.getElementById("icon-upload");
   const preview = document.getElementById("icon-preview");
@@ -82,6 +80,7 @@
   const btnToName = document.getElementById("btn-to-name");
 
   let primaryPicker, secondaryPicker;
+  let extractedPrimary = "", extractedSecondary = "";
 
   function rgbToHex(r, g, b) {
     return "#" + [r, g, b].map(x => {
@@ -100,112 +99,74 @@
 
     const data = ctx.getImageData(0, 0, 300, 300).data;
     const colorCount = {};
+
     for (let i = 0; i < data.length; i += 4) {
       const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
       if (a < 200) continue;
       const key = `${r},${g},${b}`;
       colorCount[key] = (colorCount[key] || 0) + 1;
     }
+
     const sortedColors = Object.entries(colorCount)
       .sort((a, b) => b[1] - a[1])
       .map(([rgb]) => rgbToHex(...rgb.split(',').map(Number)));
 
-    const primary = sortedColors[0] || "#ff0000";
-    const secondary = sortedColors[1] || "#0000ff";
-
-    initializePickers(primary, secondary);
-    callback(primary, secondary);
-  }
-function initializePickers(primary, secondary) {
-  const primaryPickerEl = document.getElementById("primary-picker");
-  const secondaryPickerEl = document.getElementById("secondary-picker");
-
-  primaryPickerEl.innerHTML = "";
-  secondaryPickerEl.innerHTML = "";
-
-  primaryPicker = new iro.ColorPicker(primaryPickerEl, {
-    width: 120,
-    color: primary
-  });
-  secondaryPicker = new iro.ColorPicker(secondaryPickerEl, {
-    width: 120,
-    color: secondary
-  });
-
-  const primaryHexInput = document.getElementById("primary-hex");
-  const secondaryHexInput = document.getElementById("secondary-hex");
-
-  // Set default values
-  primaryHexInput.value = primary.toUpperCase();
-  secondaryHexInput.value = secondary.toUpperCase();
-
-  // Picker → Input sync
-  primaryPicker.on("color:change", color => {
-    primaryHexInput.value = color.hexString.toUpperCase();
-  });
-  secondaryPicker.on("color:change", color => {
-    secondaryHexInput.value = color.hexString.toUpperCase();
-  });
-
-  // Input → Picker sync with validation
-  primaryHexInput.addEventListener("input", function () {
-    let val = this.value.trim().replace("#", "").toUpperCase();
-    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
-    if (val.length > 6) val = val.slice(0, 6);
-    this.value = "#" + val;
-    if (val.length === 6) {
-      primaryPicker.color.hexString = "#" + val;
+    function isBlackOrWhite(hex) {
+      const hexVal = hex.replace("#", "");
+      const r = parseInt(hexVal.slice(0, 2), 16);
+      const g = parseInt(hexVal.slice(2, 4), 16);
+      const b = parseInt(hexVal.slice(4, 6), 16);
+      const brightness = (r + g + b) / 3;
+      const maxDiff = Math.max(r, g, b) - Math.min(r, g, b);
+      return (brightness > 245 || brightness < 20) && maxDiff < 15;
     }
-  });
 
-  secondaryHexInput.addEventListener("input", function () {
-    let val = this.value.trim().replace("#", "").toUpperCase();
-    val = val.replace(/[^0-9A-F]/g, ""); // Remove invalid characters
-    if (val.length > 6) val = val.slice(0, 6);
-    this.value = "#" + val;
-    if (val.length === 6) {
-      secondaryPicker.color.hexString = "#" + val;
-    }
-  });
-}
+    let first = sortedColors[0];
+    let second = sortedColors[1];
+    let third = sortedColors[2];
 
-
-  function cropAndCenterImage(img, callback) {
-    const tempCanvas = document.createElement("canvas");
-    const ctx = tempCanvas.getContext("2d");
-    tempCanvas.width = img.width;
-    tempCanvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-    let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
-    for (let y = 0; y < img.height; y++) {
-      for (let x = 0; x < img.width; x++) {
-        const i = (y * img.width + x) * 4;
-        if (imageData.data[i + 3] > 10) {
-          minX = Math.min(minX, x);
-          minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x);
-          maxY = Math.max(maxY, y);
-        }
+    if (isBlackOrWhite(first)) {
+      if (!isBlackOrWhite(third)) {
+        extractedPrimary = third;
+        extractedSecondary = first;
       }
+    } else {
+      extractedPrimary = first;
+      extractedSecondary = second;
     }
-    const w = maxX - minX + 1;
-    const h = maxY - minY + 1;
 
-    const scale = Math.min(200 / w, 200 / h, 1);
-    const newW = Math.round(w * scale);
-    const newH = Math.round(h * scale);
-
-    const cropped = document.createElement("canvas");
-    cropped.width = newW;
-    cropped.height = newH;
-    const croppedCtx = cropped.getContext("2d");
-    croppedCtx.drawImage(tempCanvas, minX, minY, w, h, 0, 0, newW, newH);
-
-    const resultImg = new Image();
-    resultImg.onload = () => callback(resultImg, newW, newH);
-    resultImg.src = cropped.toDataURL();
+    callback(extractedPrimary, extractedSecondary);
+    initializePickers(extractedPrimary, extractedSecondary);
   }
+
+  function initializePickers(primary, secondary) {
+    const primaryPickerEl = document.getElementById("primary-picker");
+    const secondaryPickerEl = document.getElementById("secondary-picker");
+
+    primaryPickerEl.innerHTML = "";
+    secondaryPickerEl.innerHTML = "";
+
+    primaryPicker = new iro.ColorPicker(primaryPickerEl, {
+      width: 120,
+      color: primary
+    });
+    secondaryPicker = new iro.ColorPicker(secondaryPickerEl, {
+      width: 120,
+      color: secondary
+    });
+
+    document.getElementById("primary-hex").value = primary.toUpperCase();
+    document.getElementById("secondary-hex").value = secondary.toUpperCase();
+  }
+
+  btnToName.addEventListener("click", () => {
+    document.getElementById("step-colors").style.display = "none";
+    document.getElementById("step-name").style.display = "block";
+
+    // Only use extracted values
+    document.getElementById("form_primary_color").value = extractedPrimary.toUpperCase();
+    document.getElementById("form_secondary_color").value = extractedSecondary.toUpperCase();
+  });
 
   uploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
@@ -215,8 +176,7 @@ function initializePickers(primary, secondary) {
       while (preview.lastChild && preview.lastChild.tagName !== "rect") {
         preview.removeChild(preview.lastChild);
       }
-      const hiddenInput = document.getElementById("icon-hidden");
-      hiddenInput.files = e.target.files;
+      document.getElementById("icon-hidden").files = e.target.files;
 
       if (file.type === "image/svg+xml") {
         const parser = new DOMParser();
@@ -272,12 +232,42 @@ function initializePickers(primary, secondary) {
     document.getElementById("step-colors").style.display = "block";
   });
 
-  btnToName.addEventListener("click", () => {
-    document.getElementById("step-colors").style.display = "none";
-    document.getElementById("step-name").style.display = "block";
-    document.getElementById("form_primary_color").value = primaryPicker.color.hexString;
-    document.getElementById("form_secondary_color").value = secondaryPicker.color.hexString;
-  });
+  function cropAndCenterImage(img, callback) {
+    const tempCanvas = document.createElement("canvas");
+    const ctx = tempCanvas.getContext("2d");
+    tempCanvas.width = img.width;
+    tempCanvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const i = (y * img.width + x) * 4;
+        if (imageData.data[i + 3] > 10) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+
+    const scale = Math.min(200 / w, 200 / h, 1);
+    const newW = Math.round(w * scale);
+    const newH = Math.round(h * scale);
+
+    const cropped = document.createElement("canvas");
+    cropped.width = newW;
+    cropped.height = newH;
+    const croppedCtx = cropped.getContext("2d");
+    croppedCtx.drawImage(tempCanvas, minX, minY, w, h, 0, 0, newW, newH);
+
+    const resultImg = new Image();
+    resultImg.onload = () => callback(resultImg, newW, newH);
+    resultImg.src = cropped.toDataURL();
+  }
 
   window.onload = function () {
     while (preview.lastChild && preview.lastChild.tagName !== "rect") {
@@ -285,5 +275,4 @@ function initializePickers(primary, secondary) {
     }
   };
 </script>
-
 {% endblock %}
