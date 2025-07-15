@@ -17,7 +17,7 @@
 
 .team-logo {
     animation: fadeIn 0.5s ease, pulse 1s ease-in-out;
-    width: 80px; 
+    width: 50px; 
     height: auto;
 }
 
@@ -249,8 +249,8 @@ body.login-page .login-container {
 body.login-page .login-logo {
     display: block;
     margin: 0 auto 30px auto;
-    height: 160px;
-    width: 160px;
+    height: 80px;
+    width: 80px;
 }
 
 body.login-page .form-control {
