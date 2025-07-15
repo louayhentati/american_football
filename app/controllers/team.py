@@ -32,8 +32,8 @@ def create_team():
             flash('All fields are required.', 'danger')
             return redirect(request.url)
 
-        if TeamModel.query.filter_by(name=name).first():
-            flash(f'Team name "{name}" already exists. Please choose another.', 'danger')
+        if TeamModel.query.filter(func.lower(TeamModel.name) == name.lower()).first():
+            flash(f'Team name "{name}" already exists.', 'danger')
             return redirect(request.url)
 
         safe_name = secure_filename(name)
