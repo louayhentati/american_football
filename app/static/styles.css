@@ -79,6 +79,8 @@ body {
 }
 
 .card {
+    position: relative;         
+    z-index: 1;                 
     margin-bottom: 1rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
@@ -293,13 +295,14 @@ body.login-page .form-group {
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
+/* 
 .watermark-wrapper {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     opacity: 0.3;
-    z-index: 1;
+    z-index: -1;
     pointer-events: none;
     user-select: none;
     width: 100%;
@@ -311,7 +314,8 @@ body.login-page .form-group {
 }
 
 .watermark-img {
-    width:25vw;      
+    width: 25vw;
     height: auto;
     object-fit: contain;
 }
+*/
