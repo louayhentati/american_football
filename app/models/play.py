@@ -33,3 +33,24 @@ class PlayModel(db.Model):
     dir_call = db.Column(db.String(50))  # Directional Call
     tag = db.Column(db.String(50))  # Tags
     hash = db.Column(db.String(1))  # New field for Hash (L, M, R)
+
+    rusher_number = db.Column(db.Integer)
+    passer = db.Column(db.Integer)
+    receiver = db.Column(db.Integer)
+
+    # extra database for defence Add play view
+    play_type1 = db.Column(db.String(50))
+    defense_front = db.Column(db.String(50))
+    defense_strongside = db.Column(db.String(50))
+    blitz = db.Column(db.String(50))
+    slants = db.Column(db.String(50))
+    coverage = db.Column(db.String(50))
+    tackler1 = db.Column(db.Integer)
+    tackler2 = db.Column(db.Integer)
+    interceptor = db.Column(db.Integer)
+
+    # extra database for special team  Add play view
+    returner = db.Column(db.Integer)
+    returner_yard = db.Column(db.Integer)
+    kicker = db.Column(db.Integer)
+    kicker_yard = db.Column(db.Integer)

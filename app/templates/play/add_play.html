@@ -7,23 +7,24 @@
                 <div class="card-header">{{ 'Edit Play' if play else 'Add Play' }}</div>
                 <div class="card-body">
                     <form method="POST"
-                          action="{{ url_for('edit_play', play_id=play.id) if play else url_for('add_play', drive_id=drive_id) }}">
+                          action="{{ url_for('edit_play', play_id=play.id) if play else url_for('add_play', drive_id=drive_id) }}"
+                          onsubmit="validateForm(event)">
 
-                        <!-- ODK Selection -->
+                        <!-- ODK SELECTION -->
                         <div class="mb-3">
                             <label class="form-label">ODK</label>
                             <div class="btn-group" role="group">
-                                <input type="radio" class="btn-check" name="odk" id="odk-o" value="O"
-                                       {% if play and play.odk == 'O' %}checked{% elif not play %}checked{% endif %}>
-                                <label class="btn btn-outline-primary" for="odk-o">Offense</label>
+                                <input type="radio" class="btn-check" name="odk" id="odk-offense" value="offense"
+                                       onclick="showSection('offense')">
+                                <label class="btn btn-outline-primary" for="odk-offense">Offense</label>
 
-                                <input type="radio" class="btn-check" name="odk" id="odk-d" value="D"
-                                       {% if play and play.odk == 'D' %}checked{% endif %}>
-                                <label class="btn btn-outline-primary" for="odk-d">Defense</label>
+                                <input type="radio" class="btn-check" name="odk" id="odk-defense" value="defense"
+                                       onclick="showSection('defense')">
+                                <label class="btn btn-outline-primary" for="odk-defense">Defense</label>
 
-                                <input type="radio" class="btn-check" name="odk" id="odk-k" value="K"
-                                       {% if play and play.odk == 'K' %}checked{% endif %}>
-                                <label class="btn btn-outline-primary" for="odk-k">Special Teams</label>
+                                <input type="radio" class="btn-check" name="odk" id="odk-special" value="special team"
+                                       onclick="showSection('special')">
+                                <label class="btn btn-outline-primary" for="odk-special">Special Teams</label>
                             </div>
                         </div>
 
@@ -34,9 +35,10 @@
                                 <label class="form-label">Down</label><br>
                                 <div class="btn-group" role="group">
                                     {% for down_number in range(1, 5) %}
-                                        <input type="radio" class="btn-check" name="down" id="down-{{ down_number }}"
+                                        <input type="radio" class="btn-check" name="down"
+                                               id="down-{{ down_number }}"
                                                value="{{ down_number }}"
-                                                {{ 'checked' if play and play.down == down_number else 'checked' if down_number == default_down }}>
+                                                {{ 'checked' if (play and play.down == down_number) or (not play and down_number == default_down) else '' }}>
                                         <label class="btn btn-outline-primary"
                                                for="down-{{ down_number }}">{{ down_number }}</label>
                                     {% endfor %}
@@ -72,176 +74,426 @@
                                     </button>
                                 </div>
                             </div>
-
-                            <!-- Additional Parameters -->
-                            <!-- Example: Personnel -->
-                            <div class="mb-3">
-                                <label class="form-label">Personnel</label><br>
-                                <div class="btn-group">
-                                    {% for p in ['10', '11', '20', '21'] %}
-                                        <input type="radio" class="btn-check" name="personnel" id="pers-{{ p }}"
-                                               value="{{ p }}" {{ 'checked' if play and play.personnel == p }}>
-                                        <label class="btn btn-outline-primary" for="pers-{{ p }}">{{ p }}</label>
-                                    {% endfor %}
-                                </div>
+                        <!-- Yard Line -->
+                        <div class="mb-3">
+                            <label class="form-label">Yard Line</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="yard_line"
+                                       value="{{ play.yard_line if play else default_yard_line }}">
+                                <button type="button" class="btn btn-outline-secondary"
+                                        onclick="toggleYardLine()">
+                                    Own / Opp
+                                </button>
                             </div>
-
-                            <!-- Add this after the Personnel section in add_play.html -->
-
-                            <!-- Offensive Formation -->
-                            <div class="mb-3">
-                                <label class="form-label">Offensive Formation</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.off_form %}
-                                        <input type="radio" class="btn-check"
-                                               name="off_form"
-                                               id="off_form-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.off_form == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="off_form-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Formation Strength -->
-                            <div class="mb-3">
-                                <label class="form-label">Formation Strength</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.form_str %}
-                                        <input type="radio" class="btn-check"
-                                               name="form_str"
-                                               id="form_str-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.form_str == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="form_str-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Formation Adjustment -->
-                            <div class="mb-3">
-                                <label class="form-label">Formation Adjustment</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.form_adj %}
-                                        <input type="radio" class="btn-check"
-                                               name="form_adj"
-                                               id="form_adj-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.form_adj == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="form_adj-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Motion -->
-                            <div class="mb-3">
-                                <label class="form-label">Motion</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.motion %}
-                                        <input type="radio" class="btn-check"
-                                               name="motion"
-                                               id="motion-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.motion == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="motion-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Protection -->
-                            <div class="mb-3">
-                                <label class="form-label">Protection</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.protection %}
-                                        <input type="radio" class="btn-check"
-                                               name="protection"
-                                               id="protection-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.protection == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="protection-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Off Play -->
-                            <div class="mb-3">
-                                <label class="form-label">Off Play</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.off_play %}
-                                        <input type="radio" class="btn-check"
-                                               name="off_play"
-                                               id="off_play-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.off_play == option.value }}>
-                                        <label class="btn btn-outline-primary" for="off_play-{{ option.id }}">
-                                            {{ option.value }}
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-
-                            <!-- Directional Call -->
-                            <div class="mb-3">
-                                <label class="form-label">Directional Call</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.dir_call %}
-                                        <input type="radio" class="btn-check"
-                                               name="dir_call"
-                                               id="dir_call-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.dir_call == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="dir_call-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                            <!-- Tags -->
-                            <div class="mb-3">
-                                <label class="form-label">Tags</label>
-                                <div class="btn-group d-flex flex-wrap">
-                                    {% for option in options.tag %}
-                                        <input type="radio" class="btn-check"
-                                               name="tag"
-                                               id="tag-{{ option.id }}"
-                                               value="{{ option.value }}"
-                                                {{ 'checked' if play and play.tag == option.value }}>
-                                        <label class="btn btn-outline-primary"
-                                               for="tag-{{ option.id }}">{{ option.value }}</label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <!-- Play Type -->
-                            {#<div class="mb-3">#}
-                            {#    <label class="form-label">Play Type Called</label>#}
-                            {#    <div class="btn-group d-flex flex-wrap">#}
-                            {#        {% for type in ['RPO', 'PASS', 'SCREEN', 'RUN'] %}#}
-                            {#            <input type="radio" class="btn-check" name="play_type"#}
-                            {#                   id="type-{{ type|lower }}"#}
-                            {#                   value="{{ type }}" {{ 'checked' if play and play.play_type == type }}>#}
-                            {#            <label class="btn btn-outline-primary"#}
-                            {#                   for="type-{{ type|lower }}">{{ type }}</label>#}
-                            {#        {% endfor %}#}
-                            {#    </div>#}
-                            {#</div>#}
                         </div>
 
-                        <!-- Result -->
-                        <div class="mb-3">
-                            <label class="form-label">Result</label>
-                            <div class="btn-group d-flex flex-wrap">
-                                {% for result in ['Complete', 'Complete, TD', 'Incomplete', 'Rush', 'Rush, TD', 'Sack', 'Touchdown', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt', 'Penalty'] %}
-                                    <input type="radio" class="btn-check" name="result" id="result-{{ result|lower }}"
-                                           value="{{ result }}" {{ 'checked' if play and play.result == result }}>
-                                    <label class="btn btn-outline-primary"
-                                           for="result-{{ result|lower }}">{{ result }}</label>
-                                {% endfor %}
+                        <!-- OFFENSE SECTION -->
+                        <div id="offense-section" style="display: none;">
+                            <div class="mb-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Personnel</label><br>
+                                    <div class="btn-group">
+                                        {% for p in ['10', '11', '20', '21'] %}
+                                            <input type="radio" class="btn-check" name="personnel" id="pers-{{ p }}"
+                                                   value="{{ p }}" {{ 'checked' if play and personnel == p }}>
+                                            <label class="btn btn-outline-primary" for="pers-{{ p }}">{{ p }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Offensive Formation -->
+                                <div class="mb-3">
+                                    <label class="form-label">Offensive Formation</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.off_form %}
+                                            <input type="radio" class="btn-check"
+                                                   name="off_form"
+                                                   id="off_form-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and off_form == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="off_form-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Formation Strength -->
+                                <div class="mb-3">
+                                    <label class="form-label">Formation Strength</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.form_str %}
+                                            <input type="radio" class="btn-check"
+                                                   name="form_str"
+                                                   id="form_str-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and form_str == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="form_str-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Formation Adjustment -->
+                                <div class="mb-3">
+                                    <label class="form-label">Formation Adjustment</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.form_adj %}
+                                            <input type="radio" class="btn-check"
+                                                   name="form_adj"
+                                                   id="form_adj-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and form_adj == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="form_adj-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Motion -->
+                                <div class="mb-3">
+                                    <label class="form-label">Motion</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.motion %}
+                                            <input type="radio" class="btn-check"
+                                                   name="motion"
+                                                   id="motion-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and motion == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="motion-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Protection -->
+                                <div class="mb-3">
+                                    <label class="form-label">Protection</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.protection %}
+                                            <input type="radio" class="btn-check"
+                                                   name="protection"
+                                                   id="protection-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and protection == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="protection-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+
+                                <!-- Off Play -->
+                                <div class="mb-3">
+                                    <label class="form-label">Off Play</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.off_play %}
+                                            <input type="radio" class="btn-check"
+                                                   name="off_play"
+                                                   id="off_play-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                   onclick="toggleFields('offense')"
+                                                   {% if play and off_play == option.value %}checked {% endif %}>
+                                            <label class="btn btn-outline-primary" for="off_play-{{ option.id }}">
+                                                {{ option.label }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Play Type -->
+                                <div id="play-type-called" class="mb-3" style="display: none;">
+                                    <label class="form-label">Play Type Called</label>
+                                    <div class="btn-group d-flex flex-wrap" role="group">
+                                        {% for type in ['RPO', 'PASS', 'SCREEN', 'RUN'] %}
+                                            <input type="radio"
+                                                   class="btn-check"
+                                                   name="play_type"
+                                                   id="type-{{ type|lower }}"
+                                                   value="{{ type }}"
+                                                   onclick="toggleFields('offense')"
+                                                   {% if play and play_type == type %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="type-{{ type|lower }}">{{ type }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <!-- Directional Call -->
+                                <div class="mb-3">
+                                    <label class="form-label">Directional Call</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.dir_call %}
+                                            <input type="radio" class="btn-check"
+                                                   name="dir_call"
+                                                   id="dir_call-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and dir_call == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="dir_call-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="mb-3">
+                                    <label class="form-label">Tags</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.tag %}
+                                            <input type="radio" class="btn-check"
+                                                   name="tag"
+                                                   id="tag-{{ option.id }}"
+                                                   value="{{ option.value }}"
+                                                    {{ 'checked' if play and tag == option.value }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="tag-{{ option.id }}">{{ option.value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Result -->
+                            <div class="mb-3">
+                                <label class="form-label">Result</label>
+                                <div class="btn-group d-flex flex-wrap">
+                                    {% for result in ['Complete', 'Complete, TD', 'Incomplete', 'Rush', 'Rush, TD', 'Sack', 'Touchdown', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt', 'Penalty'] %}
+                                        <input type="radio" class="btn-check" name="result"
+                                               id="offense_result-{{ loop.index }}"
+                                               value="{{ result }}" {{ 'checked' if play and play.result == result }}>
+                                        <label class="btn btn-outline-primary"
+                                               for="offense_result-{{ loop.index }}">{{ result }}</label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!--Penalty fields -->
+                            <div id="penalty-fields"
+                                 style="display: {% if play and play.result=='Penalty' %}block{% else %}none{% endif %}; margin-top:1rem; margin-bottom:1rem;">
+                                <div class="mb-3">
+                                    <label class="form-label">Penalty committed by</label><br>
+                                    <div class="btn-group" role="group">
+                                        <input type="radio" class="btn-check" name="foul_team" id="foul-own" value="H"
+                                               {% if
+                                    play and play.foul_team=="H" %}checked{% endif %}>
+                                        <label class="btn btn-outline-primary" for="foul-own">Home Team</label>
+                                        <input type="radio" class="btn-check" name="foul_team" id="foul-opponent"
+                                               value="O"
+                                               {% if play and play.foul_team=="O" %}checked{% endif %}>
+                                        <label class="btn btn-outline-primary" for="foul-opponent">Opponent
+                                            Team </label>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label for="penalty_type">Penalty Type</label>
+                                            <select class="form-control" id="penalty_type" name="penalty_type">
+                                                <option value="">None</option>
+                                                {% for opt in options.get('penalty_type', []) %}
+                                                    <option value="{{ opt.value }}"
+                                                            {% if play and play.penalty_type==opt.value %}selected{% endif %}>
+                                                        {{ opt.label }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="form-group" id="spot-field-container">
+                                            <label for="penalty_spot_yard">Spot (Yard Line)</label>
+                                            <input type="number" class="form-control" id="penalty_spot_yard"
+                                                   name="penalty_spot_yard" value="{{ play.penalty_spot_yard or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Wrapper Row -->
+                            <div class="mb-3 d-flex flex-wrap gap-4 align-items-end">
+                                <!-- Rusher -->
+                                <div id="rusher-field" style="display: none;">
+                                    <label class="form-label d-block" style="font-size: 0.9rem;">Rusher (0–99)</label>
+                                    <input type="number"
+                                           name="rusher_number"
+                                           min="0"
+                                           max="99"
+                                           class="form-control"
+                                           value="{{ rusher_number if play else '' }}"
+                                           style="width: 300px;"
+                                    >
+                                </div>
+
+                                <!-- Passer -->
+                                <div id="passer-field" style="display: none;">
+                                    <label class="form-label d-block" style="font-size: 0.9rem;">Passer (0–99)</label>
+                                    <input type="number"
+                                           name="passer"
+                                           min="0"
+                                           max="99"
+                                           class="form-control"
+                                           value="{{ passer if play else '' }}"
+                                           oninput="validatePasser(this)"
+                                           style="width: 300px;">
+                                </div>
+
+                                <!-- Receiver -->
+                                <div id="receiver-field" style="display: none;">
+                                    <label class="form-label d-block" style="font-size: 0.9rem;">Receiver (0–99)</label>
+                                    <input type="number"
+                                           name="receiver"
+                                           min="0"
+                                           max="99"
+                                           class="form-control"
+                                           value="{{ receiver if play else '' }}"
+                                           oninput="validatePasser(this)"
+                                           style="width: 300px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DEFENSE SECTION -->
+                        <div id="defense-section" style="display: none;">
+                            <div class="mb-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Play type defense</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.play_type1 %}
+                                            <input type="radio" class="btn-check"
+                                                   name="play_type1"
+                                                   id="defense_play_type1-{{ option.value|replace(' ', '_')|lower }}"
+                                                   value="{{ option.value }}"
+                                                   onclick="toggleFields('defense')"
+                                                   {% if play and play.play_type == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="defense_play_type1-{{ option.value|replace(' ', '_')|lower }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    <label class="form-label">Defense Front</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.defense_front %}
+                                            <input type="radio" class="btn-check"
+                                                   name="defense_front"
+                                                   id="defense_front-{{ option.value|replace(' ', '_') }}"
+                                                   value="{{ option.value }}"
+                                                   {% if play and defense_front == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="defense_front-{{ option.value|replace(' ', '_') }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    <label class="form-label">Defense Strongside</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.defense_strongside %}
+                                            <input type="radio" class="btn-check"
+                                                   name="defense_strongside"
+                                                   id="defense_strongside-{{ option.value|replace(' ', '_') }}"
+                                                   value="{{ option.value }}"
+                                                   {% if play and play.defense_strongside == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="defense_strongside-{{ option.value|replace(' ', '_') }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    <label class="form-label">Blitz</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.blitz %}
+                                            <input type="radio" class="btn-check"
+                                                   name="blitz"
+                                                   id="blitz-{{ option.value|replace(' ', '_') }}"
+                                                   value="{{ option.value }}"
+                                                   {% if play and play.blitz == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="blitz-{{ option.value|replace(' ', '_') }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    <label class="form-label">Slants / Stunts</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.slants %}
+                                            <input type="radio" class="btn-check"
+                                                   name="slants"
+                                                   id="slants-{{ option.value|replace(' ', '_') }}"
+                                                   value="{{ option.value }}"
+                                                   {% if play and play.slants == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary mb-1 me-1"
+                                                   for="slants-{{ option.value|replace(' ', '_') }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                    <label class="form-label">Coverage</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for option in options.coverage %}
+                                            <input type="radio" class="btn-check"
+                                                   name="coverage"
+                                                   id="coverage-{{ option.value|replace(' ', '_') }}"
+                                                   value="{{ option.value }}"
+                                                   {% if play and play.coverage == option.value %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary mb-1 me-1"
+                                                   for="coverage-{{ option.value|replace(' ', '_') }}">
+                                                {{ option.value }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+
+                                </div>
+
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Tackler 1</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           name="tackler1"
+                                           id="tackler1"
+                                           placeholder="0-99"
+                                           value="{{ tackler1 if play }}"
+                                           oninput="validateInterceptedBy(this)">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tackler 2</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           name="tackler2"
+                                           id="tackler2"
+                                           placeholder="0-99"
+                                           value="{{ tackler2 if play }}"
+                                           min="0" max="99"
+                                           oninput="validateInterceptedBy(this)">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Intercepted By</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           name="interceptor"
+                                           id="interceptor"
+                                           placeholder="0-99"
+                                           value="{{ play.intercepted_by if play }}"
+                                           min="0" max="99"
+                                           oninput="validateInterceptedBy(this)">
+                                </div>
+
+                                <!-- Result -->
+                                <div class="mb-3">
+                                    <label class="form-label">Result</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for result in ['Complete', 'Complete, TD', 'Incomplete', 'Rush', 'Rush, TD', 'Sack', 'Touchdown', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt', 'Penalty'] %}
+                                            <input type="radio" class="btn-check" name="result"
+                                                   id="defense_result-{{ loop.index }}"
+                                                   value="{{ result }}" {{ 'checked' if play and play.result == result }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="defense_result-{{ loop.index }}">{{ result }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <!--Penalty fields -->
@@ -283,11 +535,69 @@
                             </div>
                         </div>
 
-                        <!-- Gain/Loss -->
+                        <!-- SPECIAL TEAMS SECTION -->
+                        <div id="special-section" style="display: none;">
+                            <div class="mb-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Returner</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           name="returner"
+                                           id="returner"
+                                           placeholder="0-99"
+                                           value="{{ returner if play }}"
+                                           oninput="validateSpecialTeam(this)">
+                                </div>
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Returner Yards</label>
+                                    <input type="number" class="form-control" name="returner_yard"
+                                           id="returner_yard"
+                                           value="{{ returner_yard if play }}">
+                                </div>
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Kicker</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           name="kicker"
+                                           id="kicker"
+                                           placeholder="0-99"
+                                           value="{{ kicker if play }}"
+                                           oninput="validateSpecialTeam(this)"
+                                    >
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Kick Yards</label>
+                                    <input type="number" class="form-control" name="kicker_yard"
+                                           id="kicker_yard"
+                                           value="{{ play.kicker_yards if play }}">
+                                </div>
+
+                                <!-- Result -->
+                                <div class="mb-3">
+                                    <label class="form-label">Result</label>
+                                    <div class="btn-group d-flex flex-wrap">
+                                        {% for result in ['Complete', 'Complete, TD', 'Fumble', 'Fumble, Def TD','Block','Block, Def TD','Downed','Fair Catch','Return','TD','Touchback'] %}
+                                            <input type="radio" class="btn-check" name="result"
+                                                   id="special_result-{{ loop.index }}"
+                                                   value="{{ result }}" {{ 'checked' if play and play.result == result }}>
+                                            <label class="btn btn-outline-primary"
+                                                   for="special_result-{{ loop.index }}">{{ result }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gain/Loss for all -->
                         <div class="mb-3">
                             <label class="form-label">Gain/Loss</label>
                             <div class="input-group">
-                                <input type="number" min="-100" max="100" class="form-control" name="gain_loss"
+                                <input type="number" class="form-control" name="gain_loss"
                                        value="{{ play.gain_loss if play else '' }}">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()">
                                     Toggle +/-
@@ -296,20 +606,120 @@
                         </div>
 
                         <!-- Submit -->
-                        <form id="playForm" onsubmit="handleSubmit(event)">
+                        <div class="d-flex justify-content-start gap-2 mt-4">
                             <button type="button" class="btn btn-secondary"
-                                    onclick="window.location.href='{{ url_for('drive_detail', drive_id=drive_id) }}'">Go
-                                Back
+                                    onclick="window.location.href='{{ url_for('drive_detail', drive_id=drive_id) }}'">
+                                Go Back
                             </button>
-                            <button type="submit"
-                                    class="btn btn-primary">{{ 'Save Changes' if play else 'Add Play' }}</button>
-                        </form>
+                            <button type="submit" class="btn btn-primary">
+                                {{ 'Save Changes' if play else 'Add Play' }}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/play/add_play.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/play.js') }}"></script>
+    <script>
+        function showSection(section) {
+            const sections = ['offense', 'defense', 'special'];
+            sections.forEach(sec => {
+                const el = document.getElementById(`${sec}-section`);
+                if (el) el.style.display = (sec === section) ? 'block' : 'none';
+            });
+        }
 
+        window.onload = () => {
+            const selected = document.querySelector('input[name="odk"]:checked');
+            if (selected) showSection(selected.value);
+        };
+
+        function validatePasser(input) {
+            const val = parseInt(input.value);
+            if (val >= 50 && val <= 79) {
+                alert("Nummern zwischen 50 und 79 sind für den Passer nicht erlaubt!");
+                input.value = "";
+            }
+        }
+
+        function toggleFields(section) {
+            const rusher = document.getElementById("rusher-field");
+            const passer = document.getElementById("passer-field");
+            const receiver = document.getElementById("receiver-field");
+
+            // Only show in offense section
+            if (section !== 'offense') {
+                rusher.style.display = "none";
+                passer.style.display = "none";
+                receiver.style.display = "none";
+                return;
+            }
+
+            const selectedInput = document.querySelector('input[name="off_play"]:checked');
+            if (!selectedInput) return;
+
+            const label = document.querySelector(`label[for="${selectedInput.id}"]`);
+            const selectedLabel = label?.innerText.trim().toUpperCase();
+
+            rusher.style.display = "none";
+            passer.style.display = "none";
+            receiver.style.display = "none";
+
+            if (selectedLabel.includes("RUN")) {
+                rusher.style.display = "block";
+            }
+            if (selectedLabel.includes("PASS") || selectedLabel.includes("SCREEN")) {
+                passer.style.display = "block";
+                receiver.style.display = "block";
+            }
+            if (selectedLabel.includes("RPO")) {
+                rusher.style.display = "block";
+                passer.style.display = "block";
+                receiver.style.display = "block";
+            }
+        }
+
+        function validateInterceptedBy(input) {
+            const value = parseInt(input.value, 10);
+            if ((value >= 0 && value <= 99) || isNaN(value)) {
+                input.classList.remove("is-invalid");
+            } else {
+                input.classList.add("is-invalid");
+                alert("Numbers must be between 0-99!");
+            }
+        }
+
+        function validateSpecialTeam(input) {
+            const value = parseInt(input.value, 10);
+            if ((value >= 0 && value <= 99) || isNaN(value)) {
+                input.classList.remove("is-invalid");
+            } else {
+                input.classList.add("is-invalid");
+                alert("Player numbers must be between 0-99!");
+            }
+        }
+
+        function validateForm(event) {
+            const odkChoices = document.getElementsByName('odk');
+            let isSelected = false;
+            for (const choice of odkChoices) {
+                if (choice.checked) {
+                    isSelected = true;
+                    break;
+                }
+            }
+            if (!isSelected) {
+                event.preventDefault();
+                alert("Please select an ODK choice (Offense, Defense, or Special Teams).");
+            }
+        }
+    </script>
+
+    <style>
+        .is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
 {% endblock %}

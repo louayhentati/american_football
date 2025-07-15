@@ -56,6 +56,26 @@ class PlayController:
                 play.dir_call = request.form.get('dir_call')
                 play.tag = request.form.get('tag')
                 play.hash = request.form.get('hash')
+                # extra für rusher,passe,receiver
+                play.rusher_number = request.form.get('rusher_number', type=int)
+                play.passer = request.form.get('passer', type=int)
+                play.receiver = request.form.get('receiver', type=int)
+                # extra für Deffense in add play
+                play.play_type1 = request.form.get('play_type1')
+                play.defense_front = request.form.get('defense_front')
+                play.defense_strongside = request.form.get('defense_strongside')
+                play.blitz = request.form.get('blitz')
+                play.slants = request.form.get('slants')
+                play.coverage = request.form.get('coverage')
+                play.tackler1 = request.form.get('tackler1', type=int)
+                play.tackler2 = request.form.get('tackler2', type=int)
+                play.interceptor = request.form.get('interceptor', type=int)
+                # extra für special team  in add play
+                play.returner = request.form.get('returner', type=int)
+                play.returner_yard = request.form.get('returner_yard', type=int)
+                play.kicker = request.form.get('kicker', type=int)
+                play.kicker_yard = request.form.get('kicker_yard', type=int)
+                print(SPOT_FOULS)
                 if play.result == "Penalty":
                     play.penalty_type  = request.form.get('penalty_type') or None
                     play.foul_team = request.form.get('foul_team') or None  
@@ -176,6 +196,21 @@ class PlayController:
                     })
                 options[param] = enriched
             else:
+                options[param] = [
+                    {'id': entry.id, 'value': entry.value, 'label': entry.value}
+                    for entry in entries
+                ]
+        defense_params = [
+            'play_type1','defense_front', 'defense_strongside',
+            'blitz', 'slants', 'coverage'
+        ]
+
+        for param in defense_params:
+            if param not in options:
+                entries = PlayOptionModel.query.filter_by(
+                    parameter_name=param,
+                    enabled=True
+                ).all()
                 options[param] = [
                     {'id': entry.id, 'value': entry.value, 'label': entry.value}
                     for entry in entries

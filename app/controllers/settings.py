@@ -13,6 +13,14 @@ class SettingsController:
     def __init__(self, app: Flask, play_parameters: dict) -> None:
         self.app = app
         self.play_parameters = play_parameters
+        self.defense_parameters = {
+            'play_type1': 'Play type defense',
+            'defense_front': 'Defense Front',
+            'defense_strongside': 'Defense Strongside',
+            'blitz': 'Blitz',
+            'slants': 'Slants / Stunts',
+            'coverage': 'Coverage'
+        }
         self.register_routes()
 
     def register_routes(self) -> None:
@@ -27,6 +35,22 @@ class SettingsController:
         self.app.add_url_rule(
             rule='/settings/play/option/<int:option_id>/toggle',
             view_func=self.toggle_play_option,
+            methods=['POST']
+        )
+        # Add defense routes
+        self.app.add_url_rule(
+            rule='/settings/defense/option/add/<param>',
+            view_func=self.add_defense_option,
+            methods=['POST']
+        )
+        self.app.add_url_rule(
+            rule='/settings/defense/option/<int:option_id>/toggle',
+            view_func=self.toggle_defense_option,
+            methods=['POST']
+        )
+        self.app.add_url_rule(
+            rule='/settings/defense/option/<int:option_id>/delete',
+            view_func=self.delete_defense_option,
             methods=['POST']
         )
 
@@ -63,9 +87,15 @@ class SettingsController:
     @login_required
     def settings(self):
         options = {}
+        defense_options = {}
+
         calls = PlayCallModel.query.all()
         for param in self.play_parameters:
             options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
+
+        # Get defense options
+        for param in self.defense_parameters:
+            defense_options[param] = PlayOptionModel.query.filter_by(parameter_name=param).all()
 
         user_team = TeamModel.query.filter_by(id=current_user.team_id).first()
 
@@ -73,9 +103,12 @@ class SettingsController:
             template_name_or_list='settings/settings.html',
             options=options,
             parameters=self.play_parameters,
+            defense_options=defense_options,
+            defense_parameters=self.defense_parameters,
             play_calls=calls,
             user_team=user_team,
             user=current_user
+
         )
 
     @login_required
@@ -96,6 +129,22 @@ class SettingsController:
         flash(f'Added option "{value}" to {self.play_parameters[param]}')
         return redirect(url_for('settings'))
 
+    # Add methods for defense options
+    @login_required
+    def add_defense_option(self, param):
+        if param not in self.defense_parameters:
+            abort(404)
+
+        value = request.form.get('value')
+
+        # Defense options don't have play calls
+        option = PlayOptionModel(parameter_name=param, value=value)
+
+        db.session.add(option)
+        db.session.commit()
+        flash(f'Added defense option "{value}" to {self.defense_parameters[param]}')
+        return redirect(url_for('settings'))
+
     @login_required
     def toggle_play_option(self, option_id):
         option = PlayOptionModel.query.get_or_404(option_id)
@@ -104,10 +153,28 @@ class SettingsController:
         return redirect(url_for('settings'))
 
     @login_required
+    def toggle_defense_option(self, option_id):
+        option = PlayOptionModel.query.get_or_404(option_id)
+        option.enabled = not option.enabled
+        db.session.commit()
+
+        state = "enabled" if option.enabled else "disabled"
+        flash(f'Defense option "{option.value}" has been {state}', 'success')
+        return redirect(url_for('settings'))
+
+    @login_required
     def delete_play_option(self, option_id):
         option = PlayOptionModel.query.get_or_404(option_id)
         db.session.delete(option)
         db.session.commit()
+        return redirect(url_for('settings'))
+
+    @login_required
+    def delete_defense_option(self, option_id):
+        option = PlayOptionModel.query.get_or_404(option_id)
+        db.session.delete(option)
+        db.session.commit()
+        flash(f'Defense option "{option.value}" has been deleted', 'success')
         return redirect(url_for('settings'))
 
     @login_required
