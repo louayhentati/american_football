@@ -32,7 +32,7 @@
                             <th>Down</th>
                             <th>Distance</th>
                             <th>Yard Line</th>
-                            <th>Play Type</th>
+                            <th>Play Type O</th>
                             <th>Result</th>
                             <th>Gain/Loss</th>
                             <th>Personnel</th>
@@ -45,6 +45,22 @@
                             <th>Direction</th>
                             <th>Tag</th>
                             <th>Hash</th>
+                            <th>Receiver</th>
+                            <th>Rusher nb</th>
+                            <th>Passer</th>
+                            <th>Play Type D</th>
+                            <th>Defense front</th>
+                            <th>Defense strong side</th>
+                            <th>Blitz</th>
+                            <th>Slants</th>
+                            <th>Coverage</th>
+                            <th>Tackler 1</th>
+                            <th>Tackler 2</th>
+                            <th>Interceptor</th>
+                            <th>Returner</th>
+                            <th>Returner Yards</th>
+                            <th>Kicker</th>
+                            <th>Kicker Yards</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
@@ -69,6 +85,25 @@
                                 <td>{{ play.dir_call }}</td>
                                 <td>{{ play.tag }}</td>
                                 <td>{{ play.hash }}</td>
+                                {# added new in drive table  #}
+                                <td>{{ play.receiver }}</td>
+                                <td>{{ play.passer }}</td>
+                                <td>{{ play.rusher_number }}</td>
+                                {# added new in drive table for defense view in addplay #}
+                                <td>{{ play.play_type1 }}</td>
+                                <td>{{ play.defense_front }}</td>
+                                <td>{{ play.defense_strongside }}</td>
+                                <td>{{ play.blitz }}</td>
+                                <td>{{ play.slants }}</td>
+                                <td>{{ play.coverage }}</td>
+                                <td>{{ play.tackler1 }}</td>
+                                <td>{{ play.tackler2 }}</td>
+                                <td>{{ play.interceptor }}</td>
+                                {# added new in drive table for special team view in addplay#}
+                                <td>{{ play.returner }}</td>
+                                <td>{{ play.returner_yard }}</td>
+                                <td>{{ play.kicker }}</td>
+                                <td>{{ play.kicker_yard }}</td>
                                 <td>
                                     <div class="d-flex align-items-center gap-1">
                                         <a href="{{ url_for('edit_play', play_id=play.id) }}"

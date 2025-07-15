@@ -1,3 +1,4 @@
+<!-- Modal for Adding Options -->
 <div class="modal fade" id="addOptionModal" tabindex="-1" aria-labelledby="addOptionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form id="addOptionForm" method="POST" class="modal-content">
@@ -10,14 +11,21 @@
 
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="playTypeSelect" class="form-label">
+                    <label for="optionTypeSelect" class="form-label">
                         Option Type <small class="text-danger">*</small>
                     </label>
-                    <select class="form-select" id="playTypeSelect" name="play_type" required>
+                    <select class="form-select" id="optionTypeSelect" name="option_type" required>
                         <option value="" selected disabled>Choose Option Type</option>
-                        {% for param_name, display_name in parameters.items() %}
-                            <option value="{{ param_name }}">{{ display_name }}</option>
-                        {% endfor %}
+                        <optgroup label="Offense">
+                            {% for param_name, display_name in parameters.items() %}
+                                <option value="offense_{{ param_name }}">{{ display_name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Defense">
+                            {% for param_name, display_name in defense_parameters.items() %}
+                                <option value="defense_{{ param_name }}">{{ display_name }}</option>
+                            {% endfor %}
+                        </optgroup>
                     </select>
                 </div>
 
@@ -25,15 +33,11 @@
                     <label for="playCategorySelect" class="form-label">
                         Play Call <small class="text-danger">*</small>
                     </label>
-                    <select class="form-select" id="playCategorySelect" name="play_call_id" required>
+                    <select class="form-select" id="playCategorySelect" name="play_call_id">
                         <option value="" selected disabled>Choose Play Call</option>
                         {% for call in play_calls %}
                             <option value="{{ call.id }}">{{ call.name }}</option>
                         {% endfor %}
-                        {#                        <option value="RPO">RPO</option>#}
-                        {#                        <option value="PASS">PASS</option>#}
-                        {#                        <option value="SCREEN">SCREEN</option>#}
-                        {#                        <option value="RUN">RUN</option>#}
                     </select>
                 </div>
 
@@ -53,7 +57,6 @@
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                {#<button type="submit" class="btn btn-success btn-sm">Submit</button>#}
                 <button type="submit" class="btn btn-primary btn-sm">Submit</button>
             </div>
         </form>
@@ -62,30 +65,40 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const typeSelect = document.getElementById("playTypeSelect");
+        const typeSelect = document.getElementById("optionTypeSelect");
         const categoryDiv = document.getElementById("offPlayCategoryDiv");
+        const playCallSelect = document.getElementById("playCategorySelect");
+        const form = document.getElementById("addOptionForm");
 
         typeSelect.addEventListener("change", function () {
-            if (this.value === "off_play") {
+            // Only show play call dropdown for offense off_play options
+            if (this.value === "offense_off_play") {
                 categoryDiv.classList.remove("d-none");
+                playCallSelect.required = true;
             } else {
                 categoryDiv.classList.add("d-none");
+                playCallSelect.required = false;
+            }
+        });
+
+        form.addEventListener("submit", function (e) {
+            const optionType = typeSelect.value;
+            if (!optionType) {
+                e.preventDefault();
+                alert("Please select an option type.");
+                return;
+            }
+
+            // Extract category and parameter
+            const [category, ...paramParts] = optionType.split('_');
+            const param = paramParts.join('_');
+
+            // Set form action based on category
+            if (category === "offense") {
+                form.action = "/settings/play/option/add/" + param;
+            } else if (category === "defense") {
+                form.action = "/settings/defense/option/add/" + param;
             }
         });
     });
 </script>
-<script>
-    const form = document.getElementById("addOptionForm");
-    const typeSelect = document.getElementById("playTypeSelect");
-
-    form.addEventListener("submit", function (e) {
-        const type = typeSelect.value;
-        if (!type) {
-            e.preventDefault();
-            alert("Select an option type.");
-            return;
-        }
-        form.action = `/settings/play/option/add/${type}`;
-    });
-</script>
-

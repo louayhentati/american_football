@@ -1,90 +1,201 @@
+<!-- Updated Play Options Section -->
 <div class="tab-pane fade show active" id="play-options" role="tabpanel">
-  <div class="content-header d-flex justify-content-between align-items-center">
-    <h4><i class="bi bi-card-checklist me-2"></i>Play Options</h4>
-    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addOptionModal">
-      <i class="fas fa-plus me-1"></i> New Option
-    </button>
-  </div>
-
-  <div class="accordion mt-3" id="optionsAccordion">
-    {% for param_name, display_name in parameters.items() %}
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="heading{{ loop.index }}">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
-                  aria-controls="collapse{{ loop.index }}">
-            {{ display_name }}
-          </button>
-        </h2>
-
-        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
-             aria-labelledby="heading{{ loop.index }}" data-bs-parent="#optionsAccordion">
-          <div class="accordion-body p-0">
-            {% set show_play_call = (param_name == 'off_play') %}
-            {% if options[param_name] %}
-              <table class="table table-hover align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th scope="col" style="width: 40%;">Name</th>
-                    {% if show_play_call %}
-                      <th scope="col" style="width: 30%;">Play Call</th>
-                    {% endif %}
-                    <th scope="col" style="width: 15%;">Status</th>
-                    <th scope="col" style="width: 15%;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for option in options[param_name] %}
-                    <tr>
-                      <td><strong>{{ option.value }}</strong></td>
-
-                      {% if show_play_call %}
-                        <td>
-                          {% if option.play_call %}
-                            {{ option.play_call.name }}
-                          {% else %}
-                            <span class="text-muted">—</span>
-                          {% endif %}
-                        </td>
-                      {% endif %}
-
-                      <td>
-                        <span class="badge bg-{{ 'success' if option.enabled else 'secondary' }}">
-                          {{ 'Enabled' if option.enabled else 'Disabled' }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center gap-2">
-                          <form method="POST" action="{{ url_for('toggle_play_option', option_id=option.id) }}">
-                            <div class="form-check form-switch m-0">
-                              <input class="form-check-input" type="checkbox"
-                                     id="toggleSwitchOption{{ option.id }}" name="enabled"
-                                     onchange="this.form.submit()"
-                                     {% if option.enabled %} checked {% endif %}
-                                     aria-label="Toggle Enable/Disable">
-                            </div>
-                          </form>
-
-                          <form method="POST" action="{{ url_for('delete_play_option', option_id=option.id) }}"
-                                onsubmit="return confirm('Delete this option?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                              <i class="fas fa-trash-alt"></i>
-                            </button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            {% else %}
-              <p class="text-muted m-3">No options configured yet for {{ display_name }}.</p>
-            {% endif %}
-          </div>
+    <div class="content-header d-flex justify-content-between align-items-center">
+        <h4><i class="bi bi-card-checklist me-2"></i>Play Options</h4>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" id="offenseTabBtn">
+                <i class="fas fa-football-ball me-2"></i>Offense</button>
+            <button type="button" class="btn btn-outline-primary" id="defenseTabBtn">
+                <i class="fas fa-shield-alt me-2"></i>Defense</button>
+            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                    data-bs-target="#addOptionModal">
+                <i class="fas fa-plus me-1"></i> New Option
+            </button>
         </div>
-      </div>
-    {% endfor %}
-  </div>
+    </div>
+
+    <!-- Offense Options Section -->
+    <div id="offense-options-section" >
+        <div class="accordion mt-3" id="optionsAccordion">
+            {% for param_name, display_name in parameters.items() %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
+                                aria-controls="collapse{{ loop.index }}">
+                            {{ display_name }}
+                        </button>
+                    </h2>
+
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                         aria-labelledby="heading{{ loop.index }}" data-bs-parent="#optionsAccordion">
+                        <div class="accordion-body p-0">
+                            {% set show_play_call = (param_name == 'off_play') %}
+                            {% if options[param_name] %}
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 40%;">Name</th>
+                                        {% if show_play_call %}
+                                            <th scope="col" style="width: 30%;">Play Call</th>
+                                        {% endif %}
+                                        <th scope="col" style="width: 15%;">Status</th>
+                                        <th scope="col" style="width: 15%;">Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for option in options[param_name] %}
+                                        <tr>
+                                            <td><strong>{{ option.value }}</strong></td>
+
+                                            {% if show_play_call %}
+                                                <td>
+                                                    {% if option.play_call %}
+                                                        {{ option.play_call.name }}
+                                                    {% else %}
+                                                        <span class="text-muted">—</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
+
+                                            <td>
+                          <span class="badge bg-{{ 'success' if option.enabled else 'secondary' }}">
+                            {{ 'Enabled' if option.enabled else 'Disabled' }}
+                          </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <form method="POST"
+                                                          action="{{ url_for('toggle_play_option', option_id=option.id) }}">
+                                                        <div class="form-check form-switch m-0">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   id="toggleSwitchOption{{ option.id }}" name="enabled"
+                                                                   onchange="this.form.submit()"
+                                                                    {% if option.enabled %} checked {% endif %}
+                                                                   aria-label="Toggle Enable/Disable">
+                                                        </div>
+                                                    </form>
+
+                                                    <form method="POST"
+                                                          action="{{ url_for('delete_play_option', option_id=option.id) }}"
+                                                          onsubmit="return confirm('Delete this option?');">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                title="Delete">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p class="text-muted m-3">No options configured yet for {{ display_name }}.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Defense Options Section -->
+    <div id="defense-options-section" style="display: none;">
+        <div class="accordion mt-3" id="defenseOptionsAccordion">
+            <!-- Loop through defense parameters -->
+            {% for param, display_name in defense_parameters.items() %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="defenseHeading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#defenseCollapse{{ loop.index }}" aria-expanded="false"
+                                aria-controls="defenseCollapse{{ loop.index }}">
+                            {{ display_name }}
+                        </button>
+                    </h2>
+                    <div id="defenseCollapse{{ loop.index }}" class="accordion-collapse collapse"
+                         aria-labelledby="defenseHeading{{ loop.index }}" data-bs-parent="#defenseOptionsAccordion">
+                        <div class="accordion-body p-0">
+                            {% if defense_options[param] %}
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 70%;">Name</th>
+                                        <th scope="col" style="width: 15%;">Status</th>
+                                        <th scope="col" style="width: 15%;">Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for option in defense_options[param] %}
+                                        <tr>
+                                            <td><strong>{{ option.value }}</strong></td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if option.enabled else 'secondary' }}">
+                                                    {{ 'Enabled' if option.enabled else 'Disabled' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <form method="POST"
+                                                          action="{{ url_for('toggle_defense_option', option_id=option.id) }}">
+                                                        <div class="form-check form-switch m-0">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   id="toggleSwitchDefense{{ option.id }}"
+                                                                   name="enabled"
+                                                                   onchange="this.form.submit()"
+                                                                    {% if option.enabled %} checked {% endif %}
+                                                                   aria-label="Toggle Enable/Disable">
+                                                        </div>
+                                                    </form>
+
+                                                    <form method="POST"
+                                                          action="{{ url_for('delete_defense_option', option_id=option.id) }}"
+                                                          onsubmit="return confirm('Delete this option?');">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                title="Delete">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p class="text-muted m-3">No {{ display_name|lower }} options configured yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
-{% include "settings/partials/play/add_option_modal.html" %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const offenseBtn = document.getElementById('offenseTabBtn');
+        const defenseBtn = document.getElementById('defenseTabBtn');
+        const offenseSection = document.getElementById('offense-options-section');
+        const defenseSection = document.getElementById('defense-options-section');
+
+        // Show offense by default
+        offenseSection.style.display = 'block';
+        defenseSection.style.display = 'none';
+
+        offenseBtn.addEventListener('click', function () {
+            offenseBtn.classList.add('active');
+            defenseBtn.classList.remove('active');
+            offenseSection.style.display = 'block';
+            defenseSection.style.display = 'none';
+        });
+
+        defenseBtn.addEventListener('click', function () {
+            defenseBtn.classList.add('active');
+            offenseBtn.classList.remove('active');
+            defenseSection.style.display = 'block';
+            offenseSection.style.display = 'none';
+        });
+    });
+</script>
