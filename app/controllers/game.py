@@ -29,6 +29,7 @@ class GameController:
         self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives)
         self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
         self.app.add_url_rule(rule='/game/<int:game_id>/dashboard', view_func=self.dashboard)
+        self.app.add_url_rule(rule='/game/<int:game_id>/dashboard-data',view_func=self.dashboard_data)
 
     @login_required
     def filter_games(self):
@@ -41,7 +42,49 @@ class GameController:
         return render_template("game/partials/_game_rows.html", games=games.all())
 
     @login_required
-    def dashboard(self,game_id):
+    def dashboard_data(self,game_id):
+        odk_filter = request.args.get("odk", "")
+
+        game = GameModel.get_by_id(game_id)
+        all_drives = [d for d in game.drives if d.plays]
+
+        if odk_filter:
+            drives = [d for d in all_drives if d.plays[0].odk == odk_filter]
+        else:
+            drives = all_drives
+
+        offense_drives = [d for d in drives if d.plays[0].odk == "O"]
+        defense_drives = [d for d in drives if d.plays[0].odk == "D"]
+        special_drives = [d for d in drives if d.plays[0].odk == "K"]
+        total_plays = sum(len(d.plays) for d in drives)
+
+        return {
+            "total_drives": len(drives),
+            "offense_drives": len(offense_drives),
+            "defense_drives": len(defense_drives),
+            "special_drives": len(special_drives),
+            "total_plays": total_plays
+        }
+
+    @login_required
+    def dashboard(self, game_id):
+        play_mapping = {
+            # PASS-Plays
+            'Breakfast': 'PASS',
+
+            # RUN-Plays
+            'Dive': 'RUN',
+            'Fade': 'RUN',
+            'Stick': 'RUN',
+
+            # RPO-Plays
+            'Stretch': "RPO",
+
+            # SCREEN-Plays
+            'Lunch': 'SCREEN',
+            'Power': 'SCREEN',
+        }
+
         game = GameModel.get_by_id(game_id)
         odk_filter = request.args.get("odk")
 
@@ -52,51 +95,44 @@ class GameController:
 
         offense_drives = [d for d in filtered_drives if d.plays and d.plays[0].odk == 'O']
         defense_drives = [d for d in filtered_drives if d.plays and d.plays[0].odk == 'D']
+        special_drives = [d for d in filtered_drives if d.plays and d.plays[0].odk == 'K']
         total_plays = sum(len(d.plays) for d in filtered_drives)
+        filtered_plays = [play for drive in filtered_drives for play in drive.plays]
 
-        # Alle Plays aus den gefilterten Drives sammeln
-        filtered_plays = []
-        for drive in filtered_drives:filtered_plays.extend(drive.plays)
+        mapped_play_categories = []
+        for p in filtered_plays:
+            if p.off_play and p.off_play.strip():
+                general_category = play_mapping.get(p.off_play.strip())
+                if general_category:
+                    mapped_play_categories.append(general_category)
 
-        # Play Types zählen
-        play_type_counts = Counter(play.play_type for drive in filtered_drives for play in drive.plays if play.play_type)
-    
-        # Für die Übergabe ins Template aufspalten
+        play_type_counts = Counter(mapped_play_categories)
+        
         play_type_labels = list(play_type_counts.keys())
         play_type_values = list(play_type_counts.values())
 
-        pass_results = {'Complete', 'Complete, TD', 'Incomplete', 'Interception', 'Interception, Def TD'}
-        run_results = {'Rush', 'Rush, TD'}
+        pass_count = play_type_counts.get('PASS', 0)
+        run_count = play_type_counts.get('RUN', 0)
 
-        pass_count = 0
-        run_count = 0
-
-        for play in filtered_plays:
-            if play.result in pass_results:
-                pass_count += 1
-            elif play.result in run_results:
-                run_count += 1
-
-        result_type_labels = ['Pass', 'Run']
+        result_type_labels = ['PASS', 'RUN']
         result_type_values = [pass_count, run_count]
 
-        penalty_plays = [p for d in game.drives for p in d.plays if p.result == 'Penalty']
+        penalty_plays = [p for p in filtered_plays if p.result == 'Penalty']        
         penalty_counter = Counter(p.penalty_type for p in penalty_plays if p.penalty_type)
-
         penalty_labels = list(penalty_counter.keys())
         penalty_values = list(penalty_counter.values())
 
-        return render_template("game/dashboard.html", game=game, filtered_drives=filtered_drives,
-            offense_drives=offense_drives,
-            defense_drives=defense_drives,
-            total_plays=total_plays,
+        return render_template("game/dashboard.html", game=game, odk_filter=odk_filter,
+            filtered_drives=filtered_drives,
+            offense_drives=offense_drives, defense_drives=defense_drives,
+            special_drives=special_drives, total_plays=total_plays,
             play_type_labels=play_type_labels,
             play_type_values=play_type_values,
             result_type_labels=result_type_labels,
             result_type_values=result_type_values,
             penalty_labels=penalty_labels,
             penalty_values=penalty_values)
-
+    
     @login_required
     def game_options(self) -> str:
         # filter away team
@@ -119,8 +155,6 @@ class GameController:
             return render_template("game/partials/_drive_rows.html", game=game)
         else:
             return render_template("game/partials/_drive_rows.html", game=game)
-
-
 
     @login_required
     def game_detail(self, game_id: int) -> str:
