@@ -32,15 +32,19 @@ class DriveController:
         return self._handle_add_play_get_request(drive_id)
 
     def _handle_add_play_post_request(self, drive_id, drive):
-        play = self._create_play_from_form(drive_id)
-        drive.result = play.result
-        db.session.add(play)
-        db.session.flush()
+        try:
+            play = self._create_play_from_form(drive_id)
 
-        self._update_play_fields(play, drive_id, drive)
-        db.session.commit()
+            db.session.add(play)
+            db.session.commit()
 
-        flash('Play added successfully!', 'success')
+            drive.update_status()
+            
+            flash('Play added successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding play: {str(e)}', 'error')
+        
         return redirect(url_for('drive_detail', drive_id=drive_id))
 
     def _create_play_from_form(self, drive_id):
@@ -105,19 +109,6 @@ class DriveController:
             kicker_yard=request.form.get('kicker_yard')
         )
 
-    def _update_play_fields(self, play, drive_id, drive):
-        previous_play = self._get_previous_play(drive_id, play.id)
-        if not previous_play:
-            return
-
-        next_fields = self.__calculate_next_play_fields(last_play=previous_play)
-        play.down = next_fields.get('down', play.down)
-        play.distance = next_fields.get('distance', play.distance)
-        play.yard_line = next_fields.get('yard_line', play.yard_line)
-
-        if next_fields.get('possession_change', False) or play.result in ApplicationData.DRIVE_ENDING_RESULTS:
-            drive.ended = True
-
     @staticmethod
     def _get_previous_play(drive_id, current_play_id):
         return (PlayModel.query
@@ -128,7 +119,7 @@ class DriveController:
 
     def _handle_add_play_get_request(self, drive_id):
         drive = DriveModel.query.get_or_404(drive_id)
-        if drive.ended or drive.result:
+        if drive.ended:
             flash(message="This drive has ended. Cannot add more plays!", category="danger")
             return redirect(url_for('drive_detail', drive_id=drive_id))
 

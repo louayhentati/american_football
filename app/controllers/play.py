@@ -119,7 +119,8 @@ class PlayController:
                 db.session.commit()
 
                 drive = DriveModel.query.get_or_404(play.drive_id)
-                self._recalculate_drive_ended(drive)
+                drive.update_status()
+
                 flash('Play updated successfully!', 'success')
                 return redirect(url_for('drive_detail', drive_id=play.drive_id))
             except Exception as e:
@@ -132,26 +133,6 @@ class PlayController:
                                drive_id=play.drive_id)
 
     @login_required
-    def _recalculate_drive_ended(self, drive):
-        last_play = (
-            PlayModel.query
-            .filter_by(drive_id=drive.id)
-            .order_by(PlayModel.id.desc())
-            .first()
-        )
-
-        if not last_play:
-            drive.ended = False
-        else:
-            if (last_play.result in ApplicationData.DRIVE_ENDING_RESULTS or
-                    (last_play.down == 4 and last_play.gain_loss < last_play.distance)
-            ):
-                drive.ended = True
-            else:
-                drive.ended = False
-        db.session.commit()
-
-    @login_required
     def delete_play(self, play_id):
         try:
             play = PlayModel.query.get_or_404(play_id)
@@ -161,15 +142,7 @@ class PlayController:
             flash('Play deleted successfully', 'success')
 
             drive = DriveModel.query.get_or_404(drive_id)
-
-            last_play = (
-                PlayModel.query
-                .filter_by(drive_id=drive_id)
-                .order_by(PlayModel.id.desc())
-                .first()
-            )
-            drive.result = last_play.result if last_play and last_play.result else "In Progress"
-            self._recalculate_drive_ended(drive)
+            drive.update_status()
 
         except Exception as e:
             db.session.rollback()
