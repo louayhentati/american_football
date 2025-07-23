@@ -21,8 +21,7 @@ class CallSheetController:
         selected_team = request.args.get("Team")
         plays = []
         if selected_team:
-            print(selected_team)
-            games = GameModel.query.filter(GameModel.away_team.has(name=selected_team)) 
+            games = GameModel.query.filter(GameModel.away_team.has(name=selected_team))
             for game in games:
                 for drive in game.drives:
                     for play in drive.plays:

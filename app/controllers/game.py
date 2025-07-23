@@ -11,6 +11,7 @@ from app.models.play import PlayModel
 from app.models.team import TeamModel
 from collections import Counter
 
+
 class GameController:
     def __init__(self, app: Flask) -> None:
         self.app = app
@@ -27,22 +28,11 @@ class GameController:
         self.app.add_url_rule(rule='/games/<int:game_id>/drive/<int:drive_id>/play-chart',
                               view_func=self.drive_play_chart)
         self.app.add_url_rule(rule='/filter_drives', view_func=self.filter_drives)
-        self.app.add_url_rule(rule='/filter_games', view_func=self.filter_games, methods=['GET'])
         self.app.add_url_rule(rule='/game/<int:game_id>/dashboard', view_func=self.dashboard)
-        self.app.add_url_rule(rule='/game/<int:game_id>/dashboard-data',view_func=self.dashboard_data)
+        self.app.add_url_rule(rule='/game/<int:game_id>/dashboard-data', view_func=self.dashboard_data)
 
     @login_required
-    def filter_games(self):
-        selected_team = request.args.get('Team')
-        print(selected_team)
-        games = GameModel.query
-        if selected_team:
-            games = games.join(GameModel.away_team).filter(TeamModel.name == selected_team)
-
-        return render_template("game/partials/_game_rows.html", games=games.all())
-
-    @login_required
-    def dashboard_data(self,game_id):
+    def dashboard_data(self, game_id):
         odk_filter = request.args.get("odk", "")
 
         game = GameModel.get_by_id(game_id)
@@ -107,7 +97,7 @@ class GameController:
                     mapped_play_categories.append(general_category)
 
         play_type_counts = Counter(mapped_play_categories)
-        
+
         play_type_labels = list(play_type_counts.keys())
         play_type_values = list(play_type_counts.values())
 
@@ -117,22 +107,22 @@ class GameController:
         result_type_labels = ['PASS', 'RUN']
         result_type_values = [pass_count, run_count]
 
-        penalty_plays = [p for p in filtered_plays if p.result == 'Penalty']        
+        penalty_plays = [p for p in filtered_plays if p.result == 'Penalty']
         penalty_counter = Counter(p.penalty_type for p in penalty_plays if p.penalty_type)
         penalty_labels = list(penalty_counter.keys())
         penalty_values = list(penalty_counter.values())
 
         return render_template("game/dashboard.html", game=game, odk_filter=odk_filter,
-            filtered_drives=filtered_drives,
-            offense_drives=offense_drives, defense_drives=defense_drives,
-            special_drives=special_drives, total_plays=total_plays,
-            play_type_labels=play_type_labels,
-            play_type_values=play_type_values,
-            result_type_labels=result_type_labels,
-            result_type_values=result_type_values,
-            penalty_labels=penalty_labels,
-            penalty_values=penalty_values)
-    
+                               filtered_drives=filtered_drives,
+                               offense_drives=offense_drives, defense_drives=defense_drives,
+                               special_drives=special_drives, total_plays=total_plays,
+                               play_type_labels=play_type_labels,
+                               play_type_values=play_type_values,
+                               result_type_labels=result_type_labels,
+                               result_type_values=result_type_values,
+                               penalty_labels=penalty_labels,
+                               penalty_values=penalty_values)
+
     @login_required
     def game_options(self) -> str:
         # filter away team
@@ -151,7 +141,7 @@ class GameController:
         game = GameModel.get_by_id(game_id)
         if selected_odk:
             game.drives = [drive for drive in game.drives
-                            if drive.plays and drive.plays[0].odk == selected_odk]
+                           if drive.plays and drive.plays[0].odk == selected_odk]
             return render_template("game/partials/_drive_rows.html", game=game)
         else:
             return render_template("game/partials/_drive_rows.html", game=game)
@@ -159,9 +149,6 @@ class GameController:
     @login_required
     def game_detail(self, game_id: int) -> str:
         game = GameModel.get_by_id(game_id)
-        for drive in game.drives:
-            if len(drive.plays) > 0:
-                print(drive.plays[0].odk)
         return render_template(template_name_or_list='game/game_detail.html', game=game)
 
     @login_required
@@ -257,14 +244,14 @@ class GameController:
         plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
 
         plays_data = []
-        
+
         home_team = game.home_team
         away_team = game.away_team
         home_team_color = home_team.primary_color if home_team else "#010748"
         away_team_color = away_team.primary_color if home_team else "#010748"
         home_team_text_color = get_readable_text_color(home_team_color) if home_team else "#FFFFFF"
         away_team_text_color = get_readable_text_color(away_team_color) if home_team else "#FFFFFF"
-        
+
         for play in plays:
 
             raw_start = play.yard_line
@@ -297,10 +284,10 @@ class GameController:
             drive=drive,
             plays=plays_data,
             max=max,
-            home = home_team_color,
-            away = away_team_color,
-            home_text = home_team_text_color,
-            away_text = away_team_text_color
+            home=home_team_color,
+            away=away_team_color,
+            home_text=home_team_text_color,
+            away_text=away_team_text_color
         )
 
     @login_required
@@ -309,14 +296,14 @@ class GameController:
         drives = DriveModel.query.filter_by(game_id=game_id).all()
 
         drives_data = []
-        
+
         home_team = game.home_team
         away_team = game.away_team
         home_team_color = home_team.primary_color if home_team else "#010748"
         away_team_color = away_team.primary_color if home_team else "#010748"
         home_team_text_color = get_readable_text_color(home_team_color) if home_team else "#FFFFFF"
         away_team_text_color = get_readable_text_color(away_team_color) if home_team else "#FFFFFF"
-            
+
         for drive in drives:
             plays = PlayModel.query.filter_by(drive_id=drive.id).order_by(PlayModel.id).all()
             number_plays = len(plays)
@@ -339,7 +326,7 @@ class GameController:
                 temp = start_yard
                 start_yard = end_yard
                 end_yard = temp
-                
+
             drives_data.append({
                 'id': drive.id,
                 'team': game.name.split(' vs ')[0],
@@ -354,10 +341,10 @@ class GameController:
             game=game,
             drives=drives_data,
             max=max,
-            home = home_team_color,
-            away = away_team_color,
-            home_text = home_team_text_color,
-            away_text = away_team_text_color
+            home=home_team_color,
+            away=away_team_color,
+            home_text=home_team_text_color,
+            away_text=away_team_text_color
         )
 
     @login_required
@@ -389,8 +376,9 @@ class GameController:
 
         return response
 
+
 def get_readable_text_color(hex_color):
     hex_color = hex_color.lstrip('#')
-    r, g, b = [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+    r, g, b = [int(hex_color[i:i + 2], 16) for i in (0, 2, 4)]
     brightness = 0.299 * r + 0.587 * g + 0.114 * b
     return "#000000" if brightness > 186 else "#ffffff"

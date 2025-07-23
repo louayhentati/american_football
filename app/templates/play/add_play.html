@@ -69,23 +69,13 @@
                                 <div class="input-group">
                                     <input type="number" min="-49" max="50" class="form-control" name="yard_line"
                                            value="{{ play.yard_line if play else default_yard_line }}">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()">
-                                        Own / Opp
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- Yard Line -->
-                            <div class="mb-3">
-                                <label class="form-label">Yard Line</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="yard_line"
-                                           value="{{ play.yard_line if play else default_yard_line }}">
                                     <button type="button" class="btn btn-outline-secondary"
                                             onclick="toggleYardLine()">
                                         Own / Opp
                                     </button>
                                 </div>
                             </div>
+
 
                             <!-- OFFENSE SECTION -->
                             <div id="offense-section" style="display: none;">

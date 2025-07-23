@@ -75,14 +75,14 @@ class PlayController:
                 play.returner_yard = request.form.get('returner_yard', type=int)
                 play.kicker = request.form.get('kicker', type=int)
                 play.kicker_yard = request.form.get('kicker_yard', type=int)
-                print(SPOT_FOULS)
+
                 if play.result == "Penalty":
-                    play.penalty_type  = request.form.get('penalty_type') or None
-                    play.foul_team = request.form.get('foul_team') or None  
+                    play.penalty_type = request.form.get('penalty_type') or None
+                    play.foul_team = request.form.get('foul_team') or None
                     if play.penalty_type in SPOT_FOULS:
-                        play.penalty_spot_yard = int(request.form.get('penalty_spot_yard') or 0 )
+                        play.penalty_spot_yard = int(request.form.get('penalty_spot_yard') or 0)
                     else:
-                        play.penalty_spot_yard = None   
+                        play.penalty_spot_yard = None
                 else:
                     play.foul_team = None
                     play.penalty_type = None
@@ -91,28 +91,27 @@ class PlayController:
                 rule = None
                 if play.result == "Penalty" and play.penalty_type:
                     rule = next((r for r in PENALTY_RULES if r["type"] == play.penalty_type), None)
-                    if rule:  
+                    if rule:
                         if play.penalty_spot_yard not in [None, 0]:
-                            yard_line = convert(play.yard_line) 
+                            yard_line = convert(play.yard_line)
                             raw_penalty_spot = convert(play.penalty_spot_yard)
                             if rule.get('spot_foul') and raw_penalty_spot is not None:
                                 if play.foul_team == "H":
                                     play.gain_loss = raw_penalty_spot - abs(rule["yards"]) - yard_line
                                 elif play.foul_team == "O":
                                     play.gain_loss = raw_penalty_spot + abs(rule["yards"]) - yard_line
-                                
+
                         elif rule.get("yards") and play.foul_team == "H":
                             play.gain_loss = -abs(rule["yards"])
                             play.penalty_spot_yard = None
-                            
-                        else: 
+
+                        else:
                             play.gain_loss = abs(rule["yards"])
                             play.penalty_spot_yard = None
-                            
-                else: # Wenn kein Penalty, nimm Wert aus dem Formular
+
+                else:  # Wenn kein Penalty, nimm Wert aus dem Formular
                     play.gain_loss = request.form.get('gain_loss') or 0
-                    
-                
+
                 drive = DriveModel.query.get_or_404(play.drive_id)
                 drive.result = result_form if result_form else "In Progress"
 
@@ -174,7 +173,7 @@ class PlayController:
                     for entry in entries
                 ]
         defense_params = [
-            'play_type1','defense_front', 'defense_strongside',
+            'play_type1', 'defense_front', 'defense_strongside',
             'blitz', 'slants', 'coverage'
         ]
 
