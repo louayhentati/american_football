@@ -115,7 +115,7 @@ class PlaybookApp:
 
     def run(self) -> None:
         try:
-            self.app.run(host='127.0.0.1', port=6060, debug=True)
+            self.app.run(host='127.0.0.1', port=5050, debug=True)
         except Exception as e:
             print(f"[!] Application failed to start: {str(e)} ({type(e).__name__})")
 

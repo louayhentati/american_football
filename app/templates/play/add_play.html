@@ -255,8 +255,9 @@
                                     </div>
                                 </div>
                                 <!--Penalty fields -->
-                                <div id="penalty-fields"
-                                     style="display: {% if play and play.result=='Penalty' %}block{% else %}none{% endif %}; margin-top:1rem; margin-bottom:1rem;">
+                                <div id="offense-penalty-fields" class="penalty-fields"
+                                     style="display: {% if play and play.result=='Penalty' %}block
+                                     {% else %}none{% endif %}; margin-top:1rem; margin-bottom:1rem;">
                                     <div class="mb-3">
                                         <label class="form-label">Penalty committed by</label><br>
                                         <div class="btn-group" role="group">
@@ -492,49 +493,54 @@
                                             {% endfor %}
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <!--Penalty fields -->
-                            <div id="penalty-fields"
-                                 style="display: {% if play and play.result=='Penalty' %}block{% else %}none{% endif %}; margin-top:1rem; margin-bottom:1rem;">
-                                <div class="mb-3">
-                                    <label class="form-label">Penalty committed by</label><br>
-                                    <div class="btn-group" role="group">
-                                        <input type="radio" class="btn-check" name="foul_team" id="foul-own" value="H"
-                                               {% if
-                                    play and play.foul_team=="H" %}checked{% endif %}>
-                                        <label class="btn btn-outline-primary" for="foul-own">Home Team</label>
-                                        <input type="radio" class="btn-check" name="foul_team" id="foul-opponent"
-                                               value="O"
-                                               {% if play and play.foul_team=="O" %}checked{% endif %}>
-                                        <label class="btn btn-outline-primary" for="foul-opponent">Opponent
-                                            Team </label>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="form-group">
-                                            <label for="penalty_type">Penalty Type</label>
-                                            <select class="form-control" id="penalty_type" name="penalty_type">
-                                                <option value="">None</option>
-                                                {% for opt in options.get('penalty_type', []) %}
-                                                    <option value="{{ opt.value }}"
-                                                            {% if play and play.penalty_type==opt.value %}selected{% endif %}>
-                                                        {{ opt.label }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
+                                    <!--Penalty fields -->
+                                    <div id="defense-penalty-fields" class="penalty-fields"
+                                         style="display: {% if play and play.result=='Penalty' %}block{% else %}none{% endif %}; margin-top:1rem; margin-bottom:1rem;">
+                                        <div class="mb-3">
+                                            <label class="form-label">Penalty committed by</label><br>
+                                            <div class="btn-group" role="group">
+                                                <input type="radio" class="btn-check" name="foul_team"
+                                                       id="defense-foul-own"
+                                                       value="H"
+                                                       {% if play and play.foul_team=="H" %}checked{% endif %}>
+                                                <label class="btn btn-outline-primary" for="defense-foul-own">Home
+                                                    Team</label>
+                                                <input type="radio" class="btn-check" name="foul_team"
+                                                       id="defense-foul-opponent"
+                                                       value="O"
+                                                       {% if play and play.foul_team=="O" %}checked{% endif %}>
+                                                <label class="btn btn-outline-primary" for="defense-foul-opponent">Opponent
+                                                    Team</label>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="penalty_type">Penalty Type</label>
+                                                    <select class="form-control" id="penalty_type" name="penalty_type">
+                                                        <option value="">None</option>
+                                                        {% for opt in options.get('penalty_type', []) %}
+                                                            <option value="{{ opt.value }}"
+                                                                    {% if play and play.penalty_type==opt.value %}selected{% endif %}>
+                                                                {{ opt.label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label for="penalty_spot_yard">Spot (Yard Line)</label>
+                                                    <input type="number" class="form-control" id="penalty_spot_yard"
+                                                           name="penalty_spot_yard"
+                                                           value="{{ play.penalty_spot_yard or '' }}">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col">
-                                        <div class="form-group" id="spot-field-container">
-                                            <label for="penalty_spot_yard">Spot (Yard Line)</label>
-                                            <input type="number" class="form-control" id="penalty_spot_yard"
-                                                   name="penalty_spot_yard" value="{{ play.penalty_spot_yard or '' }}">
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
+
 
                             <!-- SPECIAL TEAMS SECTION -->
                             <div id="special-section" style="display: none;">
@@ -735,6 +741,23 @@
             }
         });
 
+    </script>
+    <script>
+        function togglePenaltyFields() {
+            const penaltyResult = document.querySelector('input[name="result"]:checked');
+            const penaltyFields = document.querySelectorAll('.penalty-fields');
+
+            if (penaltyResult && penaltyResult.value === 'Penalty') {
+                penaltyFields.forEach(field => field.style.display = 'block');
+            } else {
+                penaltyFields.forEach(field => field.style.display = 'none');
+            }
+        }
+
+        // Add event listeners to all result radio buttons
+        document.querySelectorAll('input[name="result"]').forEach(radio => {
+            radio.addEventListener('change', togglePenaltyFields);
+        });
     </script>
 
     <style>
