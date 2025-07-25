@@ -93,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {once: true});
 });
 
+function getODK() {
+    const selected = document.querySelector('input[name="odk"]:checked');
+    return selected ? selected.value : null;
+}
 // Penalty-Toggle: shows penalty fields only if in result-Radio "Penalty" is selected
 document.addEventListener('DOMContentLoaded', function(){
   const penaltyType = document.getElementById('penalty_type');
@@ -105,7 +109,8 @@ document.addEventListener('DOMContentLoaded', function(){
   //Function that shows the penalty fields block and activates or deactivates the gain_loss field
   function togglePenaltyFields() {
     const sel = document.querySelector("input[name='result']:checked");
-    penaltySection.style.display = (sel && sel.value === 'Penalty')
+    const odk = getODK();
+    penaltySection.style.display = (sel && sel.value === 'Penalty'&& (odk === 'O' || odk === 'D'))
       ? 'block'
       : 'none';
     const isPenalty = (sel && sel.value === 'Penalty');
