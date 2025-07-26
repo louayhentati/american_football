@@ -2,16 +2,35 @@
 \usepackage[a4paper, left=2.5cm, right=3cm]{geometry}
 \usepackage[ngerman]{babel}
 \usepackage{graphicx}
-\graphicspath{{images/}}
 \usepackage[]{minted}
 \usemintedstyle{default}
 \setminted{
+	fontsize=\small,
 	tabsize=2,
-	breaklines
+	breaklines,
+	breakanywhere
 }
+
+
+\newcommand{\lowerSectionLevels}{%
+  \let\origSection\section
+  \let\origSubsection\subsection
+  \let\origSubsubsection\subsubsection
+  \let\section\origSubsection
+  \let\subsection\origSubsubsection
+  \let\subsubsection\paragraph
+}
+
+\newcommand{\resetSectionLevels}{%
+  \let\section\origSection
+  \let\subsection\origSubsection
+  \let\subsubsection\origSubsubsection
+}
+\usepackage[hidelinks]{hyperref}
+\sloppy
 \usepackage{parskip}
 \usepackage{microtype}
-%\setcounter{secnumdepth}{4}
+%\setcounter{secnumdepth}{5}
 \usepackage{tcolorbox}
 \usepackage{etoolbox}
 \BeforeBeginEnvironment{minted}{\begin{tcolorbox}}%
@@ -53,10 +72,10 @@
 \pagebreak
 \section{Jakob Hermanowski}
 \input{kapitel/hermanowski.tex}
-
 \pagebreak
-\section{Can Dechert}
-\input{kapitel/dechert.tex}
-
-
+\section{Louay Hentati}
+\lowerSectionLevels
+\input{kapitel/hentati.tex}
+\resetSectionLevels
+\section{car}
 \end{document}
