@@ -465,7 +465,7 @@
                                                id="returner"
                                                placeholder="0-99"
                                                value="{{ returner if play }}"
-                                               oninput="validateSpecialTeam(this)">
+                                               oninput="validateInterceptedBy(this)">
                                     </div>
 
 
@@ -486,7 +486,7 @@
                                                id="kicker"
                                                placeholder="0-99"
                                                value="{{ kicker if play }}"
-                                               oninput="validateSpecialTeam(this)"
+                                               oninput="validateInterceptedBy(this)"
                                         >
                                     </div>
 
@@ -664,15 +664,6 @@
             }
         }
 
-        function validateSpecialTeam(input) {
-            const value = parseInt(input.value, 10);
-            if ((value >= 0 && value <= 99) || isNaN(value)) {
-                input.classList.remove("is-invalid");
-            } else {
-                input.classList.add("is-invalid");
-                alert("Player numbers must be between 0-99!");
-            }
-        }
 
         function validateForm(event) {
             const odkChoices = document.getElementsByName('odk');
