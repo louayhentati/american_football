@@ -4,9 +4,11 @@
         <h4><i class="bi bi-card-checklist me-2"></i>Play Options</h4>
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-outline-primary active" id="offenseTabBtn">
-                <i class="fas fa-football-ball me-2"></i>Offense</button>
+                <i class="fas fa-football-ball me-2"></i>Offense
+            </button>
             <button type="button" class="btn btn-outline-primary" id="defenseTabBtn">
-                <i class="fas fa-shield-alt me-2"></i>Defense</button>
+                <i class="fas fa-shield-alt me-2"></i>Defense
+            </button>
             <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
                     data-bs-target="#addOptionModal">
                 <i class="fas fa-plus me-1"></i> New Option
@@ -15,7 +17,7 @@
     </div>
 
     <!-- Offense Options Section -->
-    <div id="offense-options-section" >
+    <div id="offense-options-section">
         <div class="accordion mt-3" id="optionsAccordion">
             {% for param_name, display_name in parameters.items() %}
                 <div class="accordion-item">
@@ -173,29 +175,106 @@
     </div>
 </div>
 
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const offenseBtn = document.getElementById('offenseTabBtn');
         const defenseBtn = document.getElementById('defenseTabBtn');
         const offenseSection = document.getElementById('offense-options-section');
         const defenseSection = document.getElementById('defense-options-section');
+        const typeSelect = document.getElementById("optionTypeSelect");
+        const categoryDiv = document.getElementById("offPlayCategoryDiv");
+        const playCallSelect = document.getElementById("playCategorySelect");
+        const form = document.getElementById("addOptionForm");
 
-        // Show offense by default
-        offenseSection.style.display = 'block';
-        defenseSection.style.display = 'none';
-
-        offenseBtn.addEventListener('click', function () {
+        // Function to show offense view
+        function showOffense() {
             offenseBtn.classList.add('active');
             defenseBtn.classList.remove('active');
             offenseSection.style.display = 'block';
             defenseSection.style.display = 'none';
-        });
+            // Store the current view in sessionStorage
+            sessionStorage.setItem('currentView', 'offense');
+        }
 
-        defenseBtn.addEventListener('click', function () {
+        // Function to show defense view
+        function showDefense() {
             defenseBtn.classList.add('active');
             offenseBtn.classList.remove('active');
             defenseSection.style.display = 'block';
             offenseSection.style.display = 'none';
+            // Store the current view in sessionStorage
+            sessionStorage.setItem('currentView', 'defense');
+        }
+
+        // Check if there's a stored view preference or URL hash
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = urlParams.get('view');
+        const storedView = sessionStorage.getItem('currentView');
+
+        // Determine which view to show on page load
+        let initialView = 'offense'; // default
+
+        if (viewParam === 'defense') {
+            initialView = 'defense';
+        } else if (storedView === 'defense') {
+            initialView = 'defense';
+        }
+
+        // Show the appropriate view on page load
+        if (initialView === 'defense') {
+            showDefense();
+        } else {
+            showOffense();
+        }
+
+        // Event listeners for tab buttons
+        offenseBtn.addEventListener('click', showOffense);
+        defenseBtn.addEventListener('click', showDefense);
+
+        // Handle option type selection in modal
+        typeSelect.addEventListener("change", function () {
+            // Only show play call dropdown for offense off_play options
+            if (this.value === "offense_off_play") {
+                categoryDiv.classList.remove("d-none");
+                playCallSelect.required = true;
+            } else {
+                categoryDiv.classList.add("d-none");
+                playCallSelect.required = false;
+            }
         });
+
+        // Handle form submission
+        form.addEventListener("submit", function (e) {
+            const optionType = typeSelect.value;
+            if (!optionType) {
+                e.preventDefault();
+                alert("Please select an option type.");
+                return;
+            }
+
+            // Extract category and parameter
+            const [category, ...paramParts] = optionType.split('_');
+            const param = paramParts.join('_');
+
+            // Set form action based on category
+            if (category === "offense") {
+                form.action = "/settings/play/option/add/" + param;
+            } else if (category === "defense") {
+                form.action = "/settings/defense/option/add/" + param;
+            }
+
+            // Store which view should be shown after form submission
+            sessionStorage.setItem('currentView', category);
+        });
+
+        // Clear stored view when modal is closed (optional - removes persistence between sessions)
+        const modal = document.getElementById('addOptionModal');
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function () {
+                // Optionally clear the stored view when modal closes
+                // sessionStorage.removeItem('currentView');
+            });
+        }
     });
 </script>
