@@ -30,343 +30,253 @@
 
 % Hyperlinks
 \usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
 
-\title{Dokumentation: Benutzerverwaltungsmodul}
-\author{X, Y, 999999999\\ \and X, Z, 222222222}
+\title{Dokumentation: Benutzerverwaltungssystem}
+\author{Leo}
 \date{}
 
 \begin{document}
 
 \maketitle
-\tableofcontents
-\newpage
 
-\section{Benutzerverwaltung}
+\section{User Management}
 
-Das Benutzerverwaltungsmodul übernimmt Authentifizierung, Autorisierung, Rollenverwaltung und Teamzuweisungen. Die folgenden Abschnitte beschreiben die Komponenten dieses Moduls im Detail.
+\subsection{Modulübersicht}
 
-\subsection{Überblick}
+Das Benutzerverwaltungssystem ist in zwei zentrale Controller-Klassen unterteilt, die jeweils unterschiedliche Verantwortlichkeiten übernehmen, jedoch eng miteinander verzahnt sind. Ziel ist es, eine sichere, rollenbasierte und intuitive Benutzerverwaltung in einer Flask-Webanwendung zu realisieren.
 
-Das Benutzerverwaltungsmodul ist ein grundlegender Bestandteil der Anwendung und zuständig für Benutzer-Authentifizierung, Autorisierung, rollenbasierte Zugriffskontrolle und Teamzuweisungen. Es wird mit Flask als Web-Framework, Flask-Login für Sitzungsverwaltung, SQLAlchemy für objekt-relationales Mapping (ORM) und Jinja2 für dynamisches Template-Rendering implementiert.
-
-\noindent Das System definiert zwei verschiedene Benutzerrollen:
 \begin{itemize}
-  \item \textbf{Admin/Coach:} Vollzugriff auf benutzerbezogene Operationen. Admins können Benutzerkonten erstellen, bearbeiten und löschen. Ein einzelnes Standardteam kann pro Anwendung über die Admin-Einstellungen ausgewählt werden, das automatisch allen Benutzern zugewiesen wird.
-  \item \textbf{Benutzer/Player:} Eingeschränkter Zugriff. Normale Benutzer können sich anmelden und mit der Anwendung interagieren, dürfen aber nur ihr eigenes Passwort zurücksetzen.
-\end{itemize}
-\noindent Rollenbasierter Zugriff wird über Dekoratoren durchgesetzt. Alle geschützten Routen erfordern die Anmeldung mittels \texttt{@login\_required}, und Admin-Routen sind zusätzlich durch einen benutzerdefinierten \texttt{@admin\_required}-Dekorator eingeschränkt. Das Modul verwendet moderne Hashing-Algorithmen wie \texttt{scrypt} zur sicheren Passwortverarbeitung, sodass keine Passwörter im Klartext gespeichert werden.
-
-\noindent Die Implementierung folgt einer modularen Struktur, die Routing-Logik, Geschäftslogik und Templates trennt, um Wartbarkeit und Erweiterbarkeit zu gewährleisten. So lassen sich Funktionen wie Zwei-Faktor-Authentifizierung, Benutzeraktivitätsverfolgung oder E-Mail-Verifikation zukünftig leicht ergänzen.
-
-\subsection{Authentifizierung und Sitzungsverwaltung}
-
-Die Klasse \texttt{UserController} verwaltet die Routen und die Integration mit Flask-Login. Im Konstruktor wird die Benutzerladefunktion mit Flask-Login verknüpft und die relevanten URLs für Login, Logout und Startseite registriert.\\
-
-Die Methode \texttt{register\_routes} fügt folgende Routen hinzu:
-\begin{itemize}
-  \item \texttt{'/'}: die Startseite (nach dem Login),
-  \item \texttt{'/login'}: akzeptiert GET und POST für Anzeige und Verarbeitung des Login-Formulars,
-  \item \texttt{'/logout'}: meldet den Benutzer ab und löscht die Sitzung.
+  \item \textbf{UserController}: Zuständig für Authentifizierungsprozesse wie Login, Logout sowie die Verwaltung der aktuellen Benutzersitzung. Er prüft Anmeldedaten, authentifiziert Benutzer, leitet je nach Authentifizierungsstatus weiter und sorgt für eine sichere Abmeldung inklusive Sitzungsbereinigung.
+  
+  \item \textbf{UserManagementController}: Dieser Controller verwaltet den Lebenszyklus eines Benutzers im System. Er erlaubt das Anlegen, Bearbeiten, Löschen und Zurücksetzen von Benutzerkonten. Zusätzlich stellt er sicher, dass nur Administratoren Zugriff auf kritische Funktionen erhalten, etwa das Bearbeiten anderer Benutzerkonten oder das Ändern von Rollen.
 \end{itemize}
 
-\noindent Durch die Bündelung der Routenregistrierung in einer Controller-Klasse bleibt der Code modular und übersichtlich.
+\noindent Diese beiden Controller greifen auf ein zentrales Benutzermodell zurück und arbeiten über klar definierte Routen mit der Benutzeroberfläche (HTML-Templates) zusammen. Die Authentifizierung erfolgt mit \texttt{Flask-Login}, während Passwortsicherheit über \texttt{Werkzeug}'s \texttt{generate\_password\_hash()} und \texttt{check\_password\_hash()} gewährleistet wird.
 
-\newpage
-\noindent \textbf{Controller-Setup und Routenregistrierung:} \\
+\subsubsection*{Initiale Routenregistrierung}
+
+Sowohl \texttt{UserController} als auch \texttt{UserManagementController} registrieren ihre Routen beim Start automatisch, um die Lesbarkeit im Hauptprogramm zu erhöhen:
+
 \begin{minted}{python}
-class UserController:
-    def __init__(self, app, login_mgr):
-        self.app = app
-        login_mgr.user_loader(self.load_user)
-        self.register_routes()
+self.app.add_url_rule('/login', view_func=self.login, methods=['GET', 'POST'])
+self.app.add_url_rule('/logout', view_func=self.logout)
+self.app.add_url_rule('/users/<int:user_id>/edit', view_func=self.edit_user, methods=['GET', 'POST'])
+\end{minted}
 
-    def register_routes(self):
-        self.app.add_url_rule('/', view_func=self.index)
-        self.app.add_url_rule('/login', view_func=self.login, methods=['GET', 'POST'])
-        self.app.add_url_rule('/logout', view_func=self.logout)
-\end{minted} 
-\vspace{1em}
-\noindent \textbf{Login-Logik:} \\
+\newpage
+\subsubsection*{Benutzerzustand und automatische Weiterleitungen}
 
-\noindent Die Methode \texttt{login()} verwaltet den Login-Vorgang. Zunächst wird die aktuelle Sitzung gelöscht. Ist der Benutzer bereits angemeldet, erfolgt eine Weiterleitung zur Hauptseite. Bei einem POST-Request werden die Anmeldedaten aus dem Formular geholt, der Benutzer gesucht und das Passwort überprüft. Bei Erfolg wird der Benutzer eingeloggt, andernfalls erscheint eine Fehlermeldung. Bei GET wird das Login-Formular angezeigt.
+Der \texttt{UserController} stellt sicher, dass authentifizierte Benutzer direkt zur Hauptanwendung (\texttt{game\_options}) weitergeleitet werden, während nicht angemeldete Benutzer das Login-Formular sehen:
 
 \begin{minted}{python}
 @staticmethod
-def login():
-    session.clear()
+def index():
     if current_user.is_authenticated:
         return redirect(url_for('game_options'))
-
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = UserModel.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Login erfolgreich!', 'success')
-            return redirect(url_for('game_options'))
-        flash('Ungültige Zugangsdaten', 'danger')
-
     return render_template('auth/login.html')
 \end{minted}
 
-\subsection{Benutzerverwaltung}
+\noindent Dadurch wird ein nahtloses und sicheres Einstiegserlebnis gewährleistet, ohne dass der Benutzer unnötige Seiten aufrufen muss.
 
-Dieser Abschnitt behandelt Admin-Funktionen zur Benutzerverwaltung wie Hinzufügen, Bearbeiten, Löschen und Passwortzurücksetzung. Neue Benutzer erhalten automatisch das aktuell ausgewählte Standardteam. Spieler können dieses Team nicht ändern, aber die verfügbaren Teams einsehen. Nur Admins haben Zugriff auf diese Funktionen. Normale Benutzer dürfen nur ihr eigenes Passwort ändern.
+\subsubsection*{Trennung der Verantwortlichkeiten}
+
+Die Trennung der Verantwortlichkeiten erlaubt es, Authentifizierungslogik (Session Handling, Redirects) vom eigentlichen Benutzer-Management (CRUD-Operationen, Rollenprüfung) sauber zu trennen. Diese modulare Architektur macht das System leicht wartbar und testbar. Änderungen an z.B. der Authentifizierung müssen nicht den Code zur Benutzerbearbeitung beeinflussen.
+
+\subsubsection*{Rollenkontrolle mittels Decorator}
+
+Für sicherheitskritische Funktionen innerhalb des \texttt{UserManagementController} wird ein zusätzlicher Decorator \texttt{@admin\_required} verwendet, der prüft, ob der aufrufende Benutzer die Administratorrolle besitzt:
+
+\begin{minted}{python}
+def admin_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            abort(403)
+        return func(*args, **kwargs)
+    return decorated_view
+\end{minted}
+
+\noindent Damit wird sichergestellt, dass normale Benutzer nicht auf geschützte Funktionen wie das Bearbeiten oder Löschen anderer Benutzer zugreifen können.
+
+\subsubsection*{Zentrale Sitzungsverwaltung und Fehlerbehandlung}
+
+Im gesamten Modul wird auf zentrale Sitzungsverwaltung (mittels \verb|session.clear()|) und strukturierte Fehlerbehandlung (z.B. \verb|abort(403)| bei unberechtigtem Zugriff) geachtet.
+
+
+\subsection{Authentifizierung}
+
+Die Authentifizierung im System erfolgt durch das \texttt{Flask-Login}-Framework, welches eine einfache Benutzerverwaltung und Sitzungssteuerung für Flask-Anwendungen ermöglicht. Benutzer werden anhand ihres Benutzernamens und des verschlüsselten Passworts überprüft und erhalten bei erfolgreicher Anmeldung Zugriff auf geschützte Bereiche der Anwendung.
+
+\subsubsection*{Login-Prozess}
+
+Beim Aufruf der Login-Seite wird überprüft, ob der Benutzer bereits angemeldet ist. Falls ja, wird er direkt zur Hauptseite der Anwendung weitergeleitet:
+
+\begin{minted}{python}
+if current_user.is_authenticated:
+    return redirect(url_for('game_options'))
+\end{minted}
+
+\noindent Ist der Benutzer nicht angemeldet, wird das Login-Formular angezeigt. Beim Absenden des Formulars werden die eingegebenen Zugangsdaten überprüft:
+
+
+\begin{minted}{python}
+username = request.form.get('username')
+password = request.form.get('password')
+user = UserModel.query.filter_by(username=username).first()
+
+if user and check_password_hash(user.password, password):
+    login_user(user)
+    flash('Login successful!', 'success')
+    return redirect(url_for('game_options'))
+\end{minted}
+
+\noindent Dabei wird das eingegebene Passwort mit dem in der Datenbank gespeicherten, gehashten Passwort mithilfe der Funktion \texttt{check\_password\_hash()} verglichen. Nur bei einem positiven Abgleich wird der Benutzer authentifiziert und die Sitzung wird durch \texttt{login\_user(user)} gestartet. Erfolgt keine Übereinstimmung, wird eine Fehlermeldung angezeigt.
+
+\subsubsection*{Sitzung und Benutzerstatus}
+
+Nach erfolgreicher Authentifizierung steht der Benutzer über die Variable \texttt{current\_user} global im gesamten System zur Verfügung. Diese wird durch \texttt{Flask-Login} automatisch befüllt, sobald eine gültige Sitzung erkannt wird.
+
+\noindent Der \texttt{UserController} registriert außerdem die benötigte \texttt{user\_loader}-Funktion zur Wiederherstellung des Benutzers aus der Session:
+
+
+\begin{minted}{python}
+@login_manager.user_loader
+def load_user(user_id):
+    return UserModel.query.get(int(user_id))
+\end{minted}
+
+\noindent Diese Funktion erlaubt es, den Benutzer anhand seiner gespeicherten ID aus der Datenbank zu laden und die Session bei jedem Request korrekt zu verknüpfen.
+\newpage
+\subsubsection*{Logout-Prozess}
+
+Beim Abmelden wird die aktuelle Sitzung gelöscht, der Benutzer aus dem Session-Kontext entfernt und zur Login-Seite zurückgeleitet:
+
+\noindent
+\begin{minted}{python}
+logout_user()
+flash('who are you ?', 'success')
+session.clear()
+return redirect(url_for('login'))
+\end{minted}
+
+\noindent Die zusätzliche Verwendung von \texttt{session.clear()} stellt sicher, dass keine Rückstände in der Session verbleiben, die nachträglich ausgenutzt werden könnten. Ein Flash-Message-Hinweis gibt dem Benutzer eine visuelle Bestätigung über die erfolgreiche Abmeldung.
+
+\subsubsection*{Zugriffsschutz durch \texttt{@login\_required}}
+
+Alle Funktionen im System, die nur von angemeldeten Benutzern aufgerufen werden dürfen, sind mit dem Decorator \texttt{@login\_required} versehen:
+
+\noindent
+\begin{minted}{python}
+@login_required
+def user_list(self):
+    users = UserModel.query.all()
+    return render_template('user/user_list.html', users=users)
+\end{minted}
+
+\noindent Durch diesen Mechanismus wird sichergestellt, dass anonyme Benutzer keine geschützten Seiten aufrufen können. Beim Versuch eines unautorisierten Zugriffs wird automatisch auf die Login-Seite umgeleitet.
 
 \subsection{Rollenbasierte Fähigkeiten}
 
-Die folgende Tabelle fasst die Möglichkeiten je nach Rolle zusammen:
+Das System unterscheidet zwei Rollen für Benutzerkonten: \texttt{user} und \texttt{admin}. Diese Rollen definieren, welche Funktionen einem Benutzer innerhalb der Anwendung zur Verfügung stehen, und bilden die Grundlage für die Zugriffskontrolle auf Systemebene.
 
-\begin{table}[h!]
-\centering
-\renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\textwidth}{|X|c|c|}
-\hline
-\textbf{Funktion} & \textbf{Admin} & \textbf{Benutzer} \\
-\hline
-Alle Benutzer anzeigen       & Ja & Nein \\
-Benutzer hinzufügen/löschen  & Ja & Nein \\
-Benutzerdaten bearbeiten     & Ja & Nein \\
-Passwort anderer zurücksetzen & Ja & Nein \\
-Eigenes Passwort ändern      & Ja & Ja \\
-\hline
-\end{tabularx}
-\caption{Rechte-Matrix für Admin und Benutzer}
-\end{table}
+\subsubsection*{Administratorrechte}
 
-\noindent Diese Rechte werden mit \texttt{@login\_required} und dem benutzerdefinierten \texttt{@admin\_required}-Dekorator durchgesetzt.
+Benutzer mit der Rolle \texttt{admin} haben vollständigen Zugriff auf alle Verwaltungsfunktionen der Anwendung. Sie dürfen neue Benutzer anlegen, bestehende Benutzer bearbeiten oder löschen, Rollen ändern und Passwörter anderer Benutzer zurücksetzen. Darüber hinaus haben sie Zugriff auf spezielle Seiten zur Benutzerübersicht und können damit die Struktur der Benutzerbasis kontrollieren und anpassen.
 
-\subsection*{Routen für Benutzeraktionen}
+\subsubsection*{Rechte normaler Benutzer}
 
-Alle benutzerbezogenen Routen sind in der Klasse \texttt{UserManagementController} organisiert. Jede Route übernimmt eine bestimmte Aktion wie Anzeige, Erstellung, Bearbeitung oder Löschung von Benutzern.
+Normale Benutzer mit der Rolle \texttt{user} haben eingeschränkten Zugriff. Sie können die Benutzerliste einsehen, um Informationen zu anderen registrierten Benutzern zu erhalten. Darüber hinaus dürfen sie ihr eigenes Passwort ändern. Andere Funktionen wie das Bearbeiten oder Löschen von Benutzern, das Zuweisen von Rollen oder das Ändern des eigenen Benutzernamens stehen ihnen nicht zur Verfügung.
 
-\begin{minted}{python}
-class UserManagementController:
-    def register_routes(self):
-        self.app.add_url_rule('/users', view_func=self.user_list)
-        self.app.add_url_rule('/users/add', view_func=self.add_user, methods=['GET', 'POST'])
-        self.app.add_url_rule('/users/<int:id>/edit', view_func=self.edit_user, methods=['GET', 'POST'])
-        self.app.add_url_rule('/users/<int:id>/delete', view_func=self.delete_user, methods=['POST'])
-        self.app.add_url_rule('/users/<int:id>/reset-password', view_func=self.reset_password, methods=['GET', 'POST'])
-\end{minted}
+\subsubsection*{Technische Umsetzung der Zugriffskontrolle}
 
-\subsection*{Benutzer hinzufügen}
+Zur Durchsetzung der rollenbasierten Einschränkungen wird serverseitig geprüft, ob der aktuell angemeldete Benutzer über ausreichende Rechte verfügt. Dies geschieht über gezielte Rollenabfragen in den Controllern. Bei unberechtigtem Zugriff wird der Zugriff verweigert und eine Fehlermeldung angezeigt. In der Benutzeroberfläche werden bestimmte Aktionen und Schaltflächen zusätzlich dynamisch ausgeblendet, um eine intuitive Benutzererfahrung zu gewährleisten.
 
-Admins können neue Benutzer über \texttt{/users/add} hinzufügen. Bei GET wird das Formular angezeigt, bei POST werden die Daten verarbeitet:
-\begin{itemize}
-  \item Benutzername, Passwort und Rolle werden übernommen,
-  \item es wird geprüft, ob der Benutzername existiert,
-  \item das Passwort wird mit \texttt{scrypt} gehasht,
-  \item ein neuer Benutzer wird gespeichert und weitergeleitet.
-\end{itemize}
+\noindent Ein Beispiel für eine typische Rechteprüfung ist die Absicherung sensibler Funktionen durch eine explizite Abfrage der Rolle. Nur wenn die Rolle des angemeldeten Benutzers als „admin“ erkannt wird, darf die entsprechende Aktion ausgeführt werden.
 
-\begin{minted}{python}
-@admin_required
-def add_user(self):
-    if request.method == 'POST':
-        uname = request.form['username']
-        pwd = request.form['password']
-        role = request.form.get('role', 'user')
+\subsection{Benutzerverwaltung}
 
-        if UserModel.query.filter_by(username=uname).first():
-            flash('Benutzername existiert bereits', 'danger')
-            return redirect(url_for('add_user'))
+Die Benutzerverwaltung ist ein zentraler Bestandteil des Systems und ermöglicht es Administratoren, Benutzerkonten effizient zu steuern. Dies umfasst das Erstellen, Bearbeiten, Löschen sowie das Zurücksetzen von Passwörtern. Die Implementierung erfolgt im \texttt{UserManagementController}, der über eigene Routen in der Webanwendung eingebunden ist.
 
-        hashed = generate_password_hash(pwd, method='scrypt')
-        user = UserModel(username=uname, password=hashed, role=role)
-        db.session.add(user)
-        db.session.commit()
-        flash('Benutzer hinzugefügt', 'success')
-        return redirect(url_for('user_list'))
+\subsubsection*{Benutzer anlegen}
 
-    return render_template('user/user_add.html')
-\end{minted}
+Administratoren können neue Benutzer über ein Formular hinzufügen. Dabei werden Benutzername, Passwort und Rolle übermittelt. Das Passwort wird nicht im Klartext gespeichert, sondern sofort mittels \texttt{scrypt} gehasht, bevor es in die Datenbank geschrieben wird. Vor dem Speichern erfolgt außerdem eine Prüfung auf Eindeutigkeit des Benutzernamens.
 
-\subsection*{Benutzer bearbeiten}
+\subsubsection*{Benutzer bearbeiten}
 
-Die Route \texttt{/users/<id>/edit} ermöglicht Admins das Ändern von Benutzernamen und Rollen. Die letzte Admin-Rolle im System darf dabei nicht entfernt werden.
+Bei der Bearbeitung von Benutzern können Administratoren den Benutzernamen und die Rolle eines bestehenden Benutzers anpassen. Zusätzlich wird verhindert, dass der letzte verbleibende Administrator seine eigenen Adminrechte verliert, um einen ungewollten Kontrollverlust über das System zu vermeiden.
 
-\subsection*{Benutzer löschen}
+\subsubsection*{Benutzer löschen}
 
-Die Route \texttt{/users/<id>/delete} erlaubt das Löschen eines Benutzers über POST, um versehentliche Klicks zu vermeiden.
+Benutzerkonten können vollständig entfernt werden. Der Vorgang ist dauerhaft und löscht den Benutzer aus der Datenbank. Vor dem Löschen wird überprüft, ob der Benutzer existiert. Weitere Einschränkungen bezüglich der Löschberechtigung erfolgen durch die Rollenlogik im System, die separat behandelt wird.
 
-\subsection*{Passwörter zurücksetzen}
+\subsubsection*{Passwort zurücksetzen}
 
-Admins können über \texttt{/users/<id>/reset-password} jedes Passwort ändern. Das Formular wird bei GET angezeigt und bei POST mit neuem Hash gespeichert.
+Eine zusätzliche Funktion erlaubt es, das Passwort eines Benutzers zurückzusetzen. Diese Aktion steht Administratoren zur Verfügung, aber auch normale Benutzer können ihr eigenes Passwort über eine separate Ansicht aktualisieren. Das neue Passwort wird ebenfalls gehasht in der Datenbank gespeichert.
 
-\subsection*{Admin-Schutzprüfung}
-
-Beim Bearbeiten wird sichergestellt, dass der letzte Admin nicht zur Rolle \texttt{user} geändert werden kann:
-
-\begin{minted}{python}
-if user.role == 'admin' and admin_count == 1 and new_role != 'admin':
-    flash('Du bist der einzige Admin.', 'danger')
-    return redirect(url_for('edit_user', user_id=user.id))
-\end{minted}
-\newpage
-\subsection{Modellstruktur}
-
-Die Klasse \texttt{UserModel} definiert die Benutzerdatenbankstruktur. Sie erweitert sowohl SQLAlchemy's \texttt{db.Model} als auch Flask-Login’s \texttt{UserMixin}.
-
-\begin{itemize}
-  \item \texttt{id}: Primärschlüssel.
-  \item \texttt{username}: Eindeutiger Login-Name.
-  \item \texttt{password}: Gehashter Passwort-String.
-  \item \texttt{role}: Rolle des Benutzers, Standard ist \texttt{'user'}.
-  \item \texttt{team\_id}: Fremdschlüssel zur Team-Tabelle.
-  \item \texttt{team}: Verknüpfung zum \texttt{TeamModel}.
-\end{itemize}
-
-\begin{minted}{python}
-class UserModel(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True) 
-    username = db.Column(db.String(80), unique=True, nullable=False) 
-    password = db.Column(db.String(120), nullable=False)  
-    role = db.Column(db.String(10), default='user') 
-    team_id = db.Column(db.Integer, db.ForeignKey('teams.id')) 
-    team = db.relationship('TeamModel', backref='users') 
-\end{minted}
 
 \subsection{Passwortsicherheit}
 
-Passwörter werden niemals im Klartext gespeichert, sondern mit dem Algorithmus \texttt{scrypt} sicher gehasht. 
+Ein zentrales Element der Benutzersicherheit ist der vertrauliche und manipulationssichere Umgang mit Passwörtern. Im vorliegenden System werden Passwörter niemals im Klartext gespeichert oder übertragen. Stattdessen kommt eine sichere Hashfunktion zur Anwendung, um die Passwörter vor unbefugtem Zugriff zu schützen.
 
-\noindent \textbf{Beim Registrieren:}
+\noindent Beim Erstellen oder Zurücksetzen eines Benutzerkontos wird das eingegebene Passwort durch die Funktion \texttt{generate\_password\_hash()} aus dem Flask-Werkzeug-Modul in einen nicht umkehrbaren Hashwert umgewandelt. Dabei wird bewusst der moderne Algorithmus \texttt{scrypt} verwendet, der sich durch besondere Widerstandsfähigkeit gegen Brute-Force- und Hardware-basierte Angriffe auszeichnet.
+
+
 \begin{minted}{python}
-from werkzeug.security import generate_password_hash
-hashed = generate_password_hash(password, method='scrypt')
+hashed_password = generate_password_hash(password, method='scrypt')
 \end{minted}
 
-\noindent \textbf{Beim Login:}
+\noindent Dieser Hashwert wird anschließend in der Datenbank gespeichert und dient beim Login als Referenz für den Passwortvergleich. Wenn sich ein Benutzer anmeldet, wird das eingegebene Passwort nicht direkt mit dem gespeicherten Hash verglichen. Stattdessen wird geprüft, ob das eingegebene Passwort den gleichen Hash ergibt. Dies geschieht über die Funktion \texttt{check\_password\_hash()}.
+
+\noindent Ein typischer Ablauf beim Anlegen eines neuen Benutzers sieht dabei wie folgt aus:
+
 \begin{minted}{python}
-from werkzeug.security import check_password_hash
-if check_password_hash(user.password, password):
-    login_user(user)
+user = UserModel(username=username, password=hashed_password, role=role)
+db.session.add(user)
+db.session.commit()
 \end{minted}
 
-\noindent Dieser Mechanismus schützt Benutzerkonten auch bei einem Datenbank-Leak vor der Entschlüsselung durch Angreifer.
+\noindent In dieser Struktur wird das bereits gehashte Passwort dem neuen Benutzerobjekt zugewiesen, bevor es dauerhaft in der Datenbank gespeichert wird.
 
+\noindent Da weder beim Speichern noch beim Prüfen Klartext-Passwörter verarbeitet werden, wird ein hohes Maß an Sicherheit gewährleistet. Selbst im Falle eines Datenbanklecks wären die Passwörter durch die Einweg-Hashfunktion geschützt und nicht direkt rekonstruierbar.
+
+\noindent Darüber hinaus erfolgt jeder Passwortwechsel sofort in verschlüsselter Form. Benutzer können ihr Passwort nur über ein sicheres Formular ändern, das durch Zugriffslogik geschützt ist. Eine Änderung des Passworts durch Dritte ist nur Administratoren vorbehalten. Diese Maßnahmen stellen sicher, dass sowohl bei der Anmeldung als auch im laufenden Betrieb keine sicherheitsrelevanten Schwachstellen im Umgang mit Passwörtern bestehen.
+
+
+\section{Team Creation}
+
+\subsection{Modulübersicht}
+
+
+Das Modul „Team Creation“ erlaubt es Administratoren, individuelle Teams mit eigenem Wappen (Shield) anzulegen. Die Erstellung erfolgt wahlweise über einen visuellen Schritt-für-Schritt-Baukasten oder durch direkten Upload eines eigenen Logos. Beide Wege führen zu einem einheitlichen Datensatz mit Name, Farben und SVG-Grafik. Der Zugang zu diesem Modul ist ausschließlich Benutzern mit Administratorrechten vorbehalten.
 
 \newpage
-\section{Team-Erstellung}
-
-Das Modul zur Team-Erstellung bietet zwei flexible Methoden zur Erstellung eines neuen Teams mit Wappenschild: einen schrittweisen visuellen Builder und eine Direkt-Upload-Oberfläche. Beide Abläufe sind vollständig mit dem Backend und der Datenbank integriert und stellen ein konsistentes Team-Modell in der gesamten Anwendung sicher.
-
-\subsection{Überblick}
-
-Benutzer können Teams auf zwei Arten erstellen:
-\begin{itemize}
-    \item Über den \textbf{Individuellen Schild-Builder}, eine mehrstufige Oberfläche zur Konfiguration von Form, Muster, Farben und Symbol.
-    \item Über den \textbf{Upload-Flow}, bei dem ein Benutzer ein transparentes PNG oder SVG hochlädt, und das System die Farben automatisch erkennt.
-\end{itemize}
-
-Das Endergebnis beider Abläufe ist ein generiertes SVG, das auf der Festplatte gespeichert wird, sowie ein neuer Eintrag in der Datenbank mit Metadaten zum Team.
-
-\subsection{Erstellungs-Abläufe}
-
-\subsubsection*{Ablauf 1: Individueller Schild-Builder}
-
-Diese Methode führt den Benutzer durch 7 Schritte:
-
-\begin{enumerate}
-    \item \textbf{Form auswählen:} Auswahl einer Schildumrandung (SVG-Pfad).
-    \item \textbf{Muster wählen:} Dekoratives Füllmuster aus sechs voreingestellten Typen auswählen.
-    \item \textbf{Farben setzen:} Primär- und Sekundärfarbe mit Farbwählern wählen.
-    \item \textbf{Muster anpassen:} Musterfüllung innerhalb der Form verschieben und skalieren.
-    \item \textbf{Symbolauswahl:} Schildsymbol (SVG oder transparentes PNG) auswählen oder hochladen.
-    \item \textbf{Symbol anpassen:} Symbol im Schild positionieren und skalieren.
-    \item \textbf{Name & Absenden:} Teamnamen angeben und Formular absenden.
-\end{enumerate}
-\noindent Am Ende des Prozesses wird ein vollständiges SVG serialisiert und das Formular sendet alle Konfigurationsdaten an die POST-Route \texttt{/team/create}.
-
-\begin{minted}{python}
-@team_bp.route('/create', methods=['GET', 'POST'])
-def create_team():
-    ...
-    if request.method == 'POST':
-        name = request.form.get('name')
-        primary_color = request.form.get('primary_color')
-        secondary_color = request.form.get('secondary_color')
-        icon_file = request.form.get('icon_filename')
-        final_svg = request.form.get('final_svg')
-        ...
-        # Endgültige SVG-Datei speichern
-        with open(svg_path, "w", encoding="utf-8") as f:
-            f.write(final_svg)
-
-        icon_path = url_for('static', filename=f'user_created_icons/{safe_name}/team_icon.svg')
-        new_team = TeamModel(
-            name=name,
-            icon=icon_path,
-            primary_color=primary_color,
-            secondary_color=secondary_color
-        )
-        db.session.add(new_team)
-        db.session.commit()
-\end{minted}
-
-\subsubsection*{Ablauf 2: Teambild-Upload (mit Farberkennung)}
-
-Diese alternative Methode erlaubt es Benutzern, ein transparentes PNG oder SVG hochzuladen, anstatt den Schritt-für-Schritt-Builder zu verwenden. Sie ist über die Route \texttt{/upload\_icon} erreichbar und führt durch drei Schritte:
-
-\begin{enumerate}
-    \item \textbf{Bild hochladen:} Der Benutzer lädt eine SVG- oder transparente PNG-Datei hoch.
-    \item \textbf{Automatische Farberkennung:} Das System analysiert das Bild und extrahiert zwei dominierende Farben.
-    \item \textbf{Farben anpassen & benennen:} Die erkannten Farben werden vorausgefüllt und können vom Benutzer überschrieben werden, bevor abgesendet wird.
-\end{enumerate}
-
-\paragraph{Farberkennungs-Logik:}
-Die Farberkennung erfolgt serverseitig mithilfe der \texttt{Pillow (PIL)}-Bibliothek. Nach dem Upload:
+\subsubsection*{Funktionsüberblick}
 
 \begin{itemize}
-    \item Das Bild wird in RGBA konvertiert und auf 64x64 Pixel verkleinert.
-    \item Nur Pixel mit ausreichend Deckkraft (Alpha) werden berücksichtigt.
-    \item RGB-Werte werden mit \texttt{collections.Counter} gezählt.
-    \item Die zwei häufigsten RGB-Farben werden gewählt und ins Hex-Format konvertiert.
+  \item Zwei Wege zur Teamerstellung:
+  \begin{itemize}
+    \item Schrittweise Gestaltung per Baukasten (Form, Muster, Farbe, Icon)
+    \item Direkter Upload eines eigenen Icons (PNG oder SVG)
+  \end{itemize}
+  \item Automatische Extraktion der dominanten Farben bei Upload
+  \item Live-Vorschau der entstehenden SVG
+  \item Serverseitige Speicherung von SVG-Datei und optionalem Icon
+  \item Einfache Erweiterbarkeit durch neue Icons oder Formen
 \end{itemize}
 
-\begin{minted}{python}
-def extract_dominant_colors(file_storage):
-    img = Image.open(file_storage.stream).convert("RGBA")
-    img = img.resize((64, 64))
-    pixels = [pixel for pixel in img.getdata() if pixel[3] > 0]
-    rgb_pixels = [(r, g, b) for r, g, b, _ in pixels]
-    most_common = Counter(rgb_pixels).most_common(2)
-    hex_colors = [f"#{r:02x}{g:02x}{b:02x}" for r, g, b in [c[0] for c in most_common]]
-    ...
-    return hex_colors[0], hex_colors[1]
-\end{minted}
+\subsection{Modell: TeamModel}
 
-\paragraph{Fallback-Verhalten:}
-Wenn das hochgeladene Bild:
-\begin{itemize}
-    \item \textbf{vollständig transparent} ist: werden \texttt{\#000000} und \texttt{\#ffffff} verwendet.
-    \item \textbf{einfärbig} ist: wird die zweite Farbe standardmäßig auf \texttt{\#ffffff} gesetzt.
-\end{itemize}
-
-\paragraph{Frontend-Integration:}
-Im Frontend wird eine Live-Vorschau im SVG-Element dargestellt. Benutzer können die automatisch erkannten Farben mit \texttt{iro.js} Farbwählern anpassen und anschließend das Team benennen. Das finale Design wird als vollständiges SVG serialisiert und über POST übertragen.
-
-\paragraph{Endgültige Übertragung:}
-Folgende Felder werden beim Absenden an den Server übergeben:
-
-\begin{itemize}
-    \item \texttt{name} : Teamname (auf Einzigartigkeit geprüft)
-    \item \texttt{final\_svg} : generiertes Design
-    \item \texttt{primary\_color}, \texttt{secondary\_color} : aus Farbwähler oder Erkennung
-    \item \texttt{icon} : hochgeladene Datei
-\end{itemize}
-
-\noindent Diese Daten werden gespeichert und im \texttt{TeamModel} registriert – identisch zum Builder-Ablauf. Der Upload-Flow bietet eine schnelle und benutzerfreundliche Möglichkeit, individuelle Designs ohne Schritt-für-Schritt-Konfiguration zu integrieren.
-
-\subsection{Team-Modell}
-
-Das Schema \texttt{TeamModel} speichert Symbolpfad, Name und Farben jedes Teams. Diese Struktur unterstützt die Benutzerzuweisung und spätere teambezogene Logik.
+Das zugrundeliegende Datenmodell für Teams wird durch die Klasse \texttt{TeamModel} dargestellt. Es definiert die Struktur der Team-Datenbanktabelle und enthält alle relevanten Informationen, die zur Darstellung und Verwaltung eines Teams notwendig sind – darunter Teamname, Farbwerte und das erzeugte SVG-Icon. Die folgende Definition zeigt die genaue Modellstruktur:
 
 \begin{minted}{python}
 class TeamModel(db.Model):
     __tablename__ = 'teams'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
     icon = db.Column(db.String(300), nullable=False)
@@ -374,43 +284,113 @@ class TeamModel(db.Model):
     secondary_color = db.Column(db.String(20), nullable=False)
 \end{minted}
 
-\subsection{Teamauflistung und -löschung}
+\noindent Jeder Eintrag enthält Name, zwei Farben und den Pfad zur erzeugten SVG-Grafik. Der Pfad verweist auf eine Datei im Ordner \texttt{/static/user\_created\_icons/<Teamname>/team\_icon.svg}.
 
-Admins können alle erstellten Teams und zugehörige Mitglieder unter \texttt{/team/list} einsehen. Für jedes Team werden angezeigt:
+\subsection{Routenübersicht}
+
+Das Teammodul stellt mehrere HTTP-Routen zur Verfügung, über die die Erstellung, Anzeige und Verwaltung von Teams gesteuert wird. Jede Route übernimmt eine spezifische Aufgabe im Gesamtprozess und ist entsprechend abgesichert, sodass nur autorisierte Benutzer (z.B. Administratoren) auf kritische Funktionen wie das Löschen oder Anlegen von Teams zugreifen können:
 
 \begin{itemize}
-    \item Teamname
-    \item Farb-Badges für Primär- und Sekundärfarbe
-    \item Zugeordnete Mitglieder
-    \item Lösch-Button (nur für Admins, mit Bestätigung)
+  \item \textbf{\texttt{/team/choice}} – Auswahlseite: Nutzer entscheidet sich zwischen Builder oder Upload
+  \item \textbf{\texttt{/team/create}} – Startseite des Schritt-für-Schritt-Builders
+  \item \textbf{\texttt{/team/upload\_icon}} – Upload-Seite für eigenes Logo
+  \item \textbf{\texttt{/team/list}} – Zeigt alle existierenden Teams
+  \item \textbf{\texttt{/team/delete/<id>}} – Löscht ein Team (nach Validierung)
 \end{itemize}
 
-\noindent Wenn einem Team Benutzer zugewiesen sind, wird die Löschung blockiert und eine Flash-Nachricht angezeigt.
+
+\subsection{Team-Erstellung: Zwei Wege}
+
+Nur Administratoren haben Zugriff auf die Team-Erstellungsfunktionalität. Sie können neue Teams auf zwei unterschiedliche Arten anlegen: entweder über einen grafischen Wappen-Baukasten (Shield Builder) oder durch den direkten Upload eines eigenen Icons. Beide Varianten führen zur Erstellung eines standardisierten Team-Eintrags mit Name, Farbcodes und einem SVG-basierten Icon. Der zugrunde liegende Code verarbeitet die Eingaben serverseitig, speichert das Ergebnis im Dateisystem und legt einen neuen Eintrag in der Datenbank an.
+
+\subsubsection*{1. Wappen-Baukasten (Shield Builder)}
+
+Der Benutzer durchläuft folgende Schritte:
+
+\begin{enumerate}
+  \item \textbf{Form auswählen}: SVG-Datei einer Wappenform
+  \item \textbf{Muster auswählen}: Sechs vordefinierte Füllmuster (Pattern)
+  \item \textbf{Farben definieren}: Zwei Farben via Color Picker (Iro.js)
+  \item \textbf{Muster anpassen}: Zoom, Position per Drag \& Slider
+  \item \textbf{Icon auswählen}: Aus Katalog oder eigener Upload
+  \item \textbf{Icon anpassen}: Größe und Positionierung
+  \item \textbf{Teamname eingeben}: Pflichtfeld
+\end{enumerate}
+
+\noindent Die Vorschau basiert auf einem \texttt{<svg>}-Element mit:
+\begin{itemize}
+  \item \textbf{ClipPath}: bestimmt die Wappenform
+  \item \textbf{Pattern-Füllung}: SVG-Muster in ausgewählter Farbe und Position
+  \item \textbf{Icon}: eingebettet als PNG oder SVG im Vordergrund
+\end{itemize}
+
+\subsubsection*{Formularverarbeitung}
+
+Nach Klick auf „Speichern“ wird das finale SVG serialisiert und via Hidden Field (\texttt{final\_svg}) an den Server gesendet. Optional wird das hochgeladene Icon gespeichert. Die Daten werden als \texttt{TeamModel}-Instanz in der Datenbank abgelegt:
 
 \begin{minted}{python}
-@team_bp.route('/delete/<int:team_id>', methods=['POST'])
-def delete_team(team_id):
-    team = TeamModel.query.get_or_404(team_id)
-    users_assigned = UserModel.query.filter_by(team_id=team_id).all()
-    if users_assigned:
-        flash('Team kann nicht gelöscht werden, solange Benutzer zugewiesen sind.', 'danger')
-        return redirect(url_for('team.list_all_teams'))
-    ...
-    db.session.delete(team)
-    db.session.commit()
+new_team = TeamModel(
+    name=name,
+    icon=icon_path,
+    primary_color=primary_color,
+    secondary_color=secondary_color
+)
 \end{minted}
 
-\subsection{Sicherheit und Validierung}
+\subsubsection*{2. Direkter Icon-Upload (PNG oder SVG)}
+
+Alternativ kann der Benutzer direkt ein Icon hochladen:
+
+\begin{enumerate}
+  \item \textbf{Datei hochladen}: PNG (mit Transparenz) oder SVG
+  \item \textbf{Farben werden automatisch erkannt}: Farbdominanzanalyse per PIL (Python Imaging Library)
+  \item \textbf{Farben bestätigen/anpassen}: Picker für Feinjustierung
+  \item \textbf{Teamname eingeben}
+\end{enumerate}
+
+\subsubsection*{Farbanalyse (Backend)}
+
+Bei Upload eines transparenten PNGs oder SVG wird serverseitig die dominanten Farben extrahiert:
+
+\begin{minted}{python}
+img = Image.open(file.stream).convert("RGBA")
+pixels = [p for p in img.getdata() if p[3] > 0]
+most_common = Counter(rgb_pixels).most_common(2)
+hex_colors = [f"#{r:02x}{g:02x}{b:02x}" for r, g, b in [c[0] for c in most_common]]
+\end{minted}
+
+\noindent Die Farben werden anschließend im Formular angezeigt und können vom Benutzer überschrieben werden. Das SVG wird ähnlich wie im Builder erzeugt, allerdings ohne Wappenform, sondern auf dem gesamten Zeichenbereich.
+
+
+\subsection{SVG-Generierung und Speicherung}
+
+Unabhängig davon, ob ein Team per Baukasten oder per Direkt-Upload erstellt wird, resultiert der Vorgang stets in einem vollständigen \texttt{<svg>}-Bild, das serverseitig persistiert wird. Dieses SVG bildet das Herzstück der Teamdarstellung und enthält alle gestalterischen Informationen.
 
 \begin{itemize}
-    \item Teamnamen müssen eindeutig sein – Duplikate werden mit Flash-Meldung zurückgewiesen.
-    \item Uploads werden mit \texttt{secure\_filename()} gesäubert, um Dateisystemprobleme zu vermeiden.
-    \item Nur SVG- und PNG-Dateien sind für Icons erlaubt.
-    \item Erforderliche Felder (Name, Farben, SVG) werden vor dem Speichern überprüft.
-    \item Teams können nicht gelöscht werden, wenn ihnen noch Benutzer zugewiesen sind.
+  \item Das SVG umfasst die gesamte Gestaltung: gewählte Wappenform (\texttt{<path>}), Muster (\texttt{<pattern>}), Farbangaben, sowie das Icon als eingebettetes \texttt{<image>}-Element.
+  \item Es wird dynamisch auf der Clientseite generiert und anschließend als Zeichenkette im versteckten Formularfeld \texttt{final\_svg} eingebunden.
+  \item Auf Serverseite wird das SVG validiert und in einem benutzerspezifischen Verzeichnis unter dem Namen \texttt{team\_icon.svg} gespeichert.
+  \item Zusätzliche \texttt{<clipPath>} und \texttt{<mask>}-Elemente sorgen für exakte Zuschnitte und klare Kanten innerhalb des Wappens.
+  \item Die Dateiablage erfolgt im Ordnerpfad \texttt{/static/user\_created\_icons/<Teamname>/}.
 \end{itemize}
 
-\noindent Diese Prüfungen garantieren Datenintegrität und verhindern versehentlichen Verlust oder Dateifehler.
+\noindent Das so erzeugte SVG dient anschließend in der gesamten Anwendung als grafische Repräsentation des Teams, z.B. in Spielstatistiken, Listen oder Exportfunktionen.
+
+\subsection{Validierung und Fehlermeldungen}
+
+Das Formular zur Team-Erstellung unterliegt strikten Validierungsregeln, um die Konsistenz der Datenbankeinträge sicherzustellen. Jede Eingabe wird sowohl client- als auch serverseitig überprüft.
+
+\begin{itemize}
+  \item Alle Felder sind Pflichtfelder: Teamname, Primär- und Sekundärfarbe sowie das generierte oder hochgeladene SVG.
+  \item Der Teamname muss eindeutig sein. Die entsprechende Spalte in der Datenbank ist mit \texttt{unique=True} versehen, um doppelte Einträge zu verhindern.
+  \item Fehlerhafte oder unvollständige Eingaben führen zur Anzeige von Hinweisen mittels \texttt{flash()}-Nachrichten direkt in der Benutzeroberfläche.
+  \item Falls beim Speichern neue Verzeichnisse erforderlich sind, z.B. für hochgeladene Icons, werden diese automatisch erzeugt (mittels \texttt{os.makedirs(..., exist\_ok=True)}).
+  \item Zusätzlich werden Standardwerte validiert, etwa zulässige Bildformate oder die Existenz des übertragenen SVG-Inhalts.
+\end{itemize}
+
+\noindent Durch diese Maßnahmen wird sichergestellt, dass nur vollständige, valide und eindeutig benannte Teams in das System aufgenommen werden.
+
+
 
 
 \end{document}
