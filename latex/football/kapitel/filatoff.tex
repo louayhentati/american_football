@@ -1,0 +1,280 @@
+\subsection{Scrum}
+Heutzutage ist es unabdingbar, ein großes, iteratives und kollaboratives Softwareprojekt ohne eine agile Methode zu entwickeln. Daher wurde das Projekt mit der agilen Methode Scrum mit dem Tool Jira entwickelt. Die Scrum-Methode ist ein Agile-Framework, das Teams bei der Zusammenarbeit unterstützt und ihnen hilft, einzelne große Probleme in kleine Stücke zu spalten und diese schrittweise zu entwickeln und kontinuierlich zu verbessern.
+
+\noindent
+\\
+Ein Team besteht aus einem Product Owner, einem Scrum Master und dem Entwicklungsteam. In diesem Abschnitt handelt es sich um den Scrum Master und dessen Hauptaufgaben. Und wie diese im Projekt umgesetzt wurden.
+
+\subsubsection{Sprint-Planungsmeetings}
+Die Planungsmeetings wurden ausschließlich mittwochs mit dem Team in der Hochschule gehalten. Es wurde kollaborativ entschieden, geleitet vom Product Owner, welche Elemente aus dem Backlog für den nächsten Sprint geholt und priorisiert werden. Die Einschätzung des Schwierigkeitsgrades erfolgte mit der Hilfe vom Planning Poker, um Story Points für einzelne Elemente zu vergeben.
+
+\subsubsection{Standup-Meetings}
+Zusätzlich zum Planungsmeeting wurde wöchentlich ein Standup-Meeting am Wochenende gehalten. Es wurden die Fragen geklärt: Woran hat jeder Einzelne gearbeitet? Woran werden sie noch arbeiten? Und gibt es bestehende Probleme oder Konflikte zu lösen? Außerdem wurden im Anschluss daran, die bereits fertigen Branches mit dem Main-Branch gemergt und so die Software erfolgreich erweitert.
+\subsubsection{Hindernisse beseitigen}
+Sowohl externe als auch interne Probleme werden normalerweise vom Scrum Master gelöst, da dieser als Zentrum zwischen Unternehmen, Product Owner und Entwicklungsteam dient. Im Projekt hingegen hat jeder selber seine Probleme gelöst, bis diese zu groß und unklar wurden. Dafür wurde dann entweder Rücksprache mit dem Shareholder gehalten oder es wurde im Weekly besprochen und gelöst.
+\subsubsection{Unterstützung beim Product Backlog}
+Sobald der Scrum Master die Zeit aufbringen kann, hilft dieser dem Entwicklungsteam bei der Entwicklung und Abarbeitung des Product Backlogs. Im Projekt wurden die Meetings primär vom Product Owner geführt, daher war die primäre Aufgabe vom Scrum Master die Unterstützung des Entwicklerteams beim Abarbeiten vom Backlog.
+\newpage
+\subsubsection{Nachbearbeitung der Sprints}
+Nach jedem Sprint wurde vom gesamten Team bewertet, wie die Sprints verliefen und was im zukünftigen Sprint entweder beibehalten oder geändert werden soll. Außerdem wurde entschieden, wie viele Issues im nächsten Sprint aufgenommen werden können, anhand der Beurteilung vom letzten Sprint. 
+
+\subsubsection{Sprint Review}
+Die Sprints sind fast ausschließlich immer in zwei Wochen-Abschnitten gelaufen. Beginnend mit dem ersten vom 28.05.2025 bis zum 11.06.2025 wurde in dieser Zeit primär das Verständnis über die zuvor bestehende Codestruktur und generell American Football aufgebaut. Zusätzlich wurde bezüglich HUDL und der API-Anbindung eine Recherche durchgeführt. Somit hatte der erste Sprint 5 Vorgänge, von denen 4 zum Ende hin abgeschlossen wurden. Alle übrig gebliebenen Vorgänge wurden immer in den nächsten Sprint mit übernommen. 
+
+\noindent
+\\
+Der zweite Sprint verlief vom 11.06.2025 bis zum 18.06.2025 und somit als einziger Sprint mit einer Dauer von einer Woche. Aufgrund dessen, dass die damalige Codestruktur zu unübersichtlich und komplex war, wurde das primäre Ziel dieses Sprints auf die Code-Revision gesetzt. Als das gemeinsam in einem langen Standup-Meeting behoben war, wurde im Anschluss daran das Thema Benutzerverwaltung in einzelne Probleme gespalten und schrittweise entwickelt. Parallel dazu wurden Vorgänge bezüglich der Games und Plays bearbeitet. In Summe gab es 10 Vorgänge und 6 davon wurden abgeschlossen.
+
+\noindent
+\\
+Der dritte Sprint ging vom 20.06.2025 bis zum 02.07.2025, der aufgrund von Feiertagen erst zwei Tage nach dem zuvor beendeten Sprint gestartet ist. Nichtsdestotrotz gab es insgesamt 23 Vorgänge, wobei 17 erfolgreich abgeschlossen wurden und man daraus schließen kann, dass das der leistungsstärkste Sprint war. Es wurden Themen wie das Tagging \& Masken, Play- \& Drive-Analysen, Teamerstellung und Erweiterung von Auswertungen entwickelt.
+
+\noindent
+\\
+Der vierte und letzte Sprint verlief vom 05.07.2025 bis zum 17.07.2025, welcher wie der Sprint zuvor erst drei Tage nach dem zuvor beendeten Sprint begonnen hat. Dieser beinhaltete 16 Vorgänge, die alle erfolgreich abgeschlossen wurden. Es wurden bestehende Themen wie Analyse- \& Drive-Darstellung verbessern, Hinzufügen von Strafen, Teamhandling, Tagging und die Wartbarkeit des Codes entwickelt. Nach erfolgreichem Abschluss aller Vorgänge wurden bestehende oder neue Bugs behoben, um eine funktionale Software bereitstellen zu können, was auch das Ende des Projekts einläutete.
+
+\newpage
+\subsection{Add Play Wertvalidierung}
+\subsubsection{Überblick}
+Beim Hinzufügen eines neuen Plays müssen die folgenden drei Werte validiert werden, damit der User nicht die Möglichkeit hat, falsche Zahlen oder Schriftzeichen eingeben zu können, was die Auswertung der Plays verfälscht und inkonsistent macht:
+\begin{itemize}
+    \item Distance 
+    \item Yard Line
+    \item Gain/Loss
+\end{itemize}
+Um dies zu ermöglichen, wurde in der HTML-Datei 'add\_play.html' der HTML-Input-tag verwendet. Dieser kreiert ein Feld, das es ermöglicht Tastatureingaben zu tätigen. Mit der Vergabe der id 'number' sind nur Zahlen erlaubt. Zusätzlich wird mit den tags 'min \& max' die Grenze für die mögliche Eingabe der Zahlen gesetzt.
+\subsubsection{Distance Validierung}
+\noindent
+Die Distance eines Plays kann theoretisch von der eigenen Endzone bis hin zu der Endzone der Opposition betragen, was eine Eingrenzung der Eingabe von 'min = -1 bis max = 100' ermöglicht. Der folgende Codeabschnitt beinhaltet ein div-tag, welches ein Label und ein Eingabefeld beinhaltet, mit der zuvor genannten Funktionalität.
+\begin{minted}{python}
+<label class="form-label">Distance</label>
+<input type="number" min="-1" max="100" class="form-control" name="distance"
+        value="{{ play.distance if play else default_distance }}">
+\end{minted}
+\subsubsection{Yard Line Validierung}
+\noindent
+Die Yard-Line gibt den derzeitigen Stand an, wo sich das Team befindet, und den Abstand von der Endzone an. Die Umsetzung ist wie bei Distance ähnlich, mit dem Unterschied, dass die Eingrenzung der Werte nun zwischen 'min = -49 bis max = 50' liegt, da das die möglichen Positionen auf dem gesamten Spielfeld darstellt. Zusätzlich gibt es einen Button, welcher die Zahl der Yard Line auf das entsprechende Team und dessen Spielhälfte anpasst.
+\begin{minted}{python}
+<label class="form-label">Yard Line</label>
+<div class="input-group">
+    <input type="number" min="-49" max="50" class="form-control" name="yard_line"
+            value="{{ play.yard_line if play else default_yard_line }}">
+    <button type="button" class="btn btn-outline-secondary" onclick="toggleYardLine()">
+        Own / Opp
+    </button>
+</div>
+\end{minted}
+\subsubsection{Gain/Loss Validierung}
+\noindent
+Der dritte und letzte Wert ist der Gain bzw. Loss eines Plays. Dieser hat exakt denselben Aufbau wie der beim Yard-Line-Wert mit dem Unterschied, dass die Eingrenzung der Werte nun zwischen 'min = -100 bis max = 100' liegt, da das den maximal möglichen Gewinn bzw. Verlust eines Plays darstellen kann. 
+\begin{minted}{python}
+<label class="form-label">Gain/Loss</label>
+<div class="input-group">
+    <input type="number" min="-100" max="100" class="form-control" name="gain_loss"
+                value="{{ play.gain_loss if play else '' }}">
+    <button type="button" class="btn btn-outline-secondary" onclick="toggleGainLoss()">
+                Toggle +/-
+    </button>
+</div>
+\end{minted}
+\subsection{Drive beendet}
+Eine Beendigung des laufenden Drives war zuvor nicht möglich. Dies barg die Gefahr einer verfälschten Spielanalyse und generellen Auswertung, falls der User die entsprechenden Regeln nicht kannte und den Drive fortsetzte, obwohl dieser vorbei war.
+\subsubsection{Überblick}
+Der laufende Drive kann auf zwei Arten beendet werden:
+\begin{itemize}
+    \item Über die \textbf {Result Felder:} Sobald eines der folgenden Results im neuen Play ausgewählt wird: Touchdown', 'Rush, TD', 'Complete, TD', 'Interception', 'Interception, Def TD', 'Fumble', 'Fumble, Def TD', 'Punt'. Diese bedeuten, dass ein Touchdown erzielt oder ein Ball- \& verlust/wechsel geschehen ist.
+    \item Über den \textbf{letzten Play:} Sobald der letzte Play ein vierten Down hat \& der Gain/Loss kleiner als Distance beträgt.
+\end{itemize}
+\noindent
+Das Endergebnis beider Abläufe führt dazu, dass der User eine Warnung angezeigt bekommt 'Der Drive sei beendet. Weiteres Hinzufügen eines Plays nicht möglich' , sobald er versucht einem beendeten Drive ein Play hinzuzufügen.
+
+\newpage
+\subsubsection{Drive Model}
+Zu Beginn wurde in der bereits vorhandene Datenbank Tabelle 'drive' ein neuer Wert \textbf{'ended'} angelegt. Dieser speichert den Status des beendeten Drives als:
+\begin{itemize}
+    \item\textbf{True} für Wahr
+    \item\textbf{False} für Falsch
+\end{itemize} 
+Initialisiert ist dieser Wert zu Beginn als 'False'.
+\begin{minted}{python}
+class DriveModel(db.Model):
+    __tablename__ = 'drive'
+    ended = db.Column(db.Boolean, default=False)
+\end{minted}
+\noindent
+Anhand dessen wurde eine einzige, wiederverwendbare und zentral angelegte Funktion erstellt, die den Drive-Status aktualisiert. Diese holt den allerletzten und gespeicherten Spielzug für diesen Drive und setzt, falls die Anweisung erfüllt wurde, das Ergebnis des Drives auf das Ergebnis des letzten Plays. Anschließend prüft er die Bedingungen für ein Drive-Ende. Zum Schluss werden die Änderungen gespeichert.
+\begin{minted}{python}
+    def update_status(self):
+        last_play = PlayModel.query.filter_by(drive_id=self.id).order_
+        by(PlayModel.id.desc()).first()
+
+        if not last_play:
+            self.ended = False
+            ...
+        self.result = last_play.result
+
+        is_turnover_on_downs = (last_play.down == 4 and
+            ...)
+        db.session.commit()
+\end{minted}
+\subsubsection{Drive Controller}
+Für das korrekte Beenden eines Drives werden folgende Funktionen benötigt. Beginnend mit der ersten '\_handle\_add\_play\_post\_request()'. Diese Funktion sammelt zuerst die Daten, die in das Add-Play-Formular eingegeben werden, und speichert diese in einem Objekt. Dieses Objekt wird persistent in der Datenbank gespeichert. Nach der Speicherung wird die neue Funktion, die im Drive-Model deklariert ist, aufgerufen und prüft, ob das Play Objekt den Drive beendet. Zum Schluss gibt es eine Erfolgs-/Fehlermeldung und der User wird zurück zu der Drive-Übersicht geleitet.
+\begin{minted}{python}
+     def _handle_add_play_post_request(self, drive_id, drive):
+        try:
+            play = self._create_play_from_form(drive_id) ...
+            db.session.commit() ...
+            drive.update_status() ... 
+            flash('Play added successfully!', 'success') ...
+        return redirect(url_for('drive_detail', drive_id=drive_id))
+\end{minted}
+\noindent
+In der bereits bestehenden Funktion '\_handle\_add\_play\_get\_request()' wurde ein Schutzmechanismus eingebaut. Zuerst wird geprüft, ob der Drive bereits als beendet deklariert sei. Falls das zutrifft, verhindert es das Hinzufügen eines weiteren Plays, zeigt eine Fehlermeldung an und leitet den User zurück zur Drive-Übersicht.
+\begin{minted}{python}
+def _handle_add_play_get_request(self, drive_id):
+    drive = DriveModel.query.get_or_404(drive_id)
+    if drive.ended:
+        flash(message="This drive has ended. Cannot add more plays!" ...
+\end{minted}
+\subsubsection{Play Controller}
+Der PlayController implementiert die Logik für die Verwaltung von Play-Objekten. Die zentralen Methoden, die für das Problem angepasst wurden, sind 'edit\_play()' und 'delete\_play()'.
+
+\noindent
+\\
+Die Funktion 'edit\_play()' ist für das Bearbeiten eines bereits existierenden Plays zuständig. Sie hat zwei Hauptaufgaben:
+\begin{itemize}
+    \item \textbf{GET:} Lädt alle Daten des Plays aus der Datenbank und füllt das Formular mit den bestehenden Werten aus.
+    \item \textbf{POST:} Nachdem die Änderungen übernommen wurden, wird dieselbe Funktion erneut aufgerufen. Diesmal nimmt sie die neuen Daten aus dem Formular, aktualisiert den entsprechenden Play und speichert die Änderungen in der Datenbank.
+\end{itemize}
+Kurz danach wird die Funktion 'drive.update\_status()' aufgerufen. Nachdem die oben genannten Änderungen gespeichert wurden, wird der übergeordnete Drive angewiesen, den Status des derzeitigen Drives zu überprüfen.
+
+\newpage
+\noindent
+Die Funktion 'delete\_play' ist für das endgültige Löschen eines einzelnen Plays zuständig.
+\\
+\\
+Genau wie bei 'edit\_play()', folgt auch hier direkt nach dem Löschen der Aufruf von der Funktion 'update\_status()'. Sobald der letzte Play eines Drives gelöscht wird, stellt diese Funktion sicher, dass der Drive-Status basierend auf dem neuen letzten Play neu berechnet wird. Dadurch wird ein zuvor als beendet markierter Drive korrekt wieder geöffnet und es kann ein neuer Play hinzugefügt werden.
+\begin{minted}{python}
+def delete_play(self, play_id):
+    try:
+        play = PlayModel.query.get_or_404(play_id)
+        ...
+        flash('Play deleted successfully', 'success')
+
+        drive = DriveModel.query.get_or_404(drive_id)
+        drive.update_status()
+        ...
+    return redirect(url_for('drive_detail', drive_id=drive_id))
+\end{minted}
+\subsection{Dashboard}
+Das entwickelte Dashboard löst die zentrale Ausgangslage von fehlender tiefgründiger Analyse der einzelnen Plays und Visualisierung dieser zentral und einheitlich an einem Ort. Somit können Trainer die Teamleistung schnell und genau bewerten. Das Dashboard visualisiert wichtige Daten wie Play Type/Results und Strafen durch farbige Analysediagramme und kann jederzeit dynamisch erweitert werden.
+\subsubsection{Überblick}
+Folgende Sektionen sind nun über den neuen Dashboard Button, der sich in der Drive Übersicht eines Games befindet, zugänglich.
+\begin{itemize}
+    \item \textbf{Offense Game Callsheet:} Über das Dashboard gelangt man zum erweiterten Game Callsheet, welches zuvor in der Drive Übersicht vorhanden war.
+    \item \textbf{Overview:} Die Overview des Dashboards verfügt über eine filterbare Box-Ansicht die den derzeitigen Drive und Play Stand eines Games anzeigt.
+    \item \textbf{Game-Analysis:} Das Feld Game-Analysis visualisiert durch 'Tab-Cards' verschiedene Diagramme, wie z.B das Play Type/Result oder Penalties.
+    \end{itemize}
+\newpage
+\subsubsection{Offense Game Callsheet}
+Die ursprüngliche Ausgangslage des Game-Callsheets war, dass keine Filterung der Einträge möglich war. Zusätzlich wurden zwei Werte hinzugefügt, die die Analyse der Plays verbessert. Daher wurde im ersten Schritt die Filterungsmöglichkeit implementiert, die es dem User ermöglicht, nach Offense-Plays, Offense-Formation, Formation-Adjustment und nach wählbarem Min bzw. Max Average Werten zu filtern. Um die Filterungseinstellungen zurückzusetzen, gibt es einen Clear-Button welcher die Werte wieder auf All setzt. Der untenstehende Code zeigt eines der Felder der Filterung.
+\begin{minted}{python}
+<div class="col-md-2">
+    <label for="filter-off_play">Offense Play</label>
+    <select id="filter-off_play" class="form-control filter-dropdown">
+        <option value="">All</option>
+    </select>
+</div>
+.....
+\end{minted}
+\noindent
+\\
+Aufgrund mangelnder Analysewerte wurden zu den bestehenden Werten die folgenden Werte implementiert:
+\begin{itemize}
+    \item \textbf{Standard Deviation:} Gibt an, wie einflussreich bestimmte Leistungswerte oder Metriken um ihren Durchschnitt (Mittelwert) streuen. Dies ist nützlich, um zu verstehen, wie konstant bzw. variabel eine Spielstatistik ist und somit ein guter Messwert für die Stabilität.
+    \item \textbf{Median:} Gibt einen robusten Mittelwert an, der nicht durch Extremwerte beeinflusst wird und so eine realistische Aussage über eine Spielstatistik zeigt. Beim Vergleich mehrerer Plays, zeigt dieser Wert die Verlässlichkeit an.
+\end{itemize}
+\begin{minted}{python}
+def _process_plays(plays: list) -> list:
+    for key, data in callsheet_data.items():
+            ...
+            std_dev = stdev(gains) if len(gains) > 1 else 0
+            med = median(gains) if gains else 0
+            
+            entries.append({
+            ...
+            'average': average,
+            'std_dev':std_dev,
+\end{minted}
+\newpage
+\subsubsection{Overview}
+Die Overview Ansicht verfügt über folgende Ansichten in einem Game:
+\begin{itemize}
+    \item \textbf{Total Drives:} Gibt den Stand aller Drives an
+    \item \textbf{Offense Drives:} Gibt den Stand aller Offense Drives an
+    \item \textbf{Defense Drives:} Gibt den Stand aller Defense Drives an
+    \item \textbf{Special Teams Drives:} Gibt den Stand aller Special Teams Drives an
+    \item \textbf{Total Plays:} Gibt den Stand aller Total Plays an
+\end{itemize}
+\noindent
+Diese Ansicht wird im Controller 'controllers/game.py', wobei dort die Werte aus der Datenbank verarbeitet und verschickt werden, und im neuen Template 'dashboard' implementiert, anhand der Klasse 'Card-Body'. Diese ist für die Visualisierung der Boxen zuständig. Zusätzlich gibt es zu den drei Teams jeweils eine Jinja-Abfrage, welche das ausgewählte Team prüft.  
+\begin{minted}{python}
+...
+<div class="card-body">
+    <h5 class="card-title">Total Drives</h5>
+    <p class="display-6">{{ filtered_drives|length }}</p>
+</div>
+...
+\end{minted}
+\noindent
+\\
+Zusätzlich zu der Ausgabe von allen Boxen besteht die Möglichkeit, diese nach dem Team zu filtern. Dadurch wird nur der Stand des ausgewählten Teams in den Boxen angezeigt und die nachstehenden Diagramme, gefiltert nach Team, aktualisiert.
+\begin{minted}{python}
+<div>
+    <select name="odk" id="teamFilter" class="form-select form-select-md" style="min-width: 180px;">
+        <option value="" {% if not request.args.get('odk') %}selected{% endif %}>All</option>
+        ...
+    </select>
+</div>
+\end{minted}
+\subsubsection{Game-Analysis 1}
+Dieser Abschnitt umfasst die Visualisierung verschiedener Diagramme aller Plays in einem Drive für das Offense-Team, durch anklickbare Tab-Cards. Beginnend mit dem ersten Tab findet man zwei Diagramme, eines, das die Off-Play-Arten und deren Anzahl darstellt, und ein zweites, welches das Verhältnis zwischen den Off-Plays 'RUN \& PASS' anzeigt:
+\begin{itemize}
+    \item \textbf{Play Type:} Visualisiert in verschiedenen Farben alle ausgewählten Off-Plays im Game als ein Pie-Chart. Diese stellen die Häufigkeit der einzelnen Off-Plays als Prozent da. Zusätzlich gibt es die Option, bestimmte Off-Plays nicht anzeigen zu können, durch das Betätigen der Plays auf der Legende.
+    \newpage
+    \item \textbf{Play Result:} Visualisiert in zwei Farben das Verhältnis zwischen den Off-Plays 'RUN \& PASS' als Pie-Chart, abhängig vom ersten Diagramm, und zeigt diese als Prozent da. 
+\end{itemize}
+Die Implementierung dieser Diagramme erfolgt in den Dateien 'dashboard.html' \&  'controllers/game.py':
+\begin{itemize}
+    \item \textbf{Game Controller:} Zu Beginn werden die einzelnen Off-Plays zu den vier Kategorien, also 'RUN,PASS,SCREEN \& RPO' gemappt. Anschließend werden die Plays von der Datenbank geholt und verglichen. Falls diese zutreffen, werden sie in einer Liste gespeichert und an das Template übergeben, wo sie dann schlussendlich im Diagramm gerendert werden.
+    \item \textbf{HTML-Befehl:} Im Template erfolgt zuerst eine Jinja-Anweisung, wobei geprüft wird, ob der Filter auf All bzw. Offense gesetzt ist, da die Diagramme nicht für das Defenese und Special Team sind. Falls das der Fall ist, wird als Nächstes geprüft, ob es einen verfügbaren übergebenen Wert gibt, welcher gerendert werden kann. Falls auch das zutrifft, wird durch den HTML-Befehl 'canvas' der Chart an der Stelle gerendert. Dieser Befehl definiert eine Zeichenfläche, auf der Grafiken mit JavaScript dynamisch erstellt und bearbeitet werden können.
+    \item \textbf{Chart-Libraries:} Um Charts darstellen zu können, mit benötigten Features, fügt man diese Links hinzu. Diese laden die JavaScript-Bibliothek Chart.js, welche zur Erstellung der Diagramme benötigt wird. Sowie ein zugehöriges Plugin, das die Daten-Beschriftungen direkt in den Diagrammen darstellt.
+    \begin{minted}{python}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-
+plugin-datalabels@2"></script>
+    \end{minted}
+    \item \textbf{Chart-Rendering:} Das JavaScript sucht zu Beginn ein Canvas-Element, das eine definierte ID besitzt, um dort ein Diagramm zeichnen zu können. Anschließend wird, basierend auf den bereitgestellten Daten, die Kreisdiagramme erstellt.Die Diagrammsegmente haben vordefinierte Farben, und es wird berechnet, wie viele Prozent jedes Segment vom Gesamten ausmacht. Zusätzlich zeigt das Plugin 'ChartDataLabels' die Prozentwerte direkt im Diagramm an und die Legende wird unter dem Diagramm angezeigt.
+\end{itemize}
+
+\subsubsection{Game-Analysis 2}
+Der zweite Tab der Game-Analysis umfasst die Visualisierung der Penalties eines gesamten Games als Pie-Chart. Dieser rendert alle geschehenen Penalties und deren Häufigkeit als Prozent- \& Zahlenwerte. Die Implementierung erfolgt in den zuvor genannten Dateien ähnlich zu den zwei Diagrammen.
+\begin{itemize}
+    \item \textbf{Game Controller:} Zu Beginn werden alle Plays geprüft, ob das Result ein Penalty ist. Anschließend werden diese gezählt und die Anzahl in einer temporären Liste gespeichert. Zum Schluss werden die Namen der Penalties und deren Häufigkeit in zwei Listen gespeichert, die dann dem Template geschickt werden.
+    \item \textbf{HTML-Befehl:} Im Template erfolgt zuerst eine Jinja-Anweisung, wobei geprüft wird, ob der Filter auf All bzw. Offense gesetzt ist, da die Penalties sich nicht auf die Defenese und Special Team richten. Falls das der Fall ist, wird als Nächstes geprüft, ob es einen verfügbaren übergebenen Wert gibt, welcher gerendert werden kann. Falls auch das zutrifft, wird durch den HTML-Befehl 'canvas' der Chart an der Stelle gerendert.
+    \begin{minted}{python}
+...
+{% if penalty_values and penalty_values|sum > 0 %}
+    <div class="d-flex justify-content-center">
+        <div style="position: relative; height:50vh; width:90vw; max-width:450px;">
+            <canvas id="penaltyChart"></canvas>
+            </div>
+        </div>
+{% else %}
+...
+    \end{minted}
+    \item \textbf{Chart-Libraries:} Um Charts darstellen zu können, wurden dieselben JavaScript-Bibliotheken benutzt wie zuvor bei den zwei Diagrammen.
+
+    \item \textbf{Chart-Rendering:} Das JavaScript sucht zu Beginn ein Canvas-Element, das eine definierte ID besitzt, um zu wissen, wo das Diagramm gezeichnet werden soll. Anschließend nimmt es die Daten (Penalty-Namen und deren Anzahl), die vom Controller kommen, und formatiert die Syntax um, die die Chart.js-Bibliothek versteht. Dazu gehören die Beschriftungen, die Werte und eine Liste von Hintergrundfarben. Zum Schluss erfolgt dann eine Anweisung an die Bibliothek, um ein Pie-Chart zu erstellen, mit den definierten Plugins.
+\end{itemize}
+\end{document}

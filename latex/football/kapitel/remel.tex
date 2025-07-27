@@ -1,0 +1,178 @@
+\section{Seeding-Skript}
+
+\subsection{Ziel}
+
+Das Python-Skript dient dazu, eine realistisch wirkende Football-Datenbank automatisch mit Daten zu befüllen.
+Das Skript kann entweder direkt aus der App heraus gestartet werden oder im Notfall auch außerhalb der Flask-Umgebung laufen. Dafür wird am Anfang geprüft, ob die App-Kontext-Klassen (beispielsweise db, TeamModel, PlayModel) importiert werden konnten. Wenn das nicht klappt, wird ein Fallback aktiviert, der lokale Dummy-Werte verwendet, damit der Code nicht komplett crasht.
+
+\begin{minted}{python}
+with app.app_context():
+    try:
+        db.session.query(PlayModel).delete()
+        db.session.query(DriveModel).delete()
+        db.session.query(GameModel).delete()
+        db.session.query(TeamModel).delete()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error clearing data: {e}")
+        raise
+
+    teams = create_teams()
+    games = create_games(teams)
+    if games:
+         drives = create_drives_for_games(games)
+         create_plays_for_drives(drives)
+         print("Games have been successfully created.")
+\end{minted}
+
+\subsection{Datenstruktur: Welche Objekte werden erstellt?}
+
+Das Skript legt Daten in vier Datenbanktabellen an:
+\begin{itemize}
+  \item Teams: NFL-Teams mit Namen, Teamfarben und einem Icon.
+  \item Games: Zwei Spiele mit je zwei zufälligen Teams (Home und Away).
+  \item Drives: Angriffsserien, also eine Abfolge von Spielzügen pro Team.
+  \item Plays: Einzelne Spielzüge mit vielen Detailinfos (zum Beispiel Formation, Motion, Resultat).
+\end{itemize}
+
+Dazu kommt eine zentrale Klasse \texttt{ApplicationData}, in der alle möglichen Optionen für Spielzüge hinterlegt sind – zum Beispiel Formationen wie „Trips Right“, Bewegungen wie „Jet Motion“, Schutzschemata wie „Slide“ oder Play Calls wie „Fade“ und „Breakfast“. Diese Optionen werden im späteren Verlauf zufällig kombiniert, sodass die erzeugten Spielzüge ziemlich abwechslungsreich aussehen.
+
+\subsection{Schritt 1: Teams erzeugen}
+
+Das Skript beginnt mit dem Anlegen von vier zufälligen NFL-Teams. Aus einer Liste von allen 32 Teams werden vier ausgewählt. Jedes Team besteht aus:
+\begin{itemize}
+  \item einem Namen (zum Beispiel „Miami Dolphins“),
+  \item einem Primär- und einem Sekundärfarbcode (zum Beispiel für UI-Darstellung),
+  \item sowie einem Pfad zum Icon (PNG-Datei unter /static/images/teams/\dots).
+\end{itemize}
+
+Diese Teams werden mit Hilfe von SQLAlchemy als \texttt{TeamModel}-Instanzen in die Datenbank geschrieben. \texttt{db.session.add()} und \texttt{db.session.commit()} sorgen dafür, dass die Daten auch gespeichert werden. Die zufällige Auswahl stellt sicher, dass bei jedem Lauf des Skripts andere Teams in der Datenbank landen – das ist vor allem für Demo-Zwecke hilfreich.
+
+\begin{minted}{python}
+created_teams = []
+for team_data in selected_teams_data:
+    team_name_slug = team_data["name"].lower().replace(" ", "_")
+    team = TeamModel(
+        name=team_data["name"],
+        icon=f"/static/images/teams/{team_name_slug}.png",
+        primary_color=team_data["primary_color"],
+        secondary_color=team_data["secondary_color"]
+    )
+    db.session.add(team)
+    created_teams.append(team)
+
+db.session.commit()
+return created_teams
+\end{minted}
+
+\subsection{Schritt 2: Spiele erstellen}
+
+Mit den vier erzeugten Teams werden zwei zufällige Matchups generiert. Jeweils ein Team wird Heimteam, das andere Auswärtsteam. Damit nicht immer dieselben Paarungen entstehen, werden die Teams vorab per \texttt{random.shuffle()} durchgemischt.
+
+Zusätzlich wird für jedes Spiel:
+\begin{itemize}
+  \item ein realistisches Spieldatum gesetzt (der letzte Sonntag vor dem aktuellen Tag),
+  \item und eine zufällige Kickoff-Zeit aus einer Liste (13:00, 16:05, 20:15 etc.) ausgewählt.
+\end{itemize}
+
+Die Namen der Spiele (zum Beispiel „Bills @ Dolphins“) werden automatisch gesetzt. Alle Spieldaten werden als \texttt{GameModel} in die Datenbank geschrieben. Diese Spiele bilden die Grundlage für die weiteren Objekte – also Drives und Spielzüge.
+
+\begin{minted}{python}
+random.shuffle(teams)
+possible_times = ["13:00", "16:05", "16:25", "20:15"]
+game_times = random.sample(possible_times, 2)
+today = datetime.now(timezone.utc)
+last_sunday = today - timedelta(days=(today.weekday() + 1) % 7)
+last_sunday = last_sunday.replace(tzinfo=None)
+
+game1 = GameModel(
+    name=f"{teams[1].name} @ {teams[0].name}",
+    game_date=last_sunday,
+    game_time=game_times[0],
+    home_team_id=teams[0].id,
+    away_team_id=teams[1].id
+)
+\end{minted}
+
+\subsection{Schritt 3: Drives erzeugen}
+
+Für jedes Spiel werden nun 18 bis 22 Drives erstellt. Das entspricht etwa der Realität in einem NFL-Spiel – da hat jede Mannschaft im Schnitt etwa 9 bis 11 Drives pro Spiel.
+
+Ein Drive ist im Prinzip eine Serie von Spielzügen, bei denen ein Team versucht, den Ball übers Feld zu bewegen und Punkte zu erzielen. Jeder Drive gehört zu einem bestimmten Spiel (\texttt{game\_id}) und wird zunächst mit dem Status \texttt{"In Progress"} markiert. Erst später – wenn alle Plays zugeordnet sind – wird der Drive als beendet markiert und bekommt ein konkretes Ergebnis wie „Touchdown“, „Punt“ oder „Turnover“.
+
+Alle Drives werden gesammelt und mit einem Commit gespeichert.
+
+\begin{minted}{python}
+for game in games:
+    total_drives_for_game = random.randint(18, 22)
+    for i in range(total_drives_for_game):
+        drive = DriveModel(
+            game_id=game.id,
+            result="In Progress"
+        )
+        all_drives.append(drive)
+
+db.session.add_all(all_drives)
+db.session.commit()
+return all_drives
+\end{minted}
+
+\subsection{Schritt 4: Spielzüge generieren}
+
+Generieren einzelner Spielzüge (Plays) für jeden Drive: Hierbei wird für jeden Drive eine Serie von zufälligen Spielzügen erstellt. Pro Drive gibt es zwischen 3 und 12 Plays – wobei der Drive natürlich auch früher enden kann (zum Beispiel durch Fumble oder Touchdown).
+
+Folgende Parameter werden bei jedem Spielzug gesetzt:
+\begin{itemize}
+  \item Quarter: Anhand des Drive-Index wird das Viertel bestimmt (1. bis 4.).
+  \item Down \& Distance: Zählt automatisch mit. Neue First Downs setzen Down zurück auf 1.
+  \item Yard Line: Die Feldposition des Balls, die sich mit jedem Play verändert.
+  \item Play Type: Zufällig entweder „Run“ oder „Pass“.
+  \item Result: Je nach Playtyp wird ein realistisches Ergebnis ausgewählt (mit Gewichtung).
+  \begin{itemize}
+    \item Run: zum Beispiel „Rush“, „Touchdown“, „Fumble“
+    \item Pass: zum Beispiel „Complete“, „Sack“, „Interception“
+  \end{itemize}
+  \item Yard-Gewinn oder -Verlust: Wird logisch aus dem Ergebnis abgeleitet.
+  \item Play-Details: Die Optionen aus \texttt{ApplicationData} – also Formation, Motion, Schutz usw.
+  \item Touchdown-Flag: Falls das Ergebnis ein Touchdown war oder das Feldende erreicht wurde.
+\end{itemize}
+
+Die gegebene Implementierung nutzt gewichtete Zufallsentscheidungen, um realistische Spielzüge (Plays) innerhalb eines Drives zu simulieren. Dabei wird für jeden Spielzug zunächst zufällig entschieden, ob es sich um einen Run oder Pass handelt. Anschließend wird mit gewichteten Wahrscheinlichkeiten ein konkretes Ergebnis für den jeweiligen Spieltyp ausgewählt:
+\begin{itemize}
+  \item Run-Plays wählen mit einer Wahrscheinlichkeit von 90 Prozent einen normalen Laufspielzug (\texttt{Rush}), während seltene Ereignisse wie zum Beispiel ein \texttt{Fumble} mit nur 5 Prozent berücksichtigt werden.
+  \item Pass-Plays nutzen eine feinere Gewichtung: 60 Prozent Wahrscheinlichkeit für einen kompletten Pass (\texttt{Complete}), und jeweils 5–25 Prozent für unvollständige Pässe, Interceptions oder Sacks.
+\end{itemize}
+
+Diese Gewichtung sorgt dafür, dass häufige Spielverläufe realistisch öfter auftreten, während kritische oder seltene Ereignisse nur gelegentlich auftreten, was der realen Dynamik von Footballspielen entspricht.
+
+Der Code achtet darauf, dass die Spielzüge nachvollziehbar sind: Wenn zum Beispiel vier Versuche (Downs) ohne Raumgewinn passieren, wird der Drive beendet mit \texttt{"Turnover on Downs"}. Wenn bei einem Play ein Touchdown erzielt oder der Ball verloren wird, wird der Drive entsprechend markiert.
+
+Am Ende jedes Drives wird das tatsächliche Ergebnis (\texttt{drive.result}) gesetzt, zum Beispiel „Touchdown“, „Fumble“, „Punt“. Zusätzlich wird \texttt{drive.ended = True} gesetzt.
+
+Alle erzeugten \texttt{PlayModel}-Instanzen werden in einem Rutsch gespeichert.
+
+\subsection{„Play Categories“ Reiter}
+
+\begin{minted}{html}
+{% else %}
+    <p class="text-muted mb-0">No play categories configured yet.</p>
+{% endif %}
+\end{minted}
+
+Diese Zeile wird angezeigt, wenn keine Spielkategorien vorhanden sind.
+
+\begin{minted}{html}
+onsubmit="return confirm('Delete this play category?');"
+\end{minted}
+
+Ein Dialog, der beim Absenden eines Formulars fragt, ob die Kategorie wirklich gelöscht werden soll.
+
+\begin{minted}{html}
+<button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPlayCallModal">
+  <i class="fas fa-plus"></i> New Play Category
+</button>
+\end{minted}
+
+Ein grüner Button, der ein Modal-Fenster öffnet, um eine neue Spielkategorie hinzuzufügen. Hier war überall an einem früheren Zeitpunkt „Play Calls“ statt „Play Categories“ geschrieben, bis es dann geändert worden ist, damit die Logik stimmt.
+

@@ -1,0 +1,126 @@
+
+\subsection{FP-11 Drive Chart weiterentwickeln}
+
+\subsubsection{Ausgangslage}
+\vspace*{0.5cm}
+Vor der Weiterentwicklung des \textit{Drive Charts} war die grafische Darstellung der Drives fehlerbehaftet und nicht sehr ersichtlich. Das lag zum größten Teil an der Berechnung der \textit{Start-} und \textit{End-Yards} Werte vor der Übergabe an das Template, was zu einer widersprüchlichen Visualisierung des Spiels führte. 
+Eine detaillierte Analyse einzelner Drives und dessen Plays in Form eines einzelnen Charts war zuvor nicht möglich, da die Visualisierung auf Drive-Ebene endete. 
+Es war nicht ersichtlich, welches Team zu, beziehungsweise von welcher Seite spielt, da für die Endzonen immer dieselben zwei vordefinierten Farben benutzt wurden und die Teamnamen nirgendwo ausgegeben wurden.
+\vspace*{0.3cm}
+
+Die daraus resultierenden Ziele waren es:
+\begin{itemize}
+    \item Eine korrekte Darstellung des Charts zu gewährleisten
+    \item Einen Chart zu entwickeln, der einen einzelnen Drive und seine Plays abbildet
+    \item Den Chart ersichtlicher und ansprechender zu gestalten
+\end{itemize}
+\vspace*{0.5cm}
+\subsubsection{Umsetzung}
+\vspace*{0.5cm}
+Um das Wichtigste, eine einheitliche und korrekte Darstellung der Drives zu ermöglichen, wurde eine einheitliche Funktion implementiert, die die Yard-Werte aller Spielzüge korrekt von einem \textit{(-49 bis 50)} Format auf ein \textit{(0 bis 100)} Format umwandelt.\\ Vorher wurden Start- und End-Yard auf verschiedene Arten ausgerechnet, was zu Fehlern geführt hat.  Jetzt wird bei einem Wert kleiner als Null der Wert invertiert, bei einem Wert von \textit{50}, der Wert \textit{50} wieder zurückgegeben und ansonsten der Wert von \textit{Hundert} abgezogen und zurückgegeben. 
+\vspace*{0.5cm}
+\begin{minted}{python}
+    @staticmethod
+    def convert(yard_line: int) -> int:
+        if yard_line == 50:
+            return 50
+        if yard_line < 0:
+            return -yard_line
+        return 100 - yard_line
+\end{minted}
+\vspace*{0.3cm}
+Mit dieser neuen einheitlichen Funktion namens \textit{convert()} werden die Werte jetzt, egal ob \textit{Start-} oder \textit{End-Yard}, auf dieselbe Art und Weise berechnet. Dadurch wird gewährleistet, dass die Start- und Endpunkte jedes Drives im \textit{Chart} nachvollziehbar und korrekt sind. Diese Funktion und eine passende Funktion zum Zurückwandeln finden auch ihren Gebrauch in anderen Teilen der Software wie zum Beispiel für die automatische Berechnung der nächsten Spielpositionen.
+\\
+Um die Erstellung eines neuen \textit{Charts}, dem sogenannten \textit{Play-Chart}, für die einzelnen Drives zu erstellen, wurde als erstes eine neue Route im \textit{Game-Controller} erstellt: 
+\vspace*{0.3cm}
+\begin{minted}{python}
+self.app.add_url_rule(rule='/games/<int:game_id>/drive/
+    <int:drive_id>/play-chart', view_func=self.drive_play_chart)
+\end{minted}
+\vspace*{0.3cm}
+Zu dieser Route wurde die passende Funktion \textit{drive\_play\_chart} implementiert und ein Button in der Spielübersicht auf jeder \textit{Drive-Card} hinzugefügt. Die Hauptaufgabe dieser Funktion liegt darin, die Daten für die Visualisierung an das neu erstellte HTML-Template des \textit{Play-Charts} zu übergeben. Das Template wurde mit ähnlichem Style und Aufbau geschrieben, um ein einheitliches Design zu gewährleisten. 
+Währenddessen wurden auch die Funktionen und das Template des alten \textit{Drive-Charts} angepasst und weiterentwickelt.
+Ein weiterer Fokus lag auf der optischen Verbesserung des \textit{Charts}. Die Teamfarben sowie die Namen der Teams werden nun dynamisch an das Template übergeben und direkt im \textit{Chart} als visuelle Endzonen angezeigt. In den beiden Funktionen der Routen für die \textit{Charts} im \textit{Game-Controller} werden die primären Farben der Teams und deren Namen geladen und ebenfalls an die Templates übergeben. Dabei wurde ebenfalls eine Funktion namens \textit{get\_readable\_text\_color} entwickelt, die für jede Teamfarbe automatisch eine gut lesbare Textfarbe bestimmt (basierend auf der Helligkeit der gewählten Farbe). Anhand des Helligkeitswerts der Teamfarbe wird Schwarz oder Weiß als Schriftfarbe gewählt, um die Lesbarkeit zu gewährleisten. 
+
+\vspace*{0.3cm}
+\begin{minted}{python}
+def get_readable_text_color(hex_color):
+    hex_color = hex_color.lstrip('#')
+    r, g, b = [int(hex_color[i:i + 2], 16) for i in (0, 2, 4)]
+    brightness = 0.299 * r + 0.587 * g + 0.114 * b
+    return "#000000" if brightness > 186 else "#ffffff"
+\end{minted}
+\vspace*{0.3cm}
+Im Template wurden diese Farben in die entsprechenden Felder eingesetzt und zwei zusätzliche Labels erstellt, die auf Höhe der Endzonen platziert sind und die Teamnamen in den übergebenen Textfarben vertikal ausgeben.
+Zusätzlich wurde die Höhe des \textit{Charts} angepasst, damit sie automatisch im Template an die Anzahl der angezeigten Plays angepasst wird, da vorher Charts mit über 7 Balken abgeschnitten wurden. Damit ist der Chart auch bei sehr vielen Spielzügen übersichtlich und passt sich flexibel an unterschiedliche Drive-Längen an. 
+\vspace*{0.5cm}
+\subsubsection{Ergebnis}
+\vspace*{0.5cm}
+Durch diese Überarbeitung konnte die Darstellung der Drives und der einzelnen Plays wesentlich verbessert werden. Die Fehlerquellen in der Berechnung der Yards wurden behoben, die Übersichtlichkeit und Lesbarkeit der Charts wurde durch die dynamische Farb- und Textgestaltung deutlich gesteigert. Nutzer der Anwendung erhalten nun eine anschauliche und nachvollziehbare Übersicht über jeden Drive sowie die darin enthaltenen Spielzüge. Die generelle Optik ist nun deutlich strukturierter und anschaulicher gestaltet, sodass auf einen Blick erkennbar ist, welches Team welche Endzone angreift und wie der Verlauf eines Drives war.
+
+\vspace*{0.5cm}
+\subsection{FP-37 Erfassung von Strafen}
+\subsubsection{Ausgangslage}
+\vspace*{0.5cm}
+Vor dem Feature \textit{Erfassung von Strafen} konnte im System lediglich vermerkt werden, dass ein \textit{Play} mit dem Ergebnis \textit{Penalty} endete. Es fehlten jedoch sämtliche Details zur Art der Strafe sowie welches Team diese begangen hat. Dadurch war es nicht möglich, die Auswirkungen automatisch zu erfassen und für das nächste \textit{Play} zu setzen und somit den Spielverlauf korrekt abzubilden. Dies führte dazu, dass Strafen in der Analyse nicht ausreichend berücksichtigt wurden und die Daten für Auswertungen lückenhaft blieben. 
+\vspace*{0.5cm}
+
+Die Ziele waren also:
+\begin{itemize}
+    \item Bei Ergebnis „Penalty“ sollen weitere Informationen wie Team und Art der Strafe erfasst werden
+    \item Bei Spot Fouls soll zusätzlich der Spot eingegeben werden
+    \item Strafen sollen automatisch für die Berechnung der Position des nächsten Plays angewendet werden
+\end{itemize}
+\vspace*{0.5cm}
+\subsubsection{Umsetzung}
+\vspace*{0.5cm}
+Um diese Lücken zu schließen, wurde eine umfassende Logik zur Erfassung und automatischen Verarbeitung von Strafen entwickelt. Die Grundlage bildet dabei der \textit{Penalty-Katalog}, der in einer separaten Python-Datei \textit{penalty\_catalogue.py} als strukturierte Liste \textit{PENALTY\_RULES} hinterlegt ist. Jede Art der Strafe ist dort als Objekt mit den wichtigsten Werten abgebildet, wie etwa die Strafe in Yards, ob es sich um einen \textit{Spot foul} handelt, ob ein \textit{Automatic First Down} ausgelöst wird oder ob es zu einem \textit{Loss of Down} kommt. 
+\\
+Im Frontend wurde das \textit{Add-Play-Formular} entsprechend erweitert. Sobald man als Ergebnis \textit{Penalty} auswählt, erscheinen dynamisch zwei zusätzliche Optionsfelder.
+\vspace*{0.3cm}
+\begin{minted}{python}
+    penaltySection.style.display = (sel && sel.value === 'Penalty'&& (odk === 'O' || odk === 'D'))
+      ? 'block'
+      : 'none';
+\end{minted}
+\vspace*{0.3cm}
+Hier können Nutzer angeben, welches Team das Foul zu verantworten hat und die Art der Strafe. Falls die Strafe ein \textit{Spot foul} ist, erscheint ein weiteres Feld, in dem der Nutzer den \textit{Spot} des Fouls angeben soll. Die Funktion der dynamischen Felder wurde in der JavaScript Datei \textit{play.js} implementiert. Dort wird geprüft, ob als Ergebnis \textit{Penalty} ausgewählt ist und ob gleich \textit{offence} oder \textit{defence} ist, um die zusätzlichen Felder im Formular anzuzeigen. Danach wird noch geprüft, falls ein \textit{penalty\_type} ausgewählt ist, ob dieser ein \textit{Spot foul} ist oder nicht, um das \textit{Spot}-Feld anzuzeigen. Außerdem wird bei einem \textit{Penalty} zusätzlich das \textit{gain\_loss}-Feld deaktiviert und mit einem Text als Platzhalter gefüllt, da dieser Wert automatisch ausgerechnet wird. 
+\vspace*{0.3cm}
+\begin{minted}{python}
+    if (isPenalty) {
+      gainLossInput.readOnly = true;
+      gainLossInput.style.backgroundColor = '#e9ecef';
+      gainLossInput.placeholder = "Auto-calculated for penalty";
+    } else {
+      gainLossInput.readOnly = false;
+      gainLossInput.style.backgroundColor = '';
+      gainLossInput.placeholder = "";
+    }
+\end{minted}
+\vspace*{0.3cm}
+Grundlegend dafür mussten drei neue Spalten zur \textit{Play}-Tabelle in der Datenbank hinzugefügt werden: der Typ der Fouls in Form eines Strings, der \textit{Spot} bei einem \textit{Spot foul} in Form einer Ganzzahl und das Team, das gefoult hat, in Form eines Strings.
+\\
+\\
+Die Logik zur automatischen Anwendung der Strafen wurde im Backend, im \textit{Drive-Controller}, umgesetzt. Vorerst wird geprüft ob ein \textit{penalty\_type} ausgewählt ist. Abhängig von der gewählten Strafe und dem verantwortlichen Team wird beim Speichern eines \textit{Plays} \textit{gain\_loss} mithilfe mehrerer Bedingungen ausgerechnet. Bei einer normalen Strafe wird diese je nach verursachendem Team angepasst. Wenn das Foul vom eigenen Team begangen wurde wird der Yard-Wert der Strafe in \textit{gain\_loss} als negative Zahl gesetzt. Wenn das Foul vom gegnerischen Team begangen wurde wird der Yard-Wert aus dem Kalalog in \textit{gain\_loss} als positive Zahl gesetzt. Bei einem \textit{Spot foul} wird zusätzlich der \textit{Spot} mit einkalkuliert, damit die Strafe korrekt übernommen wird. Wenn \textit{if rule} falsch ist, also kein \textit{penalty\_type} ausgewählt ist, wird \textit{gain\_loss} standardmäßig aus dem Formular geholt. Bei einem \textit{Automatic First Down} oder einem \textit{Loss of Down} werden \textit{down} und \textit{distance} für das nächste \textit{Play} angepasst. 
+Diese Kalkulationen wurden auch im \textit{Play-Controller} implementiert, um zu gewährleisten, dass beim Ändern der Daten des Formulars ebenfalls korrekte Werte gespeichert werden.
+\vspace*{0.3cm}
+\begin{minted}{python}
+        if rule:
+            if rule.get('spot_foul') and raw_penalty_spot is not None:
+                if foul_team == "H":
+                    gain_loss = raw_penalty_spot - abs(rule["yards"]) - yard_line
+                elif foul_team == "O":
+                    gain_loss = raw_penalty_spot + abs(rule["yards"]) - yard_line
+            elif rule.get("yards"):
+                if foul_team == "H":
+                    gain_loss = -abs(rule["yards"])
+                elif foul_team == "O":
+                    gain_loss = abs(rule["yards"])
+        else:
+            gain_loss = int(form.get('gain_loss') or 0)
+\end{minted}
+\vspace*{0.3cm}
+\subsubsection{Ergebnis}
+\vspace*{0.5cm}
+Durch die Einführung dieser Logik können Strafen jetzt nicht nur exakt dokumentiert werden, sondern auch vollautomatisch auf den weiteren Spielverlauf angewendet werden. Dies erhöht die Aussagekraft der gespeicherten Daten erheblich und ermöglicht detaillierte Analysen der Drives und Performance einzelner Teams. Gleichzeitig wird die Bedienung für Nutzer vereinfacht, da alle komplexen Berechnungen im Hintergrund erfolgen.
+
