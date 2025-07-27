@@ -3,7 +3,7 @@
 \subsection{Ziel}
 
 Das Python-Skript dient dazu, eine realistisch wirkende Football-Datenbank automatisch mit Daten zu befüllen.
-Das Skript kann entweder direkt aus der App heraus gestartet werden oder im Notfall auch außerhalb der Flask-Umgebung laufen. Dafür wird am Anfang geprüft, ob die App-Kontext-Klassen (z. B. db, TeamModel, PlayModel) importiert werden konnten. Wenn das nicht klappt, wird ein Fallback aktiviert, der lokale Dummy-Werte verwendet, damit der Code nicht komplett crasht.
+Das Skript kann entweder direkt aus der App heraus gestartet werden oder im Notfall auch außerhalb der Flask-Umgebung laufen. Dafür wird am Anfang geprüft, ob die App-Kontext-Klassen (beispielsweise db, TeamModel, PlayModel) importiert werden konnten. Wenn das nicht klappt, wird ein Fallback aktiviert, der lokale Dummy-Werte verwendet, damit der Code nicht komplett crasht.
 
 \begin{minted}{python}
 with app.app_context():
