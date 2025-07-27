@@ -1,0 +1,79 @@
+
+Flask & Flask-Login Imports Documentation
+=========================================
+
+This document maps the Python imports in your Flask app to their corresponding official documentation links.
+
+----------------------
+Flask Core API Imports
+----------------------
+
+from flask import Flask
+- https://flask.palletsprojects.com/en/stable/api/#flask.Flask
+
+from flask import render_template
+- https://flask.palletsprojects.com/en/stable/api/#flask.render_template
+
+from flask import request
+- https://flask.palletsprojects.com/en/stable/api/#flask.Request
+
+from flask import redirect
+- https://flask.palletsprojects.com/en/stable/api/#flask.redirect
+
+from flask import url_for
+- https://flask.palletsprojects.com/en/stable/api/#flask.url_for
+
+from flask import flash
+- https://flask.palletsprojects.com/en/stable/api/#flask.flash
+
+from flask import abort
+- https://flask.palletsprojects.com/en/stable/api/#flask.abort
+
+from flask import jsonify
+- https://flask.palletsprojects.com/en/stable/api/#flask.jsonify
+
+from flask import session
+- https://flask.palletsprojects.com/en/stable/api/#flask.session
+
+from flask import make_response
+- https://flask.palletsprojects.com/en/stable/api/#flask.make_response
+
+------------------------
+Flask-Login Functionality
+------------------------
+
+from flask_login import LoginManager
+- https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager
+
+from flask_login import login_user
+- https://flask-login.readthedocs.io/en/latest/#flask_login.login_user
+
+from flask_login import login_required
+- https://flask-login.readthedocs.io/en/latest/#flask_login.login_required
+
+from flask_login import logout_user
+- https://flask-login.readthedocs.io/en/latest/#flask_login.logout_user
+
+from flask_login import current_user
+- https://flask-login.readthedocs.io/en/latest/#flask_login.current_user
+
+------------------
+Python Built-in Modules
+------------------
+
+datetime - https://docs.python.org/3/library/datetime.html
+random - https://docs.python.org/3/library/random.html
+os - https://docs.python.org/3/library/os.html
+csv - https://docs.python.org/3/library/csv.html
+io - https://docs.python.org/3/library/io.html
+
+------------------
+App-Specific Modules
+------------------
+
+from models import db, User, Game, Drive, Play, PlayOption
+- These are defined in your app (check models.py)
+
+from teams import teams_data
+- Custom data defined in teams.py
+

@@ -1,0 +1,170 @@
+Football Penalty Catalogue (NCAA)
+---------------------------------
+
+Yellow flag is thrown on the field -> play is allowed to continue, after play opponent can accept or decline the penalty.
+But with pre-snap penalties often a wistle is blown and play is stopped immediatly.
+
+Most penalties result in the offence gaining or loosing a set amount of yards, depending on penalty.
+
+L.O.S. -> the line of scrimmage.
+NEUTRAL ZONE -> slice of the field as thick as the length of the ball, only snappers arms and legs may enter the zone during the snap.
+
+Offence must remain set (frozen like statues) for a full second before ball is snapped. 
+Two exceptions: 
+-> Quarterback is allowed movement for communication purposes only.
+-> One offensive player is allowed motion parallel or away from the line of scrimmage.
+
+- Pass Interference yardage is capped at 15 yards in NCAA, unlike NFL’s spot foul rule.
+
+
+-----------------------------------------------------------
+PRE-SNAP PENALTIES (before or as the ball is being snapped)
+-----------------------------------------------------------
+
+(Offence:)
+- FALSE START
+	Offensive player moves before the ball is snapped. 
+	Play is blown dead.
+
+- ILLEGAL SHIFT
+  	Offense fails to set for at least one full second after shifting. 
+	Play is blown dead.
+
+- ILLEGAL MOTION
+  	Offensive player in motion moves toward the line of scrimmage at the time of the snap.
+
+- ILLEGAL FORMATION
+	Offensive formation violates the rules:
+	- AT LEAST 7 PLAYERS MUST BE ON THE LINE
+	- ELIGIBLE RECEIVERS MUST BE ON BOTH ENDS OF THE LINE
+	- ALL INTERIOR PLAYERS ON THE LINE MUST	BE INELIGIBLE
+	Play is blown dead.
+
+- DELAY OF GAME (rarely also called on Defence)
+  	Play clock expires before the snap. 
+	5-yard penalty.
+
+(Defence:)
+- OFFSIDE (rarely also called on Offence)
+  	Player lined up into or moved too soon into neutral zone.
+	Play is allowed to continue, except if the offside player has a clear path to the quarterback.
+
+- ENCROACHMENT
+	Defensive player enters the neutral zone and makes physical contact with an offensive player.
+	Play is blown dead.
+
+- NEUTRAL ZONE INFRACTION
+  	Defender causes an offensive player to false start by entering the neutral zone. 
+	Play is blown dead.
+
+- DISCONCERTING SIGNALS
+  	Simulating the offensive snap count or other signals to confuse the offense. 
+	5-yard penalty.
+
+
+
+-------------------------------------------------
+GAMEPLAY PENALTIES (While the action is occuring)
+-------------------------------------------------
+
+- HOLDING
+	Player restricting the movement of an opposing player that does not have the ball.
+	This does not include blocking, but material restriction of the opposing player with grabs, wrap-arounds and pulling on clothes.
+	Is is a grey area, because it is hard to define and often players get away with it.
+
+	-> Holding called on an offensive player = 10 yard penalty
+	-> Holding called on an defensive player = 5 yard penalty and automatic first down for offence
+
+
+- ILLEGAL CONTACT
+  	Defender makes contact with a receiver more than 5 yards past the line of scrimmage. 
+	5-yard penalty and automatic first down.
+
+- PASS INTERFERENCE
+  - Defense: Contact that hinders an eligible receiver’s opportunity to catch the ball. 
+	     15-yard penalty + automatic first down.
+  - Offense: Contact hindering defender's opportunity to intercept. 
+	     15-yard penalty + loss of down.
+
+- INELIGIBLE RECEIVER DOWNFIELD
+  	Offensive linemen more than 3 yards downfield on a forward pass. 
+	5-yard penalty.
+
+- BLOCKING BELOW THE WAIST
+  	Illegal block targeting the legs. 
+	15-yard penalty (with exceptions near the line of scrimmage in some formations).
+
+- TARGETING
+  	Forcible contact using the crown of the helmet or targeting a defenseless opponent’s head/neck. 
+	15-yard penalty and player ejection.
+
+- ROUGHING THE PASSER
+  	Late or violent hit on the quarterback after a pass. 
+	15-yard penalty + automatic first down.
+
+- ROUGHING THE KICKER
+  	Illegal contact with the kicker or punter. 
+	15-yard penalty + automatic first down.
+
+- UNSPORTSMANLIKE CONDUCT
+  	Includes taunting, excessive celebration, or use of banned signals/gestures. 
+	15-yard penalty, possible ejection.
+
+- HORSE-COLLAR TACKLE
+  	Pulling a ball carrier down by the inside collar or jersey. 
+	15-yard penalty.
+
+- ILLEGAL BLOCK IN THE BACK
+  	Blocking an opponent from behind and above the waist. 
+	10-yard penalty.
+
+- CHOP BLOCK
+  	Blocking a defender high and low simultaneously. 
+	15-yard penalty.
+
+- FACEMASK
+  	Grabbing the facemask of an opponent. 
+	15-yard penalty.
+
+- ILLEGAL FORWARD PASS
+  	Passing after crossing the line of scrimmage or a second forward pass. 
+	5-yard penalty + loss of down.
+
+
+--------------------------------
+SPECIAL/ADMINISTRATIVE PENALTIES
+--------------------------------
+
+- FEIGNING INJURY
+  	A player fakes an injury to stop play. 
+	Timeout charged or 5-yard delay-of-game penalty.
+
+- ILLEGAL SUBSTITUTION
+  	Having more than 11 players on the field at the snap. 
+	5-yard penalty.
+
+- ILLEGAL SIGNAL DEVICES
+  	Use of unauthorized electronic devices or improper signaling methods. 
+	15-yard penalty.
+
+- ILLEGAL SCRIMMAGE FORMATION (KICKS)
+  	Violations in player alignment on kick or punt plays. 
+	Delay of game or 5-yard penalty.
+
+- GAME ADMINISTRATION INTERFERENCE
+  	Sideline interference by coaches or equipment. 
+	Warning followed by 5-yard penalties.
+
+- ILLEGAL CELEBRATION
+  	Excessive or choreographed celebrations. 
+	15-yard penalty, possible ejection.
+
+
+
+
+Sources:
+https://rulebook.github.io/en/toc/
+https://www.cougcenter.com/2013/6/28/4445944/common-ncaa-football-penalties-referee-signals
+
+(	https://www.youtube.com/watch?v=2toSSUYyOm8
+	https://www.youtube.com/watch?v=xfbR4_yw9f8)
