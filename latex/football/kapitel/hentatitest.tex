@@ -1,15 +1,493 @@
-%! Author = louayhentati
-%! Date = 27.07.25
+\documentclass[12pt]{article}
 
-% Preamble
-\documentclass[11pt]{article}
+% Sprache & Kodierung
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
 
-% Packages
-\usepackage{amsmath}
+% Seitenlayout
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{tabularx}
 
-% Document
+% Code Listings mit Minted
+\usepackage{minted}
+\usemintedstyle{default}
+\setminted{
+    fontsize=\small,
+    tabsize=2,
+    breaklines=true
+}
+
+% Farbige Boxen um Code
+\usepackage{tcolorbox}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{minted}{\begin{tcolorbox}[colback=gray!5, colframe=gray!30, boxrule=0.5pt, arc=2pt]}
+\AfterEndEnvironment{minted}{\end{tcolorbox}}
+
+% Bessere Typografie
+\usepackage{microtype}
+
+% Hyperlinks
+\usepackage{hyperref}
+
+% Tiefergehende Nummerierung aktivieren
+\setcounter{secnumdepth}{3}
+
+\title{Dokumentation: Benutzerverwaltungsmodul}
+\author{X, Y, 999999999\\ \and X, Z, 222222222}
+\date{}
+
 \begin{document}
 
+\maketitle
+\tableofcontents
+\newpage
 
+\section{Erfassung von Spielerstatistiken im Hudl-System}
+
+Das System erfasst automatisch Spielerstatistiken durch Verknüpfung von \textbf{Play-Tagging} und \textbf{Spielerzuordnung}.\\
+Kernfunktionen:
+\begin{itemize}
+    \item Rusher-Identifikation bei Laufspielzügen
+    \item Passer/Receiver-Erfassung bei Passspielzügen
+    \item Dynamische Anzeige von Eingabefeldern basierend auf Spieltyp
+    \item Echtzeitvalidierung der Spielernummern
+\end{itemize}
+
+\subsection{Dynamische Feldanzeige (togglePlayerFields)}
+
+\begin{minted}{javascript}
+function togglePlayerFields(selectedInput) {
+  const playType = selectedInput.getAttribute('data-play-type').toUpperCase();
+  // Hide all fields initially
+  rusher.style.display = "none";
+  passer.style.display = "none";
+  receiver.style.display = "none";
+
+  // Show fields based on play type
+  if (playType === "RUN") rusher.style.display = "block";
+  else if (playType === "PASS" || playType === "SCREEN") {
+    passer.style.display = "block";
+    receiver.style.display = "block";
+  }
+  else if (playType === "RPO") {
+    rusher.style.display = "block";
+    passer.style.display = "block";
+    receiver.style.display = "block";
+  }
+}
+\end{minted}
+
+
+\textbf{Trigger:} Wird bei Auswahl eines \texttt{Off Play}-Radio-Buttons aufgerufen \\
+\textbf{Datenquelle:} \texttt{data-play-type} Attribut der Radio-Buttons (z.\,B. "RUN", "PASS") \\
+\textbf{Logik:} Zeigt nur relevante Felder für den Spielzugtyp an
+
+\subsection{Eingabevalidierung (validatePasser)}
+
+\begin{minted}{javascript}
+function validatePasser(input) {
+  const val = parseInt(input.value);
+  if (val >= 50 && val <= 79) {
+    alert("Players Numbers between 50 and 79 are not accepted!");
+    input.value = "";
+  }
+}
+\end{minted}
+
+\textbf{Prüfung:} Blockiert Nummern 50–79 (typisch für Linemen) \\
+\textbf{UI-Feedback:} Alert-Nachricht + Löschung ungültiger Eingaben \\
+\textbf{Anwendung:} Bei Passer/Receiver-Eingabe via \texttt{oninput}
+
+
+\subsection{Initialisierungslogik}
+
+\begin{minted}{javascript}
+window.addEventListener('DOMContentLoaded', function() {
+  const selectedOffPlay = document.querySelector('input[name="off_play"]:checked');
+  if (selectedOffPlay) togglePlayerFields(selectedOffPlay);
+});
+\end{minted}
+
+\textbf{Zweck:} Zeigt gespeicherte Felder beim Bearbeiten an \\
+\textbf{Trigger:} Bei vollständig geladener Seite
+
+\subsection{Datenmodell und Integration}
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Feld} & \textbf{Gültige Werte} & \textbf{Abhängigkeit} \\
+\hline
+Rusher & 0–99 & Nur bei RUN/RPO \\
+Passer & 0–49, 80–99 & Nur bei PASS/SCREEN/RPO \\
+Receiver & 0–49, 80–99 & Nur bei PASS/SCREEN/RPO \\
+Play Type & RUN/PASS/SCREEN/RPO & Bestimmt Sichtbarkeit \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection*{Herausforderungen \& Lösungen}
+
+\begin{itemize}
+    \item \textbf{Synchronisierung Frontend/Backend:}\\
+    \textit{Lösung:} \texttt{data-play-type} Attribut synchronisiert Anzeigetext (value) und Spieltyp (label)
+
+    \item \textbf{Datenkonsistenz in Tabellen:}\\
+    \textit{Lösung:} Komplexe Abfragen kombinieren Positionsdaten aus verschiedenen Spielzügen
+
+    \item \textbf{Benutzerführung:}\\
+    \textit{Lösung:} Sofortiges Feedback durch Echtzeitvalidierung
+\end{itemize}
+
+\begin{minted}{html}
+<!-- Beispiel: Dynamische Feldgruppen -->
+<div id="rusher-field" style="display: none;">
+  <input name="rusher_number" oninput="validatePasser(this)">
+</div>
+
+<!-- Beispiel: Play-Type-Bindung -->
+<input type="radio" name="off_play" data-play-type="RUN" onclick="togglePlayerFields(this)">
+\end{minted}
+
+\begin{itemize}
+    \item \textbf{Clean UI:} Felder sind standardmäßig versteckt (\texttt{display: none})
+    \item \textbf{Responsive Validation:} \texttt{oninput} triggert Validierung bei jeder Eingabe
+    \item \textbf{Kontextsensitive Logik:} \texttt{onclick} ruft Feldsteuerung nur bei Offense-Play auf
+\end{itemize}
+
+\section{Maske für Taggen von Defense}
+\subsection{Purpose and Functionality}
+
+Die Funktion zur Verteidigungs-Tagging erlaubt es Coaches, defensive Strategien während der Spielanalyse präzise zu erfassen. Wird im ODK-Selektor „Defense“ gewählt, ersetzt das System die offensiven Felder durch defense-spezifische Parameter. Dies ermöglicht:
+
+\begin{itemize}
+    \item Eine genaue Erfassung von defensiven Formationen und Taktiken
+    \item Spielerbezogenes Tracking (z.\,B. Tackler, Interceptions)
+    \item Nahtlose Integration mit Drive-Zusammenfassungen und Statistiken
+\end{itemize}
+
+Unabhängig vom gewählten ODK-Modus (Offense, Defense oder Special Teams) werden zentrale Spielfeldparameter standardmäßig eingeblendet. Dazu gehören:
+
+\begin{itemize}
+    \item \textbf{Down} (1–4)
+    \item \textbf{Distance} (Yards bis zum First Down)
+    \item \textbf{Hash} (Position: Left, Middle, Right)
+    \item \textbf{Yard Line} (eigene oder gegnerische Spielfeldseite)
+\end{itemize}
+
+Diese Felder gewährleisten eine einheitliche Erfassung der Spielsituation und bilden die Grundlage für die Analyse aller Spielzüge.
+
+Um eine korrekte Datenbasis sicherzustellen, muss vor dem Ausfüllen ein ODK-Modus gewählt werden. Sollte keine Auswahl getroffen worden sein, wird ein Warnhinweis ausgegeben, der den Benutzer auffordert, sich für Offense, Defense oder Special Teams zu entscheiden.
+
+\subsection{Formularvalidierung für ODK-Auswahl}
+
+Um sicherzustellen, dass ein gültiger ODK-Modus (Offense, Defense oder Special Teams) vor dem Absenden des Formulars ausgewählt wurde, wird eine JavaScript-Funktion eingesetzt. Diese prüft, ob eine der Optionen aktiviert ist. Andernfalls wird das Absenden verhindert und ein Warnhinweis angezeigt.
+
+\begin{minted}[fontsize=\small, linenos]{javascript}
+function validateForm(event) {
+    const odkChoices = document.getElementsByName('odk');
+    let isSelected = false;
+    for (const choice of odkChoices) {
+        if (choice.checked) {
+            isSelected = true;
+            break;
+        }
+    }
+    if (!isSelected) {
+        event.preventDefault();
+        alert("Please select an ODK choice (Offense, Defense, or Special Teams).");
+    }
+}
+\end{minted}
+
+Diese Validierung schützt vor inkonsistenter Dateneingabe und stellt sicher, dass der Spielzug korrekt einem Bereich (Offense, Defense oder Special Teams) zugeordnet ist.
+
+\subsection{Key Defense Parameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{6cm}|l|}
+\hline
+\textbf{App Field Name} & \textbf{Beschreibung} & \textbf{Input Type} \\
+\hline
+Play Type          & Typ der defensiven Strategie (z. B. Base, Blitz) & Radio Buttons \\
+Defense Front      & Aufstellung der D-Line (z. B. 4-3, 3-4) & Radio Buttons \\
+Defense Strongside & Starke Seite der Formation (Left/Right) & Radio Buttons \\
+Blitz              & Blitz-Paket-Typ & Radio Buttons \\
+Slants / Stunts    & Bewegungsmuster der D-Line & Radio Buttons \\
+Coverage           & Coverage-Schema der Secondary & Radio Buttons \\
+Tackler 1          & Trikotnummer des Haupt-Tacklers & Number Input (0–99) \\
+Tackler 2          & Trikotnummer des zweiten Tacklers & Number Input (0–99) \\
+Intercepted By     & Trikotnummer des Interceptors & Number Input (0–99) \\
+\hline
+\end{tabular}
+\caption{Defense-Parameter und Zuordnung im App-Formular}
+\end{table}
+
+
+\subsection{Implementation in Code}
+
+\paragraph{Frontend (HTML/Jinja2):} Die folgende Struktur zeigt einen Ausschnitt des Defense-Formulars:
+
+\begin{minted}[fontsize=\small,breaklines]{html}
+<!-- DEFENSE SECTION (Visible when 'Defense' selected) -->
+<div id="defense-section" style="display: none;">
+  <!-- PLAY TYPE -->
+  <div class="mb-3">
+    <label class="form-label">Play type defense</label>
+    <div class="btn-group d-flex flex-wrap">
+      {% for option in options.play_type1 %}
+        <input type="radio" class="btn-check" name="play_type1"
+               value="{{ option.value }}"
+               {% if play %}checked{% endif %}>
+        <label class="btn btn-outline-primary">{{ option.value }}</label>
+      {% endfor %}
+    </div>
+  </div>
+  ...
+</div>
+\end{minted}
+
+
+\paragraph{Datenbank (SQLAlchemy):} Defense-spezifische Felder im Datenmodell:
+
+\begin{minted}[fontsize=\small,breaklines]{python}
+class PlayModel(db.Model):
+    play_type1 = db.Column(db.String(50))
+    defense_front = db.Column(db.String(50))
+    defense_strongside = db.Column(db.String(50))
+    blitz = db.Column(db.String(50))
+    slants = db.Column(db.String(50))
+    coverage = db.Column(db.String(50))
+    tackler1 = db.Column(db.Integer)
+    tackler2 = db.Column(db.Integer)
+    interceptor = db.Column(db.Integer)
+\end{minted}
+
+\subsection{ Settings Management}
+
+Die Verwaltung der Play-Optionen erfolgt über eine zentrale Einstellungsseite. Diese ermöglicht es dem Benutzer, sowohl für Offense als auch für Defense neue Optionen hinzuzufügen, die später im \textit{Add Play}-Formular zur Auswahl stehen.
+
+\paragraph{Einfache Optionserweiterung}%
+Es gibt einen gemeinsamen Button mit der Bezeichnung \textbf{Neue Option hinzufügen}. Nach dem Klick öffnet sich ein Formular, in dem der Benutzer:
+\begin{itemize}
+  \item die Kategorie auswählen kann (z.\,B. \textit{Play Type – Defense} oder \textit{Coverage – Defense}, oder entsprechende Offense-Parameter),
+  \item einen Wert für die neue Option eingibt (z.\,B. \textit{Zone Blitz}),
+  \item und das Formular abschickt.
+\end{itemize}
+
+Nach dem Absenden:
+\begin{itemize}
+  \item wird die neue Option automatisch der entsprechenden Kategorie (Offense oder Defense) zugeordnet,
+  \item die Seite wird neu geladen,
+  \item und die neue Option erscheint direkt im zugehörigen Abschnitt der Einstellungen, z.\,B. unter \textit{Blitz} bei den Defense-Optionen.
+\end{itemize}
+
+\paragraph{Integration mit dem Add-Play-Formular}%
+Sobald eine neue Option gespeichert wurde, ist sie unmittelbar im \textit{Add Play}-Formular verfügbar, ohne dass zusätzlicher Programmieraufwand notwendig ist. Der Benutzer kann sie direkt bei der Spielzug-Eingabe auswählen.
+
+\paragraph{Übersichtliche Darstellung}%
+Alle Optionen sind in einem Accordion-Layout gruppiert und nach Parametergruppen sortiert (z.\,B. \textit{Defense Front}, \textit{Coverage}, \textit{Play Type – Offense}). Jede Option kann dort einzeln:
+\begin{itemize}
+  \item aktiviert oder deaktiviert werden,
+  \item oder dauerhaft gelöscht werden.
+\end{itemize}
+
+\paragraph{Vorteile}%
+\begin{itemize}
+  \item Einfache Erweiterung der Play-Auswahl durch den Benutzer selbst
+  \item Gemeinsames Interface für Offense- und Defense-Parameter
+  \item Automatische Integration neuer Optionen in das Tagging-Formular
+  \item Klare, gruppierte Darstellung in der Settings-Übersicht
+\end{itemize}
+
+
+\begin{minted}[fontsize=\small,breaklines]{html}
+<!-- SETTINGS INTERFACE -->
+<div id="defense-options-section">
+  <div class="accordion" id="defenseOptionsAccordion">
+    {% for param, display_name in defense_parameters.items() %}
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button">{{ display_name }}</button>
+        </h2>
+        <div class="accordion-body">
+          <table class="table">
+            ...
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+\end{minted}
+
+\subsection{Key Features}
+
+\begin{itemize}
+  \item \textbf{Dynamisches Umschalten:} Defense-Felder ersetzen Offense-Felder bei Auswahl von „Defense“.
+  \item \textbf{Validierung:} Nur gültige Nummern (0–99) werden akzeptiert.
+  \item \textbf{Separate Verwaltung:} Defense-Optionen können separat konfiguriert werden.
+\end{itemize}
+
+\begin{minted}[fontsize=\small,breaklines]{javascript}
+// Sichtbarkeit der Defense-Section
+function showSection(section) {
+  if (section === 'defense') {
+    document.getElementById('defense-section').style.display = 'block';
+    document.getElementById('offense-section').style.display = 'none';
+  }
+}
+
+// Validierung der Spieler-Nummer
+function validateInterceptedBy(input) {
+  if (input.value < 0 || input.value > 99) {
+    alert("Invalid jersey number (0-99)!");
+    input.value = "";
+  }
+}
+\end{minted}
+
+\subsection{Datenfluss}
+
+\begin{enumerate}
+  \item Benutzer wählt „Defense“ im ODK-Selektor.
+  \item Defense-spezifische Felder erscheinen.
+  \item Daten werden validiert und gespeichert.
+  \item Speicherung in \texttt{PlayModel} erfolgt:
+\end{enumerate}
+
+\begin{minted}[fontsize=\small,breaklines]{python}
+play = PlayModel(
+    defense_front=form.get('defense_front'),
+    coverage=form.get('coverage'),
+    tackler1=form.get('tackler1'),
+    ...
+)
+\end{minted}
+
+\subsection{Edge Cases Handling}
+
+\begin{itemize}
+  \item Leere Tackler-Felder werden als \texttt{NULL} gespeichert.
+  \item Ungültige Nummern (außerhalb 0–99) werden clientseitig blockiert.
+  \item Deaktivierte Optionen erscheinen nicht im Formular.
+  \item Neue Formationen lassen sich jederzeit über das Einstellungsmenü hinzufügen.
+\end{itemize}
+
+\bigskip
+
+Diese Implementierung ermöglicht eine flexible, nutzerfreundliche und strukturierte Erfassung defensiver Strategien und ist vollständig mit dem bestehenden Tagging-System kompatibel.
+
+\section{Special Teams Tagging Feature}
+
+\subsection{Purpose and Functionality}
+
+Das \textit{Special Teams Tagging Feature} dient der schnellen und effizienten Erfassung von Schlüsseldaten bei Special Teams Plays. Im Gegensatz zu Offense- und Defense-Plays liegt der Fokus hier auf einer minimalistischen Oberfläche zur strukturierten Eingabe relevanter Metadaten:
+
+\begin{itemize}
+  \item Identifikation der beteiligten Spieler (Returner und Kicker)
+  \item Erfassung der zurückgelegten Yards (Returner und Kicker)
+  \item Klassifikation des Spielausgangs (z.\,B. Touchback, Fumble)
+  \item Optimierte Oberfläche für schnelle Eingabe und geringe Fehleranfälligkeit
+\end{itemize}
+
+\subsection{Key Special Teams Parameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{6cm}|l|}
+\hline
+\textbf{App Field Name} & \textbf{Beschreibung} & \textbf{Input Type} \\
+\hline
+ Returner       & Spieler, der den
+Ballzurückträgt &
+Number Input (0-99) \\
+ Kicker         & Spieler, der den Ball kickt & Number Input (0-99) \\
+Returner Yards & Zurückgelegte Yards durch Returner & Number Input (Ganzzahl) \\
+ Kick Yards     & Distanz des Kicks & Number Input (Ganzzahl) \\
+ Result         & Ausgang des Spielzugs & Radio Buttons (Spezifische Optionen) \\
+\hline
+\end{tabular}
+\caption{Special Teams Parameter und Zuordnung im App-Formular}
+\end{table}
+
+\subsection{Technische Umsetzung}
+
+\subsubsection{Frontend (HTML/Jinja2)}
+
+Die Eingabemaske für Special Teams wird nur eingeblendet, wenn im ODK \textit{Special Teams} ausgewählt wurde. Die Felder beinhalten Returner/Kicker, Yards sowie Ergebnis-Auswahl über Radio-Buttons.
+
+\subsubsection{JavaScript Validierung}
+
+Spielernummern werden clientseitig geprüft, um sicherzustellen, dass nur gültige Trikotnummern (0–99) eingegeben werden:
+
+\begin{minted}{javascript}
+function validateSpecialTeam(input) {
+  const value = parseInt(input.value, 10);
+  if ((value >= 0 && value <= 99) || isNaN(value)) {
+    input.classList.remove("is-invalid");
+  } else {
+    input.classList.add("is-invalid");
+    alert("Player numbers must be between 0-99!");
+  }
+}
+\end{minted}
+
+\subsubsection{SQLAlchemy Datenmodell}
+
+\begin{minted}{python}
+class PlayModel(db.Model):
+    returner = db.Column(db.Integer)        # RETURNER
+    returner_yard = db.Column(db.Integer)   # RET YARDS
+    kicker = db.Column(db.Integer)          # KICKER
+    kicker_yard = db.Column(db.Integer)     # KICK YARDS
+\end{minted}
+
+\subsection{Key Features}
+
+\begin{itemize}
+  \item \textbf{Kontextabhängige Anzeige:} Die Special Teams-Sektion wird nur angezeigt, wenn sie ausgewählt wurde.
+  \item \textbf{Echtzeitvalidierung:} Spielernummern werden sofort geprüft und hervorgehoben, wenn ungültig.
+  \item \textbf{Spezialisierte Ergebnisoptionen:} Auswahlfeld für Special Teams-spezifische Ergebnisse (z.\,B. Fair Catch, Touchback).
+\end{itemize}
+
+
+\subsection{Edge Case Handling}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Fall} & \textbf{Behandlung} \\
+\hline
+Ungültige Spielernummer & Clientseitige Validierung + Warnung \\
+Fehlende Yard-Angabe & Speicherung als \texttt{NULL}, statistisch behandelt \\
+Mehrere Returner & Nur ein Feld – Entscheidung liegt beim Coach \\
+Unterscheidung Kick vs. Punt & Über \textit{Result}-Feld differenziert \\
+\hline
+\end{tabular}
+\caption{Edge Case Handling für Special Teams}
+\end{table}
+
+\subsection{Business Logic}
+
+\begin{itemize}
+  \item \textbf{Nummernvalidierung:} Linemen-Nummern (50–79) können blockiert werden, wenn gewünscht.
+  \item \textbf{Ergebnis-Taxonomie:} 12 spezialisierte Optionen decken alle gängigen Special Teams-Szenarien ab.
+  \item \textbf{Yard-Tracking:} Nur positive Werte erlaubt (Richtung ergibt sich durch Spieltyp).
+  \item \textbf{Statistische Integration:} Felder erscheinen in Drive-Summaries und Spielerstatistiken.
+\end{itemize}
+
+\begin{minted}{python}
+def calculate_kicker_stats(player_id):
+    kicks = PlayModel.query.filter_by(kicker=player_id).all()
+    total_yards = sum(k.kicker_yard for k in kicks if k.kicker_yard)
+    return {"total_kicks": len(kicks), "avg_yards": total_yards/len(kicks)}
+\end{minted}
+
+\textbf{Fazit:} Dieses Modul bietet eine schlanke, durchdachte Lösung zur Erfassung relevanter Daten bei Special Teams Plays – vollständig integriert in den bestehenden Tagging-Workflow.
 
 \end{document}
